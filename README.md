@@ -55,3 +55,4 @@ This project uses Storybook for component testing and documentation:
 
 - `npx playwright test` - Run E2E tests
 - `npx playwright test --ui` - Interactive mode
+

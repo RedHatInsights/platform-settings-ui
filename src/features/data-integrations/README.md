@@ -182,17 +182,26 @@ hand-written against the Go schema rather than re-exported.
 
 The Sources API is **`/api/sources/v3.1`** — there is no v2. This is a deliberate exception
 to the repo-wide "use v2" rule, which comes from notifications.
-`@redhat-cloud-services/sources-client@3.0.19` exports `listSources`, `listSourceTypes`,
-`showSource`, and `createSource`, covering both the list and the wizard.
+`@redhat-cloud-services/sources-client@3.0.19` exports `postGraphQL`, `listSourceTypes`, and
+`showSource` — the three this island uses — plus `createSource` and `listApplicationTypes`
+for the wizard and the table's applications column.
 
 ### Where the types differ from the ticket
 
 RHCLOUD-49536's acceptance criteria name `status`, `date_added`, and `connected_applications`
 on the Source entity. The v3.1 API returns none of those. The real fields are
-`availability_status` and `created_at`, and applications are a **separate collection** —
-`/sources/{id}/applications` (`listSourceApplications`), which is outside the three methods
-the ticket specifies. `MyDataIntegrationsTab` will need that extra call for its
-"Connected applications" column.
+`availability_status` and `created_at`, and applications are an association rather than a
+column.
+
+`getSources()` asks for that association inline, so `useSources` already hands
+`MyDataIntegrationsTab` a `Source.applications` array for its "Connected applications"
+column — no per-row call. A separate `/sources/{id}/applications` request
+(`listSourceApplications`) is only needed by callers going through the REST list endpoint,
+which this island does not.
+
+What the column *will* need is `/application_types` (`listApplicationTypes`) to turn each
+`application_type_id` into a display name. That is a small static catalogue, so it wants the
+same long-`staleTime` treatment as `useSourceTypes`.
 
 ## Add data integration dropdown
 

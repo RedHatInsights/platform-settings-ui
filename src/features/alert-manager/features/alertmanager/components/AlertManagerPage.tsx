@@ -1,21 +1,20 @@
 import React, { useEffect } from 'react';
 import { useIntl } from 'react-intl';
-import {
-  Content,
-  ContentVariants,
-} from '@patternfly/react-core/dist/dynamic/components/Content';
 import { Divider } from '@patternfly/react-core/dist/dynamic/components/Divider';
-import { Flex } from '@patternfly/react-core/dist/dynamic/layouts/Flex';
-import { FlexItem } from '@patternfly/react-core/dist/dynamic/layouts/Flex';
-import { Title } from '@patternfly/react-core/dist/dynamic/components/Title';
-import OpenDrawerRightIcon from '@patternfly/react-icons/dist/js/icons/open-drawer-right-icon';
-import PageHeader from '@redhat-cloud-services/frontend-components/PageHeader';
+import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHeader';
 import Main from '@redhat-cloud-services/frontend-components/Main';
 // eslint-disable-next-line no-restricted-imports -- Page component needs chrome for document title
 import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome';
 import AlertManagerTable from './AlertManagerTable';
 import messages from '../messages';
-import './AlertManagerPage.scss';
+
+const NOTIFICATIONS_ICON =
+  '/apps/frontend-assets/technology-icons/notifications.svg';
+
+// The technology-icon SVGs declare width/height 100% with only a viewBox, so
+// they have no intrinsic size and must be sized by the consumer. 48px is
+// PageHeader's own icon slot width (its `iconMinWidth` rule).
+const ICON_SIZE = 48;
 
 const AlertManagerPage: React.FC = () => {
   const intl = useIntl();
@@ -32,39 +31,25 @@ const AlertManagerPage: React.FC = () => {
 
   return (
     <>
-      <PageHeader>
-        <div className="alert-manager-header">
-          <Flex>
-            <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-              <div className="iconMinWidth-1-2-2">
-                <img
-                  src="/apps/frontend-assets/technology-icons/notifications.svg"
-                  alt=""
-                />
-              </div>
-            </FlexItem>
-            <Divider orientation={{ default: 'vertical' }} />
-            <FlexItem flex={{ default: 'flex_1' }}>
-              <Title headingLevel="h1" size="2xl" className="pf-v6-u-mb-sm">
-                {intl.formatMessage(messages.pageTitle)}
-              </Title>
-              <Content component={ContentVariants.p}>
-                {intl.formatMessage(messages.pageDescription)}
-              </Content>
-              <Content component={ContentVariants.p}>
-                <a
-                  href="#"
-                  onClick={handleLearnMore}
-                  className="alert-manager-learn-more"
-                >
-                  {intl.formatMessage(messages.learnMore)}{' '}
-                  <OpenDrawerRightIcon />
-                </a>
-              </Content>
-            </FlexItem>
-          </Flex>
-        </div>
-      </PageHeader>
+      <PageHeader
+        title={intl.formatMessage(messages.pageTitle)}
+        subtitle={intl.formatMessage(messages.pageDescription)}
+        icon={
+          <img
+            src={NOTIFICATIONS_ICON}
+            alt=""
+            width={ICON_SIZE}
+            height={ICON_SIZE}
+          />
+        }
+        linkProps={{
+          label: intl.formatMessage(messages.learnMore),
+          isExternal: true,
+          component: 'a',
+          href: '#',
+          onClick: handleLearnMore,
+        }}
+      />
       <Divider />
       <Main>
         <AlertManagerTable />

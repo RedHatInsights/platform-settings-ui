@@ -1,2 +1,6 @@
 // Importing Global Variables
 @import "~@redhat-cloud-services/frontend-components-utilities/styles/_all";
+
+// Applies to every PageHeader in the app, so it is imported once here rather
+// than per page.
+@import "./Components/PageHeaderIcon";

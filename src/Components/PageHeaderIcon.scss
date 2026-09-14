@@ -1,0 +1,17 @@
+// PageHeader (@patternfly/react-component-groups) hardcodes
+// `alignSelf: 'alignSelfCenter'` on the FlexItem holding the icon, so the icon
+// is centred against the *whole* text column. The moment a page adds a third
+// line — a "Learn more" link under the title and subtitle — the column grows
+// and the icon drops by half that height, leaving it visibly lower than on a
+// two-line header like Event Log.
+
+// Top-align it instead, so the icon lines up with the title regardless of how
+// many lines the text column has.
+
+// The icon slot is the first child of PageHeader's Flex. Targeting it by
+// position is deliberate: its other class is a react-jss generated name
+// (`iconMinWidth-0-2-2`) whose counter suffix depends on stylesheet creation
+// order, so it is not safe to select on.
+.pf-v6-c-page__main-section > .pf-v6-l-flex > .pf-m-align-self-center:first-child {
+  align-self: flex-start;
+}

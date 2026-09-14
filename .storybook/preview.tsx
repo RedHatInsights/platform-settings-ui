@@ -1,6 +1,9 @@
 import type { Preview } from '@storybook/react-webpack5';
 import '@patternfly/react-core/dist/styles/base.css';
 import '@patternfly/patternfly/patternfly-addons.css';
+// App.scss is imported by App.tsx, which stories never render, so app-wide
+// styles have to be registered here as well.
+import '../src/Components/PageHeaderIcon.scss';
 import React, { useMemo } from 'react';
 import { IntlProvider } from 'react-intl';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

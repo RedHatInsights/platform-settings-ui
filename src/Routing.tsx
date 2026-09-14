@@ -30,6 +30,24 @@ const AboutPage = lazy(() =>
     /* webpackChunkName: "AboutPage" */ './features/settings-overview/features/about'
   ).then((module) => ({ default: module.AboutPage })),
 );
+const DataIntegrationsPage = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "DataIntegrationsPage" */ './features/data-integrations/DataIntegrationsPage'
+    ),
+);
+const MyDataIntegrationsTab = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "MyDataIntegrationsTab" */ './features/data-integrations/components/MyDataIntegrationsTab'
+    ),
+);
+const DataIntegrationsAboutTab = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "DataIntegrationsAboutTab" */ './features/data-integrations/components/AboutTab'
+    ),
+);
 
 const LandingPage = () => (
   <Bullseye>
@@ -49,6 +67,20 @@ const routes = [
   {
     path: 'overview',
     element: AboutPage,
+  },
+  {
+    path: 'data-integrations',
+    element: DataIntegrationsPage,
+    childRoutes: [
+      {
+        path: '',
+        element: MyDataIntegrationsTab,
+      },
+      {
+        path: 'about',
+        element: DataIntegrationsAboutTab,
+      },
+    ],
   },
   {
     path: 'no-permissions',

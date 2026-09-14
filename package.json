@@ -35,6 +35,7 @@
     "@redhat-cloud-services/frontend-components-notifications": "^6.6.2",
     "@redhat-cloud-services/frontend-components-utilities": "^7.3.1",
     "@redhat-cloud-services/notifications-client": "^6.1.10",
+    "@redhat-cloud-services/sources-client": "^3.0.19",
     "@scalprum/core": "^0.9.0",
     "@scalprum/react-core": "^0.11.1",
     "@tanstack/react-query": "^5.101.4",

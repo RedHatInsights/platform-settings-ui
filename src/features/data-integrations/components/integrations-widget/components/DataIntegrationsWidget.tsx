@@ -15,6 +15,7 @@ import { Bullseye } from '@patternfly/react-core/dist/dynamic/layouts/Bullseye';
 import { Icon } from '@patternfly/react-core/dist/dynamic/components/Icon';
 import PlusCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/plus-circle-icon';
 import IntegrationsIcon from '@patternfly/react-icons/dist/dynamic/icons/integration-icon';
+import ExclamationCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/exclamation-circle-icon';
 import { AppLink } from '../../../../../Components/AppLink';
 import { useAppNavigate } from '../../../../../hooks/useAppNavigate';
 import { useIntegrationCounts } from '../hooks/useIntegrationCounts';
@@ -72,11 +73,17 @@ const DataIntegrationsWidget: React.FC<DataIntegrationsWidgetProps> = ({
   const appNavigate = useAppNavigate();
 
   // Use the hook to fetch counts, or use prop overrides for testing
-  const { counts: fetchedCounts, isLoading: fetchedIsLoading } =
-    useIntegrationCounts();
+  const {
+    counts: fetchedCounts,
+    isLoading: fetchedIsLoading,
+    error,
+  } = useIntegrationCounts();
 
   const counts = propCounts ?? fetchedCounts;
-  const isLoading = propIsLoading || fetchedIsLoading;
+  // When count overrides are provided, ignore fetchedIsLoading
+  const isLoading = propCounts
+    ? propIsLoading
+    : propIsLoading || fetchedIsLoading;
 
   const handleAddClick = (filterValue: string) => {
     // Navigate to data integrations page and open the wizard
@@ -101,6 +108,33 @@ const DataIntegrationsWidget: React.FC<DataIntegrationsWidgetProps> = ({
               size="lg"
               aria-label={intl.formatMessage(messages.loadingIntegrations)}
             />
+          </Bullseye>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  // Show error state if loading failed
+  if (error && !propCounts) {
+    return (
+      <Card
+        className="data-integrations-widget"
+        ouiaId="data-integrations-widget"
+      >
+        <CardBody>
+          <Bullseye>
+            <Flex
+              direction={{ default: 'column' }}
+              alignItems={{ default: 'alignItemsCenter' }}
+              spaceItems={{ default: 'spaceItemsSm' }}
+            >
+              <Icon status="danger" size="lg">
+                <ExclamationCircleIcon />
+              </Icon>
+              <span>
+                {intl.formatMessage(messages.errorLoadingIntegrations)}
+              </span>
+            </Flex>
           </Bullseye>
         </CardBody>
       </Card>

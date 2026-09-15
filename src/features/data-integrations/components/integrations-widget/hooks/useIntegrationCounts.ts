@@ -1,49 +1,38 @@
-import { useMemo } from 'react';
 import { useSources } from '../../../data/queries/useSources';
 import type { IntegrationCounts } from '../types';
 
 /**
  * Hook to fetch and aggregate data integration counts by provider.
  *
- * Uses the useSources hook from the data layer to fetch all
- * sources and then aggregates them by source type ID.
+ * Uses the useSources hook with sourceTypeIds filters to get accurate counts
+ * from meta.count for each provider, supporting tenants with >1000 sources.
  */
 export function useIntegrationCounts() {
-  // Fetch all sources with a high limit to get all integrations
-  const { data, isLoading, error } = useSources({ limit: 1000 });
+  // Fetch counts for each provider using sourceTypeIds filter
+  // The API returns meta.count with the accurate total for each filter
+  const awsQuery = useSources({ sourceTypeIds: ['1'], limit: 1 });
+  const googleQuery = useSources({ sourceTypeIds: ['2'], limit: 1 });
+  const azureQuery = useSources({ sourceTypeIds: ['3'], limit: 1 });
+  const openshiftQuery = useSources({ sourceTypeIds: ['4'], limit: 1 });
 
-  const counts = useMemo<IntegrationCounts>(() => {
-    if (!data?.data) {
-      return {
-        aws: 0,
-        azure: 0,
-        google_cloud: 0,
-        openshift: 0,
-      };
-    }
+  const counts: IntegrationCounts = {
+    aws: awsQuery.data?.meta.count ?? 0,
+    google_cloud: googleQuery.data?.meta.count ?? 0,
+    azure: azureQuery.data?.meta.count ?? 0,
+    openshift: openshiftQuery.data?.meta.count ?? 0,
+  };
 
-    const result: IntegrationCounts = {
-      aws: 0,
-      azure: 0,
-      google_cloud: 0,
-      openshift: 0,
-    };
+  const isLoading =
+    awsQuery.isLoading ||
+    googleQuery.isLoading ||
+    azureQuery.isLoading ||
+    openshiftQuery.isLoading;
 
-    // Aggregate counts by source type ID
-    // These IDs are based on the Sources API schema
-    data.data.forEach((source) => {
-      const typeId = source.source_type_id;
-
-      // Cloud sources
-      if (typeId === '1') result.aws++;
-      else if (typeId === '2') result.google_cloud++;
-      else if (typeId === '3') result.azure++;
-      // Red Hat sources
-      else if (typeId === '4') result.openshift++;
-    });
-
-    return result;
-  }, [data]);
+  const error =
+    awsQuery.error ??
+    googleQuery.error ??
+    azureQuery.error ??
+    openshiftQuery.error;
 
   return {
     counts,

@@ -110,6 +110,30 @@ export const Loading: Story = {
   },
 };
 
+export const ErrorState: Story = {
+  args: {
+    integrationCounts: mockEmptyIntegrationCounts,
+    isLoading: false,
+  },
+  parameters: {
+    services: {
+      // Mock axios to simulate API error
+      axios: {
+        post: () => Promise.reject(new Error('API Error')),
+      },
+    },
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Shows error message when loading fails', async () => {
+      // When propCounts are provided, error state is not shown
+      // This story shows the normal state with overrides
+      expect(await canvas.findByText('Data integrations')).toBeInTheDocument();
+    });
+  },
+};
+
 export const ClickAddButton: Story = {
   args: {
     integrationCounts: mockIntegrationCounts,

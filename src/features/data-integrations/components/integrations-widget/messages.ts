@@ -47,4 +47,9 @@ export default defineMessages({
     description: 'Loading state message',
     defaultMessage: 'Loading integrations...',
   },
+  errorLoadingIntegrations: {
+    id: 'dataIntegrationsWidget.error',
+    description: 'Error loading integrations message',
+    defaultMessage: 'Unable to load integration counts',
+  },
 });

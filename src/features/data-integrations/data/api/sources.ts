@@ -1,5 +1,7 @@
 import {
+  type ListApplicationTypesReturnType,
   type ListSourceTypesReturnType,
+  listApplicationTypes,
   listSourceTypes,
   postGraphQL,
   showSource,
@@ -7,6 +9,7 @@ import {
 import { APIFactory } from '@redhat-cloud-services/javascript-clients-shared/utils';
 import type { AxiosInstance } from 'axios';
 import type {
+  ApplicationType,
   PageSource,
   Source,
   SourceType,
@@ -20,12 +23,18 @@ import type {
 const SOURCES_API_BASE = '/api/sources/v3.1';
 
 /**
- * `/source_types` is a small, fixed catalogue (a few dozen rows), so it is
- * fetched in one page rather than paginated.
+ * `/source_types` and `/application_types` are small, fixed catalogues (a few
+ * dozen rows each), so they are fetched in one page rather than paginated.
  */
 const SOURCE_TYPES_LIMIT = 100;
+const APPLICATION_TYPES_LIMIT = 100;
 
-const endpoints = { listSourceTypes, postGraphQL, showSource };
+const endpoints = {
+  listApplicationTypes,
+  listSourceTypes,
+  postGraphQL,
+  showSource,
+};
 
 /**
  * The list goes over GraphQL; everything else is REST.
@@ -220,6 +229,15 @@ export function createSourcesApi(axios: AxiosInstance) {
       const collection: ListSourceTypesReturnType = response.data;
 
       return (collection.data ?? []) as SourceType[];
+    },
+
+    async getApplicationTypes(): Promise<ApplicationType[]> {
+      const response = await api.listApplicationTypes({
+        limit: APPLICATION_TYPES_LIMIT,
+      });
+      const collection: ListApplicationTypesReturnType = response.data;
+
+      return (collection.data ?? []) as ApplicationType[];
     },
   };
 }

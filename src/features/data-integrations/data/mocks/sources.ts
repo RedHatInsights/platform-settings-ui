@@ -1,7 +1,11 @@
 import { HttpResponse, http } from 'msw';
 import { createResettableCollection } from '../../../../shared/mockCollections';
-import type { PageSourceType, Source } from '../types/sources.types';
-import { seedSourceTypes, seedSources } from './seed';
+import type {
+  PageApplicationType,
+  PageSourceType,
+  Source,
+} from '../types/sources.types';
+import { seedApplicationTypes, seedSourceTypes, seedSources } from './seed';
 
 const SOURCES_API_BASE = '/api/sources/v3.1';
 
@@ -143,6 +147,16 @@ export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
         data: seedSourceTypes,
         links: {},
         meta: { count: seedSourceTypes.length },
+      };
+
+      return HttpResponse.json(response);
+    }),
+
+    http.get(`${baseUrl}/application_types`, () => {
+      const response: PageApplicationType = {
+        data: seedApplicationTypes,
+        links: {},
+        meta: { count: seedApplicationTypes.length },
       };
 
       return HttpResponse.json(response);

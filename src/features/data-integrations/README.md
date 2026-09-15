@@ -14,12 +14,13 @@ Manager. That distinction is the reason for the `data-` prefix on the route.
 ## Status
 
 RHCLOUD-49532 delivered **the shell only**: routing, page header, tabs, and the
-"Add data integration" dropdown. Both tab bodies and the creation wizard are placeholders.
+"Add data integration" dropdown. RHCLOUD-49536 added the data layer beneath it. Both tab
+bodies and the creation wizard are still placeholders — **nothing renders this data yet.**
 
 | Piece | State | Owner |
 | --- | --- | --- |
 | Page shell, routing, header, dropdown | Done | RHCLOUD-49532 |
-| Data layer (`data/api`, `data/queries`, `data/mocks`) | Not started | RHCLOUD-49536 |
+| Data layer (`data/api`, `data/queries`, `data/mocks`) | Done | RHCLOUD-49536 |
 | "My data integrations" table | Placeholder | RHCLOUD-50925 |
 | About tab content | Placeholder | RHCLOUD-49534 |
 | Creation wizard | Placeholder | No story yet — needs filing |
@@ -34,6 +35,7 @@ data-integrations/
 ├── index.ts                           # named re-exports
 ├── messages.ts                        # react-intl defineMessages, namespaced dataIntegrations.*
 ├── types.ts                           # SourceTypeName union
+├── data/                              # see "Data layer" below
 └── components/
     ├── AddDataIntegrationDropdown.tsx
     ├── AddDataIntegrationDropdown.stories.tsx
@@ -69,22 +71,22 @@ both `/settings/data-integrations` and `/settings/data-integrations/about` the b
 this by nesting a `StorybookMockProvider` with `app="data-integrations"`; without it the
 preview-level default (`platform-settings`) would give the wrong basename.
 
-## Data layer seam (RHCLOUD-49536)
+## Data layer (RHCLOUD-49536)
 
-**The shell fetches nothing today** — there are no queries, no MSW handlers, and no mock
-seed. When the data layer lands it follows the repo's TanStack Query convention, the same
-three-tier shape Alert Manager uses:
+The same three-tier shape Alert Manager uses, on the repo's TanStack Query convention:
 
 ```text
 data-integrations/
 └── data/
-    ├── api/sources.ts        # APIFactory wrapper over @redhat-cloud-services/sources-client
-    ├── queries/sources.ts    # useSources(), useSourceTypes(), sourcesKeys factory
-    ├── mocks/{seed,sources}.ts
+    ├── api/sources.ts             # APIFactory over sources-client: GraphQL list, REST detail
+    ├── queries/useSources.ts      # useSources(), useSource(), sourcesKeys factory
+    ├── queries/useSourceTypes.ts  # useSourceTypes(), sourceTypesKeys factory
+    ├── mocks/seed.ts              # seedSources, seedSourceTypes
+    ├── mocks/sources.ts           # createSourcesHandlers(), sourcesDb
     └── types/sources.types.ts
 ```
 
-Rules that apply when filling this in:
+Rules it follows, and that anything added here has to keep to:
 
 - **All server state goes through `@tanstack/react-query`.** No `useEffect` + `useState`
   fetching, no bare axios calls in components. The `QueryClient` is provided app-wide by
@@ -101,12 +103,105 @@ Consumers to expect: `MyDataIntegrationsTab` needs `useSources` (paginated, filt
 `useTableState` per `experience-ui/require-use-table-state`); the creation wizard needs
 `useSourceTypes` plus a create mutation.
 
+### The list goes over GraphQL; everything else is REST
+
+`getSources()` posts to `/api/sources/v3.1/graphql`. `getSource()` and `getSourceTypes()`
+use the typed REST endpoints. That is the same split `sources-ui` landed on, and it is not a
+style preference — it is what the two transports can express.
+
+`GET /sources` returns the Source columns and nothing else. Two consequences, both of which
+hit the table directly:
+
+1. **Associations can't come back inline.** The "Connected applications" column would need a
+   second call. That part is survivable — `GET /applications?filter[source_id][]=…` batches
+   the whole page into one request, since `source_id` is in the backend's filter whitelist.
+2. **Associations can't be sorted or filtered on at all.** This is the decisive one.
+   `parseSorting` in `middleware/filtering.go` never sets a subresource, and `applySortBy`
+   validates the column against `^[a-zA-Z_]\w*$` — so a dotted `source_type.product_name` is
+   rejected outright. There is no query-param syntax that reaches the subresource join. The
+   "Type" column therefore cannot sort by provider display name over REST, only by the
+   meaningless `source_type_id` foreign key. Filtering by attached application is out for the
+   same reason.
+
+The GraphQL argument parser handles both explicitly — `parseFilters` and `parseSortBy` in
+`graph/arguments.go` strip a `source_type.` or `applications.` prefix and set the subresource.
+So `SourcesParams.sortBy` accepts `source_type.product_name`, and `applicationTypeIds`
+filters on the join.
+
+Three things to know about the GraphQL path:
+
+- **Arguments go as variables, never interpolated.** `sources-ui` builds its query by hand —
+  `value: "${filterValue.name}"` at `entities.js:124` — which breaks the moment a search term
+  or a source name contains a quote. `SOURCES_QUERY` is a constant and everything else rides
+  in `variables`.
+- **A failed query is HTTP 200 with an `errors` array.** `unwrap()` turns that into a throw,
+  otherwise TanStack Query would treat it as a successful empty result and `isError` would
+  never fire. The `Error` story covers exactly this.
+- **The schema is narrower than the REST entity.** No `availability_status_error`, `uid`, or
+  `version` on Source — error text lives on the individual applications. Those fields are
+  marked detail-reads-only in `sources.types.ts`.
+
+The server batches the association lookups itself (`queryResolver.Sources` stashes the page's
+source IDs on the request context), so the inline `applications` do not cost an N+1 on the
+backend either.
+
+### Verified against the backend, not inferred
+
+All of the above is checked against `RedHatInsights/sources-api-go` — `graph/schema.graphqls`,
+`graph/arguments.go`, `graph/schema.resolvers.go`, `dao/filtering.go`, `middleware/filtering.go`,
+`util/filtering.go`, and `public/openapi-3-v3.1.json`.
+
+Worth recording, because it is easy to reach for the wrong reference:
+
+- `sources-ui`'s bracketed `filter[...]` strings (`restFilterGenerator`, `entities.js:209`)
+  are **never sent to the API**. They build the browser URL for deep-linking
+  (`updateQuery` in `src/utilities/urlQuery.js:13`, read back by `parseQuery`). Copying them
+  as proof of REST filter syntax is a mistake — one of them,
+  `filter[applications][application_type_id][eq][]`, would actually be rejected.
+- Filter operations the backend supports: `""`/`eq`, `not_eq`, `gt`, `gte`, `lt`, `lte`,
+  `nil`, `not_nil`, `contains`, `starts_with`, `ends_with`, and the case-insensitive `eq_i`,
+  `not_eq_i`, `contains_i`, `starts_with_i`, `ends_with_i`. An empty or `eq` operation with
+  more than one value becomes a SQL `IN`.
+- Filterable and sortable columns are whitelisted per table in `allowedFilterColumns`
+  (`dao/filtering.go:11`). For `sources` that is `id`, `created_at`, `updated_at`, `paused_at`,
+  `name`, `uid`, `version`, `imported`, `source_ref`, `app_creation_workflow`,
+  `source_type_id`, `availability_status`, `last_checked_at`, `last_available_at`.
+- Pagination defaults to `limit=100` (max 1000) and `offset=0`; sorting defaults to `id ASC`.
+  `data/mocks/sources.ts` uses the same defaults so an unparameterised query behaves
+  identically there.
+- `availability_status` is exactly the four values in `SourceAvailabilityStatus`.
+
+One caveat on the client, which still carries `showSource` and `listSourceTypes`: it is
+generated from `RedHatInsights/sources-api`'s `openapi-3-v1.0.json`
+(`javascript-clients/packages/sources/project.json:16`) — the retired Ruby API's spec — while
+the live backend is `sources-api-go`. The paths line up, but the generated *types* are all
+optional and are not the current service's, which is why `data/types/sources.types.ts` is
+hand-written against the Go schema rather than re-exported.
+
 ### API version
 
 The Sources API is **`/api/sources/v3.1`** — there is no v2. This is a deliberate exception
 to the repo-wide "use v2" rule, which comes from notifications.
-`@redhat-cloud-services/sources-client` exports `ListSources`, `ListSourceTypes`,
-`ShowSource`, and `CreateSource`, covering both the list and the wizard.
+`@redhat-cloud-services/sources-client@3.0.19` exports `postGraphQL`, `listSourceTypes`, and
+`showSource` — the three this island uses — plus `createSource` and `listApplicationTypes`
+for the wizard and the table's applications column.
+
+### Where the types differ from the ticket
+
+RHCLOUD-49536's acceptance criteria name `status`, `date_added`, and `connected_applications`
+on the Source entity. The v3.1 API returns none of those. The real fields are
+`availability_status` and `created_at`, and applications are an association rather than a
+column.
+
+`getSources()` asks for that association inline, so `useSources` already hands
+`MyDataIntegrationsTab` a `Source.applications` array for its "Connected applications"
+column — no per-row call. A separate `/sources/{id}/applications` request
+(`listSourceApplications`) is only needed by callers going through the REST list endpoint,
+which this island does not.
+
+What the column *will* need is `/application_types` (`listApplicationTypes`) to turn each
+`application_type_id` into a display name. That is a small static catalogue, so it wants the
+same long-`staleTime` treatment as `useSourceTypes`.
 
 ## Add data integration dropdown
 

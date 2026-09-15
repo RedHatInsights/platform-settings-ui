@@ -13,3 +13,11 @@ export type {
   SourceType,
   SourcesParams,
 } from './data/types/sources.types';
+export {
+  DataIntegrationsWidget,
+  useIntegrationCounts,
+} from './components/integrations-widget';
+export type {
+  IntegrationCounts,
+  DataIntegrationProvider,
+} from './components/integrations-widget';

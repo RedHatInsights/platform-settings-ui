@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useIntl } from 'react-intl';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { Divider } from '@patternfly/react-core/dist/dynamic/components/Divider';
 import {
   Tab,
@@ -14,6 +14,7 @@ import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome'
 import { useAppNavigate } from '../../hooks/useAppNavigate';
 import AddDataIntegrationDropdown from './components/AddDataIntegrationDropdown';
 import messages from './messages';
+import type { SourceTypeName } from './types';
 
 const DOCS_URL =
   'https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/configuring_cloud_integrations_for_red_hat_services/index';
@@ -33,10 +34,27 @@ const DataIntegrationsPage: React.FC = () => {
   const location = useLocation();
   const appNavigate = useAppNavigate();
   const { updateDocumentTitle } = useChrome();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     updateDocumentTitle?.(intl.formatMessage(messages.pageTitle));
   }, [updateDocumentTitle, intl]);
+
+  // Consume query parameters emitted by widgets and other entry points.
+  // - add=<provider>: Open the Add Data Integration wizard with the specified provider
+  // - provider=<provider>: Filter the My data integrations table by provider (RHCLOUD-50925)
+  const addParam = searchParams.get('add') as SourceTypeName | null;
+  const providerParam = searchParams.get('provider');
+
+  // Clear query params after reading them to prevent re-triggering on navigation
+  useEffect(() => {
+    if (addParam || providerParam) {
+      setSearchParams({}, { replace: true });
+    }
+  }, [addParam, providerParam, setSearchParams]);
+
+  // TODO: Pass providerParam to MyDataIntegrationsTab when RHCLOUD-50925 lands
+  // to pre-filter the table by the selected provider.
 
   // Derived from the URL rather than held in state, so the active tab survives
   // a reload and can be deep-linked.
@@ -75,7 +93,7 @@ const DataIntegrationsPage: React.FC = () => {
           target: '_blank',
           rel: 'noopener noreferrer',
         }}
-        actionMenu={<AddDataIntegrationDropdown />}
+        actionMenu={<AddDataIntegrationDropdown initialSourceType={addParam} />}
       />
       <Tabs
         activeKey={activeTab}

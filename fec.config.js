@@ -22,6 +22,8 @@ module.exports = {
   moduleFederation: {
     exposes: {
       './RootApp': './src/AppEntry',
+      './DataIntegrationsWidget':
+        './src/features/data-integrations/components/integrations-widget',
     },
     exclude: ['react-router-dom'],
     shared: [

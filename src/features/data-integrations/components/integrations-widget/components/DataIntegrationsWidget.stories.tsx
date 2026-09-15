@@ -7,6 +7,7 @@ import {
   mockEmptyIntegrationCounts,
   mockIntegrationCounts,
 } from '../__mocks__/integrationCounts';
+import { createErrorSourcesHandler } from '../../../data/mocks/sources';
 
 const BASENAME = '/settings/platform-settings';
 
@@ -112,24 +113,22 @@ export const Loading: Story = {
 
 export const ErrorState: Story = {
   args: {
-    integrationCounts: mockEmptyIntegrationCounts,
     isLoading: false,
   },
   parameters: {
-    services: {
-      // Mock axios to simulate API error
-      axios: {
-        post: () => Promise.reject(new Error('API Error')),
-      },
+    msw: {
+      handlers: [createErrorSourcesHandler()],
     },
   },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
 
     await step('Shows error message when loading fails', async () => {
-      // When propCounts are provided, error state is not shown
-      // This story shows the normal state with overrides
-      expect(await canvas.findByText('Data integrations')).toBeInTheDocument();
+      const errorMessage = await canvas.findByText(
+        'Unable to load integration counts',
+      );
+      expect(errorMessage).toBeInTheDocument();
+      expect(errorMessage).toHaveAttribute('role', 'alert');
     });
   },
 };

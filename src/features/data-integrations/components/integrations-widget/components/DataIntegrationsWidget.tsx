@@ -131,7 +131,7 @@ const DataIntegrationsWidget: React.FC<DataIntegrationsWidgetProps> = ({
               <Icon status="danger" size="lg">
                 <ExclamationCircleIcon />
               </Icon>
-              <span>
+              <span role="alert">
                 {intl.formatMessage(messages.errorLoadingIntegrations)}
               </span>
             </Flex>

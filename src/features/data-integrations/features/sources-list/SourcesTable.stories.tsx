@@ -1,7 +1,6 @@
-import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { StorybookMockProvider } from '@redhat-cloud-services/hcc-storybook-hub';
+import { MemoryRouter } from 'react-router-dom';
 import { clearAndType } from '../../../../shared/interactionHelpers';
 import SourcesTable from './SourcesTable';
 import {
@@ -16,31 +15,26 @@ import {
   seedSources,
 } from '../../data/mocks/seed';
 
-/**
- * Wrapper that provides Chrome-aware routing. The `app="data-integrations"`
- * prop ensures relative navigation resolves correctly for the Name column links.
- */
-const SourcesTableWithProviders: React.FC = () => {
-  return (
-    <StorybookMockProvider bundle="settings" app="data-integrations">
-      <SourcesTable />
-    </StorybookMockProvider>
-  );
-};
-
-const meta: Meta<typeof SourcesTableWithProviders> = {
+const meta = {
   title: 'features/data-integrations/SourcesTable',
-  component: SourcesTableWithProviders,
+  component: SourcesTable,
+  decorators: [
+    (Story) => (
+      <MemoryRouter initialEntries={['/settings/data-integrations']}>
+        <Story />
+      </MemoryRouter>
+    ),
+  ],
   parameters: {
     msw: { handlers: createSourcesHandlers() },
   },
   beforeEach: () => {
     sourcesDb.reset();
   },
-};
+} satisfies Meta<typeof SourcesTable>;
 
 export default meta;
-type Story = StoryObj<typeof SourcesTableWithProviders>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   play: async ({ canvasElement, step }) => {
@@ -48,19 +42,24 @@ export const Default: Story = {
     const user = userEvent.setup();
 
     await step('Table renders with all sources', async () => {
+      // Wait for first source name to appear (proves table loaded and data fetched)
+      await expect(
+        canvas.findByText(seedSources[0].name, {}, { timeout: 5000 }),
+      ).resolves.toBeInTheDocument();
+
       const rows = await canvas.findAllByRole('row');
       // seedSources has 9 sources + 1 header row = 10 total
       await expect(rows).toHaveLength(seedSources.length + 1);
     });
 
     await step('All column headers are present', async () => {
-      await expect(canvas.getByText('Name')).toBeInTheDocument();
-      await expect(canvas.getByText('Type')).toBeInTheDocument();
+      await expect(canvas.findByText('Name')).resolves.toBeInTheDocument();
+      await expect(canvas.findByText('Type')).resolves.toBeInTheDocument();
       await expect(
-        canvas.getByText('Connected applications'),
-      ).toBeInTheDocument();
-      await expect(canvas.getByText('Date added')).toBeInTheDocument();
-      await expect(canvas.getByText('Status')).toBeInTheDocument();
+        canvas.findByText('Connected applications'),
+      ).resolves.toBeInTheDocument();
+      await expect(canvas.findByText('Date added')).resolves.toBeInTheDocument();
+      await expect(canvas.findByText('Status')).resolves.toBeInTheDocument();
     });
 
     await step('First row displays correctly', async () => {
@@ -80,11 +79,11 @@ export const Default: Story = {
         (type) => type.id === firstSource.source_type_id,
       );
       await expect(
-        canvas.getByText(sourceType!.product_name!),
-      ).toBeInTheDocument();
+        canvas.findByText(sourceType!.product_name!),
+      ).resolves.toBeInTheDocument();
 
       // Status badge should be present
-      await expect(canvas.getByText('Available')).toBeInTheDocument();
+      await expect(canvas.findByText('Available')).resolves.toBeInTheDocument();
     });
 
     await step('Connected applications display with status icons', async () => {
@@ -97,11 +96,13 @@ export const Default: Story = {
         (type) => type.id === firstApp.application_type_id,
       );
 
-      await expect(canvas.getByText(appType!.display_name)).toBeInTheDocument();
+      await expect(
+        canvas.findByText(appType!.display_name),
+      ).resolves.toBeInTheDocument();
     });
 
     await step('Search by name filters the table', async () => {
-      const searchInput = canvas.getByPlaceholderText('Find by name');
+      const searchInput = await canvas.findByPlaceholderText('Find by name');
       await clearAndType(user, () => searchInput, 'AWS');
 
       await waitFor(async () => {
@@ -115,7 +116,7 @@ export const Default: Story = {
     });
 
     await step('Filter by integration type', async () => {
-      const filterButton = canvas.getByRole('button', { name: /filter/i });
+      const filterButton = await canvas.findByRole('button', { name: /filter/i });
       await user.click(filterButton);
 
       // Select OpenShift filter
@@ -132,7 +133,7 @@ export const Default: Story = {
     });
 
     await step('Sort by Date added column', async () => {
-      const dateColumn = canvas.getByText('Date added');
+      const dateColumn = await canvas.findByText('Date added');
       await user.click(dateColumn);
 
       await waitFor(async () => {
@@ -156,13 +157,13 @@ export const EmptyState: Story = {
     const canvas = within(canvasElement);
 
     await step('Empty state displays when no sources exist', async () => {
-      const emptyTitle = await canvas.findByText('No data integrations');
-      await expect(emptyTitle).toBeInTheDocument();
+      await expect(
+        canvas.findByText('No data integrations', {}, { timeout: 5000 }),
+      ).resolves.toBeInTheDocument();
 
-      const emptyBody = await canvas.findByText(
-        /Get started by adding your first data integration/,
-      );
-      await expect(emptyBody).toBeInTheDocument();
+      await expect(
+        canvas.findByText(/Get started by adding your first data integration/),
+      ).resolves.toBeInTheDocument();
     });
   },
 };
@@ -173,17 +174,22 @@ export const FilteredEmptyState: Story = {
     const user = userEvent.setup();
 
     await step('Apply filters that return no results', async () => {
+      // Wait for table to load first
+      await expect(
+        canvas.findByText(seedSources[0].name, {}, { timeout: 5000 }),
+      ).resolves.toBeInTheDocument();
+
       const searchInput = await canvas.findByPlaceholderText('Find by name');
       await clearAndType(user, () => searchInput, 'NonexistentSource');
 
       await waitFor(async () => {
-        const emptyTitle = await canvas.findByText('No results found');
-        await expect(emptyTitle).toBeInTheDocument();
+        await expect(
+          canvas.findByText('No results found'),
+        ).resolves.toBeInTheDocument();
 
-        const emptyBody = await canvas.findByText(
-          /No data integrations match the current filters/,
-        );
-        await expect(emptyBody).toBeInTheDocument();
+        await expect(
+          canvas.findByText(/No data integrations match the current filters/),
+        ).resolves.toBeInTheDocument();
       });
     });
 
@@ -210,10 +216,9 @@ export const ErrorState: Story = {
     const canvas = within(canvasElement);
 
     await step('Error state displays on API failure', async () => {
-      const errorHeading = await canvas.findByRole('heading', {
-        name: /something went wrong/i,
-      });
-      await expect(errorHeading).toBeInTheDocument();
+      await expect(
+        canvas.findByRole('heading', { name: /something went wrong/i }, { timeout: 5000 }),
+      ).resolves.toBeInTheDocument();
     });
   },
 };
@@ -224,13 +229,18 @@ export const Pagination: Story = {
     const user = userEvent.setup();
 
     await step('Table loads with default pagination', async () => {
+      // Wait for data to load
+      await expect(
+        canvas.findByText(seedSources[0].name, {}, { timeout: 5000 }),
+      ).resolves.toBeInTheDocument();
+
       const rows = await canvas.findAllByRole('row');
       await expect(rows).toHaveLength(seedSources.length + 1);
     });
 
     await step('Change page size', async () => {
       // Open page size dropdown
-      const pageSizeButton = canvas.getByRole('button', { name: /per page/i });
+      const pageSizeButton = await canvas.findByRole('button', { name: /per page/i });
       await user.click(pageSizeButton);
 
       // Select 10 per page
@@ -252,6 +262,11 @@ export const SortByType: Story = {
     const user = userEvent.setup();
 
     await step('Sort by Type column (provider name)', async () => {
+      // Wait for data to load
+      await expect(
+        canvas.findByText(seedSources[0].name, {}, { timeout: 5000 }),
+      ).resolves.toBeInTheDocument();
+
       const typeColumn = await canvas.findByText('Type');
       await user.click(typeColumn);
 

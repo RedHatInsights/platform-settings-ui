@@ -9,6 +9,7 @@ import {
 import DataIntegrationsPage from './DataIntegrationsPage';
 import MyDataIntegrationsTab from './components/MyDataIntegrationsTab';
 import AboutTab from './components/AboutTab';
+import { createSourcesHandlers, sourcesDb } from './data/mocks/sources';
 
 const DOCS_URL =
   'https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/configuring_cloud_integrations_for_red_hat_services/index';
@@ -57,6 +58,12 @@ const meta = {
       </StorybookMockProvider>
     ),
   ],
+  parameters: {
+    msw: { handlers: createSourcesHandlers() },
+  },
+  beforeEach: () => {
+    sourcesDb.reset();
+  },
 } satisfies Meta<typeof DataIntegrationsPage>;
 
 export default meta;
@@ -100,10 +107,11 @@ export const Default: Story = {
       },
     );
 
-    await step('The default tab body renders', async () => {
-      expect(
-        canvas.getByText('The data integrations table is coming soon.'),
-      ).toBeInTheDocument();
+    await step('The default tab body renders with table', async () => {
+      // Table should be present (wait for it to load)
+      await expect(
+        canvas.findByRole('table', {}, { timeout: 5000 }),
+      ).resolves.toBeInTheDocument();
     });
 
     await step('The add dropdown is available and enabled', async () => {

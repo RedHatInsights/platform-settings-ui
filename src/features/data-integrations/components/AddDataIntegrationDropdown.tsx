@@ -17,14 +17,22 @@ export interface AddDataIntegrationDropdownProps {
    * check; until then the button is always enabled.
    */
   isDisabled?: boolean;
+  /**
+   * Initial source type to open the wizard with. Used for deep-linking from
+   * widgets or other entry points via query parameters.
+   */
+  initialSourceType?: SourceTypeName | null;
 }
 
 const AddDataIntegrationDropdown: React.FC<AddDataIntegrationDropdownProps> = ({
   isDisabled = false,
+  initialSourceType = null,
 }) => {
   const intl = useIntl();
   const [isOpen, setIsOpen] = useState(false);
-  const [selected, setSelected] = useState<SourceTypeName | null>(null);
+  const [selected, setSelected] = useState<SourceTypeName | null>(
+    initialSourceType,
+  );
 
   const handleSelect = (
     _event: React.MouseEvent<Element, MouseEvent> | undefined,

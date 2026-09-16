@@ -203,7 +203,7 @@ export const seedSources: Source[] = [
     id: '108',
     name: 'AWS development account',
     source_type_id: '2',
-    created_at: new Date().toISOString(), // "Just now"
+    created_at: '2026-09-15T20:00:00Z', // Recent timestamp for testing
     availability_status: 'in_progress',
     applications: [
       {

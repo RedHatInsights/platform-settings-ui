@@ -138,8 +138,11 @@ export const Default: Story = {
       await waitFor(async () => {
         // After toggling sort (from desc to asc), oldest should be first
         const rows = await canvas.findAllByRole('row');
-        // Verify sorting changed by checking first row is different
         await expect(rows.length).toBeGreaterThan(1);
+
+        // Verify first data row changed (oldest source after sort toggle)
+        const firstDataRow = rows[1]; // Skip header row
+        await expect(firstDataRow).toHaveTextContent('AWS production account');
       });
     });
   },
@@ -254,8 +257,11 @@ export const SortByType: Story = {
 
       await waitFor(async () => {
         const rows = await canvas.findAllByRole('row');
-        // Verify we still have data
         await expect(rows.length).toBeGreaterThan(1);
+
+        // After ascending sort, "Amazon Web Services" should be first
+        const firstDataRow = rows[1];
+        await expect(firstDataRow).toHaveTextContent('Amazon Web Services');
       });
 
       // Click again to reverse sort
@@ -264,6 +270,12 @@ export const SortByType: Story = {
       await waitFor(async () => {
         const rows = await canvas.findAllByRole('row');
         await expect(rows.length).toBeGreaterThan(1);
+
+        // After descending sort, OpenShift should be first (or last alphabetically)
+        const firstDataRow = rows[1];
+        await expect(firstDataRow).toHaveTextContent(
+          /OpenShift|Microsoft Azure/,
+        );
       });
     });
   },

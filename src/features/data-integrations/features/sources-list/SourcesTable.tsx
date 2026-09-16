@@ -50,8 +50,9 @@ const SourcesTable: React.FC = () => {
   });
 
   // Fetch catalogues
-  const { data: sourceTypes } = useSourceTypes();
-  const { data: applicationTypes } = useApplicationTypes();
+  const { data: sourceTypes, error: sourceTypesError } = useSourceTypes();
+  const { data: applicationTypes, error: applicationTypesError } =
+    useApplicationTypes();
 
   // Build API params from table state
   const apiParams = useMemo(() => {
@@ -193,6 +194,10 @@ const SourcesTable: React.FC = () => {
 
   const emptyStateError = <DefaultEmptyStateError />;
 
+  // Combine errors from all queries
+  const combinedError =
+    error || sourceTypesError || applicationTypesError || null;
+
   return (
     <TableView
       ariaLabel={intl.formatMessage(pageMessages.myDataIntegrationsTab)}
@@ -214,7 +219,7 @@ const SourcesTable: React.FC = () => {
       filters={tableState.filters}
       onFiltersChange={tableState.onFiltersChange}
       clearAllFilters={tableState.clearAllFilters}
-      error={error as Error | null}
+      error={combinedError as Error | null}
       emptyStateNoData={emptyStateNoData}
       emptyStateNoResults={emptyStateNoResults}
       emptyStateError={emptyStateError}

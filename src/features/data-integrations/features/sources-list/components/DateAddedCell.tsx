@@ -13,24 +13,25 @@ const DateAddedCell: React.FC<DateAddedCellProps> = ({ createdAt }) => {
   const createdDate = new Date(createdAt);
   const now = new Date();
   const diffInSeconds = (now.getTime() - createdDate.getTime()) / 1000;
+  const absDiff = Math.abs(diffInSeconds);
 
   let value: number;
   let unit: 'second' | 'minute' | 'hour' | 'day' | 'month' | 'year';
 
-  if (diffInSeconds < 60) {
+  if (absDiff < 60) {
     value = -Math.floor(diffInSeconds);
     unit = 'second';
-  } else if (diffInSeconds < 3600) {
+  } else if (absDiff < 3600) {
     value = -Math.floor(diffInSeconds / 60);
     unit = 'minute';
-  } else if (diffInSeconds < 86400) {
+  } else if (absDiff < 86400) {
     value = -Math.floor(diffInSeconds / 3600);
     unit = 'hour';
-  } else if (diffInSeconds < 2592000) {
+  } else if (absDiff < 2592000) {
     // Less than 30 days
     value = -Math.floor(diffInSeconds / 86400);
     unit = 'day';
-  } else if (diffInSeconds < 31536000) {
+  } else if (absDiff < 31536000) {
     // Less than 365 days
     value = -Math.floor(diffInSeconds / 2592000);
     unit = 'month';

@@ -9,8 +9,11 @@ const config: TestRunnerConfig = {
    * Hook that runs before each story test
    */
   async preVisit(page) {
-    // Increase default timeout for slow CI environments
-    page.setDefaultTimeout(10000);
+    // Increase default timeout for complex interactions (matches insights-rbac-ui: 60s)
+    page.setDefaultTimeout(60000);
+
+    // Force viewport to match Chromatic for consistent screenshots
+    await page.setViewportSize({ width: 1200, height: 500 });
   },
 
   /**

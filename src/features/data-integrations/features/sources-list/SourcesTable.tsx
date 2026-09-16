@@ -17,7 +17,6 @@ import type { Source } from '../../data/types/sources.types';
 import type { SourceTypeName } from '../../types';
 import { AppLink } from '../../../../Components/AppLink';
 import ConnectedApplicationsCell from './components/ConnectedApplicationsCell';
-import DateAddedCell from './components/DateAddedCell';
 import StatusCell from './components/StatusCell';
 import messages from './messages';
 import pageMessages from '../../messages';
@@ -118,6 +117,7 @@ const SourcesTable: React.FC = () => {
     dateAdded: {
       label: intl.formatMessage(messages.dateAddedColumn),
       sortable: true,
+      format: 'date',
     },
     status: {
       label: intl.formatMessage(messages.statusColumn),
@@ -142,7 +142,7 @@ const SourcesTable: React.FC = () => {
         applicationTypes={applicationTypes}
       />
     ),
-    dateAdded: (row) => <DateAddedCell createdAt={row.created_at} />,
+    dateAdded: (row) => row.created_at,
     status: (row) => (
       <StatusCell status={row.availability_status} pausedAt={row.paused_at} />
     ),

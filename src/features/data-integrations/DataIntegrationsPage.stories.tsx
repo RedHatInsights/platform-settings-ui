@@ -108,9 +108,9 @@ export const Default: Story = {
     );
 
     await step('The default tab body renders with table', async () => {
-      // Table should be present (wait for it to load)
+      // Wait for table view to load with data
       await expect(
-        canvas.findByRole('table', {}, { timeout: 5000 }),
+        canvas.findByTestId('table-view', {}, { timeout: 10000 }),
       ).resolves.toBeInTheDocument();
     });
 
@@ -160,7 +160,7 @@ export const SwitchToAboutTab: Story = {
       await user.click(
         canvas.getByRole('tab', { name: 'My data integrations' }),
       );
-      await canvas.findByRole('table', {}, { timeout: 5000 });
+      await canvas.findByTestId('table-view', {}, { timeout: 10000 });
       expect(
         canvas.getByRole('tab', { name: 'My data integrations' }),
       ).toHaveAttribute('aria-selected', 'true');

@@ -15,8 +15,7 @@ import { useSourceTypes } from '../../data/queries/useSourceTypes';
 import { useApplicationTypes } from '../../data/queries/useApplicationTypes';
 import type { Source } from '../../data/types/sources.types';
 import type { SourceTypeName } from '../../types';
-import NameCell from './components/NameCell';
-import TypeCell from './components/TypeCell';
+import { AppLink } from '../../../../Components/AppLink';
 import ConnectedApplicationsCell from './components/ConnectedApplicationsCell';
 import DateAddedCell from './components/DateAddedCell';
 import StatusCell from './components/StatusCell';
@@ -128,10 +127,15 @@ const SourcesTable: React.FC = () => {
 
   // Cell renderers
   const cellRenderers: CellRendererMap<typeof columns, Source> = {
-    name: (row) => <NameCell id={row.id} name={row.name} />,
-    type: (row) => (
-      <TypeCell sourceTypeId={row.source_type_id} sourceTypes={sourceTypes} />
+    name: (row) => (
+      <AppLink to={`/data-integrations/${row.id}`}>{row.name}</AppLink>
     ),
+    type: (row) => {
+      const sourceType = sourceTypes?.find(
+        (type) => type.id === row.source_type_id,
+      );
+      return <span>{sourceType?.product_name ?? row.source_type_id}</span>;
+    },
     connectedApplications: (row) => (
       <ConnectedApplicationsCell
         applications={row.applications}

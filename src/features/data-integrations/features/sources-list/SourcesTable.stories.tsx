@@ -1,6 +1,8 @@
+import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MemoryRouter } from 'react-router-dom';
+import { StorybookMockProvider } from '@redhat-cloud-services/hcc-storybook-hub';
 import { clearAndType } from '../../../../shared/interactionHelpers';
 import SourcesTable from './SourcesTable';
 import {
@@ -15,26 +17,33 @@ import {
   seedSources,
 } from '../../data/mocks/seed';
 
-const meta = {
-  title: 'features/data-integrations/SourcesTable',
-  component: SourcesTable,
-  decorators: [
-    (Story) => (
+/**
+ * Wrapper that provides routing for test-runner mode.
+ * StorybookMockProvider wraps MemoryRouter to override global decorator.
+ */
+const SourcesTableWithProviders: React.FC = () => {
+  return (
+    <StorybookMockProvider bundle="settings" app="data-integrations">
       <MemoryRouter initialEntries={['/settings/data-integrations']}>
-        <Story />
+        <SourcesTable />
       </MemoryRouter>
-    ),
-  ],
+    </StorybookMockProvider>
+  );
+};
+
+const meta: Meta<typeof SourcesTableWithProviders> = {
+  title: 'features/data-integrations/SourcesTable',
+  component: SourcesTableWithProviders,
   parameters: {
     msw: { handlers: createSourcesHandlers() },
   },
   beforeEach: () => {
     sourcesDb.reset();
   },
-} satisfies Meta<typeof SourcesTable>;
+} satisfies Meta<typeof SourcesTableWithProviders>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<typeof SourcesTableWithProviders>;
 
 export const Default: Story = {
   play: async ({ canvasElement, step }) => {
@@ -47,7 +56,10 @@ export const Default: Story = {
         canvas.findByText(seedSources[0].name, {}, { timeout: 5000 }),
       ).resolves.toBeInTheDocument();
 
-      const rows = await canvas.findAllByRole('row');
+      // Find rows within the table element only (not pagination/toolbar)
+      const table = await canvas.findByRole('table');
+      const tableScope = within(table);
+      const rows = tableScope.getAllByRole('row');
       // seedSources has 9 sources + 1 header row = 10 total
       await expect(rows).toHaveLength(seedSources.length + 1);
     });
@@ -234,7 +246,9 @@ export const Pagination: Story = {
         canvas.findByText(seedSources[0].name, {}, { timeout: 5000 }),
       ).resolves.toBeInTheDocument();
 
-      const rows = await canvas.findAllByRole('row');
+      const table = await canvas.findByRole('table');
+      const tableScope = within(table);
+      const rows = tableScope.getAllByRole('row');
       await expect(rows).toHaveLength(seedSources.length + 1);
     });
 
@@ -249,7 +263,9 @@ export const Pagination: Story = {
 
       await waitFor(async () => {
         // Should still show all rows since we only have 9 sources
-        const rows = await canvas.findAllByRole('row');
+        const table = await canvas.findByRole('table');
+        const tableScope = within(table);
+        const rows = tableScope.getAllByRole('row');
         await expect(rows).toHaveLength(seedSources.length + 1);
       });
     });

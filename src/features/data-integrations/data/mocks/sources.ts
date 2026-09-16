@@ -101,7 +101,25 @@ function graphQLData(sources: Source[], count: number) {
 }
 
 export function createEmptySourcesHandler(baseUrl = SOURCES_API_BASE) {
-  return http.post(`${baseUrl}/graphql`, () => graphQLData([], 0));
+  return [
+    http.post(`${baseUrl}/graphql`, () => graphQLData([], 0)),
+    http.get(`${baseUrl}/source_types`, () => {
+      const response: PageSourceType = {
+        data: seedSourceTypes,
+        links: {},
+        meta: { count: seedSourceTypes.length },
+      };
+      return HttpResponse.json(response);
+    }),
+    http.get(`${baseUrl}/application_types`, () => {
+      const response: PageApplicationType = {
+        data: seedApplicationTypes,
+        links: {},
+        meta: { count: seedApplicationTypes.length },
+      };
+      return HttpResponse.json(response);
+    }),
+  ];
 }
 
 /**
@@ -109,9 +127,27 @@ export function createEmptySourcesHandler(baseUrl = SOURCES_API_BASE) {
  * error status — which is the case `unwrap()` in the api layer exists for.
  */
 export function createErrorSourcesHandler(baseUrl = SOURCES_API_BASE) {
-  return http.post(`${baseUrl}/graphql`, () =>
-    HttpResponse.json({ errors: [{ message: 'Internal Server Error' }] }),
-  );
+  return [
+    http.post(`${baseUrl}/graphql`, () =>
+      HttpResponse.json({ errors: [{ message: 'Internal Server Error' }] }),
+    ),
+    http.get(`${baseUrl}/source_types`, () => {
+      const response: PageSourceType = {
+        data: seedSourceTypes,
+        links: {},
+        meta: { count: seedSourceTypes.length },
+      };
+      return HttpResponse.json(response);
+    }),
+    http.get(`${baseUrl}/application_types`, () => {
+      const response: PageApplicationType = {
+        data: seedApplicationTypes,
+        links: {},
+        meta: { count: seedApplicationTypes.length },
+      };
+      return HttpResponse.json(response);
+    }),
+  ];
 }
 
 export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {

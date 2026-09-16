@@ -160,7 +160,7 @@ export const SwitchToAboutTab: Story = {
       await user.click(
         canvas.getByRole('tab', { name: 'My data integrations' }),
       );
-      await canvas.findByText('The data integrations table is coming soon.');
+      await canvas.findByRole('table', {}, { timeout: 5000 });
       expect(
         canvas.getByRole('tab', { name: 'My data integrations' }),
       ).toHaveAttribute('aria-selected', 'true');

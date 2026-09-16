@@ -96,14 +96,14 @@ export const FilteredBySourceType: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
 
-    await step('Only the two AWS sources survive the filter', async () => {
-      const summary = await canvas.findByText('Showing 2 of 2 sources');
+    await step('Only the three AWS sources survive the filter', async () => {
+      const summary = await canvas.findByText('Showing 3 of 3 sources');
       await expect(summary).toBeInTheDocument();
     });
 
     await step('A source of another type is gone', async () => {
       const items = await canvas.findAllByRole('listitem');
-      await expect(items).toHaveLength(2);
+      await expect(items).toHaveLength(3);
       await expect(
         canvas.queryByText(/Azure cost management/),
       ).not.toBeInTheDocument();
@@ -169,7 +169,7 @@ export const SortedByDateAdded: Story = {
 
     await step('Newest source is first', async () => {
       const items = await canvas.findAllByRole('listitem');
-      await expect(items[0]).toHaveTextContent('Google Cloud billing export');
+      await expect(items[0]).toHaveTextContent('AWS development account');
     });
 
     await step('Oldest source is last', async () => {

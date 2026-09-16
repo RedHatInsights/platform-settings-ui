@@ -70,7 +70,9 @@ export const Default: Story = {
       await expect(
         canvas.findByText('Connected applications'),
       ).resolves.toBeInTheDocument();
-      await expect(canvas.findByText('Date added')).resolves.toBeInTheDocument();
+      await expect(
+        canvas.findByText('Date added'),
+      ).resolves.toBeInTheDocument();
       await expect(canvas.findByText('Status')).resolves.toBeInTheDocument();
     });
 
@@ -128,7 +130,9 @@ export const Default: Story = {
     });
 
     await step('Filter by integration type', async () => {
-      const filterButton = await canvas.findByRole('button', { name: /filter/i });
+      const filterButton = await canvas.findByRole('button', {
+        name: /filter/i,
+      });
       await user.click(filterButton);
 
       // Select OpenShift filter
@@ -229,7 +233,11 @@ export const ErrorState: Story = {
 
     await step('Error state displays on API failure', async () => {
       await expect(
-        canvas.findByRole('heading', { name: /something went wrong/i }, { timeout: 5000 }),
+        canvas.findByRole(
+          'heading',
+          { name: /something went wrong/i },
+          { timeout: 5000 },
+        ),
       ).resolves.toBeInTheDocument();
     });
   },
@@ -254,7 +262,9 @@ export const Pagination: Story = {
 
     await step('Change page size', async () => {
       // Open page size dropdown
-      const pageSizeButton = await canvas.findByRole('button', { name: /per page/i });
+      const pageSizeButton = await canvas.findByRole('button', {
+        name: /per page/i,
+      });
       await user.click(pageSizeButton);
 
       // Select 10 per page
@@ -265,8 +275,8 @@ export const Pagination: Story = {
         // Should still show all rows since we only have 9 sources
         const table = await canvas.findByRole('table');
         const tableScope = within(table);
-        const rows = tableScope.getAllByRole('row');
-        await expect(rows).toHaveLength(seedSources.length + 1);
+        const rows = tableScope.queryAllByRole('row');
+        expect(rows).toHaveLength(seedSources.length + 1);
       });
     });
   },

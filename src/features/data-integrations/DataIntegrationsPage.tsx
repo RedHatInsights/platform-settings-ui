@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useIntl } from 'react-intl';
-import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
+import { Outlet, useMatch, useSearchParams } from 'react-router-dom';
 import { Divider } from '@patternfly/react-core/dist/dynamic/components/Divider';
 import {
   Tab,
@@ -11,8 +11,8 @@ import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHead
 import Main from '@redhat-cloud-services/frontend-components/Main';
 // eslint-disable-next-line no-restricted-imports -- Page component needs chrome for document title
 import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome';
-import { useAppNavigate } from '../../hooks/useAppNavigate';
 import AddDataIntegrationDropdown from './components/AddDataIntegrationDropdown';
+import AboutTab from './components/AboutTab';
 import messages from './messages';
 import type { SourceTypeName } from './types';
 
@@ -31,8 +31,6 @@ type TabKey = 'my-integrations' | 'about';
 
 const DataIntegrationsPage: React.FC = () => {
   const intl = useIntl();
-  const location = useLocation();
-  const appNavigate = useAppNavigate();
   const { updateDocumentTitle } = useChrome();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -56,20 +54,37 @@ const DataIntegrationsPage: React.FC = () => {
   // TODO: Pass providerParam to MyDataIntegrationsTab when RHCLOUD-50925 lands
   // to pre-filter the table by the selected provider.
 
-  // Derived from the URL rather than held in state, so the active tab survives
-  // a reload and can be deep-linked.
-  const activeTab: TabKey = location.pathname.endsWith('/about')
-    ? 'about'
-    : 'my-integrations';
+  // Use React Router's useMatch for reliable route detection
+  const detailMatch = useMatch('/settings/data-integrations/:sourceId');
+
+  // Read active tab from query params (?tab=about)
+  const tabParam = searchParams.get('tab');
+  const activeTab: TabKey = tabParam === 'about' ? 'about' : 'my-integrations';
+
+  // Check if we're on a detail page using route matching
+  const isDetailPage = !!detailMatch;
 
   const handleTabSelect = (
     _event: React.MouseEvent | React.KeyboardEvent | MouseEvent,
     tabKey: string | number,
   ) => {
-    // useAppNavigate prefixes the Chrome basename, which resolves to
-    // /settings/data-integrations on both of these routes.
-    appNavigate(tabKey === 'about' ? 'about' : '');
+    // Update query params to switch tabs
+    if (tabKey === 'about') {
+      setSearchParams({ tab: 'about' });
+    } else {
+      // Remove tab param for default (my-integrations)
+      setSearchParams({});
+    }
   };
+
+  // Detail pages render standalone without the parent header/tabs
+  if (isDetailPage) {
+    return (
+      <Main>
+        <Outlet />
+      </Main>
+    );
+  }
 
   return (
     <>
@@ -123,9 +138,7 @@ const DataIntegrationsPage: React.FC = () => {
         />
       </Tabs>
       <Divider />
-      <Main>
-        <Outlet />
-      </Main>
+      <Main>{activeTab === 'about' ? <AboutTab /> : <Outlet />}</Main>
     </>
   );
 };

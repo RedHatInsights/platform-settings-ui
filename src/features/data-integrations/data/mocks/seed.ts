@@ -43,6 +43,14 @@ export const seedApplicationTypes: ApplicationType[] = [
  * that hardcodes `source_type_id: '1'` reads the same as a real response.
  * `category` splits them exactly as the add-integration dropdown groups them.
  */
+/**
+ * The four providers this island offers. Ids are the stage values, so a story
+ * that hardcodes `source_type_id: '1'` reads the same as a real response.
+ * `category` splits them exactly as the add-integration dropdown groups them.
+ *
+ * icon_url is NOT included - it's a UI concern, not returned by the API.
+ * See constants/sourceTypeIcons.ts for the UI-side icon mapping.
+ */
 export const seedSourceTypes: SourceType[] = [
   {
     id: '1',
@@ -50,7 +58,6 @@ export const seedSourceTypes: SourceType[] = [
     product_name: 'OpenShift Container Platform',
     vendor: 'Red Hat',
     category: 'Red Hat',
-    icon_url: '/apps/frontend-assets/red-hat-logos/logo_hat-only.svg',
   },
   {
     id: '2',
@@ -58,7 +65,6 @@ export const seedSourceTypes: SourceType[] = [
     product_name: 'Amazon Web Services',
     vendor: 'Amazon',
     category: 'Cloud',
-    icon_url: '/apps/frontend-assets/partners-icons/aws.svg',
   },
   {
     id: '3',
@@ -66,7 +72,6 @@ export const seedSourceTypes: SourceType[] = [
     product_name: 'Google Cloud',
     vendor: 'Google',
     category: 'Cloud',
-    icon_url: '/apps/frontend-assets/partners-icons/google-cloud-short.svg',
   },
   {
     id: '4',
@@ -74,7 +79,6 @@ export const seedSourceTypes: SourceType[] = [
     product_name: 'Microsoft Azure',
     vendor: 'Azure',
     category: 'Cloud',
-    icon_url: '/apps/frontend-assets/partners-icons/microsoft-azure-short.svg',
   },
 ];
 

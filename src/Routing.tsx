@@ -42,12 +42,15 @@ const MyDataIntegrationsTab = lazy(
       /* webpackChunkName: "MyDataIntegrationsTab" */ './features/data-integrations/components/MyDataIntegrationsTab'
     ),
 );
-const DataIntegrationsAboutTab = lazy(
+const SourceDetailPage = lazy(
   () =>
     import(
-      /* webpackChunkName: "DataIntegrationsAboutTab" */ './features/data-integrations/components/AboutTab'
+      /* webpackChunkName: "SourceDetailPage" */ './features/data-integrations/features/source-detail/SourceDetailPage'
     ),
 );
+
+// AboutTab is rendered directly by DataIntegrationsPage (not lazy loaded via routing)
+// to support query param-based tab switching (?tab=about)
 
 const LandingPage = () => (
   <Bullseye>
@@ -77,8 +80,8 @@ const routes = [
         element: MyDataIntegrationsTab,
       },
       {
-        path: 'about',
-        element: DataIntegrationsAboutTab,
+        path: ':sourceId',
+        element: SourceDetailPage,
       },
     ],
   },

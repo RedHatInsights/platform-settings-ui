@@ -127,9 +127,7 @@ const SourcesTable: React.FC = () => {
 
   // Cell renderers
   const cellRenderers: CellRendererMap<typeof columns, Source> = {
-    name: (row) => (
-      <AppLink to={`/data-integrations/${row.id}`}>{row.name}</AppLink>
-    ),
+    name: (row) => <AppLink to={row.id}>{row.name}</AppLink>,
     type: (row) => {
       const sourceType = sourceTypes?.find(
         (type) => type.id === row.source_type_id,

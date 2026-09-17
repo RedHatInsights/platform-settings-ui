@@ -4,7 +4,12 @@ export { default as AboutTab } from './components/AboutTab';
 export type { SourceTypeName, IntegrationTypeOption } from './types';
 export { sourcesKeys, useSource, useSources } from './data/queries/useSources';
 export { sourceTypesKeys, useSourceTypes } from './data/queries/useSourceTypes';
+export {
+  applicationTypesKeys,
+  useApplicationTypes,
+} from './data/queries/useApplicationTypes';
 export type {
+  ApplicationType,
   PageSource,
   PageSourceType,
   Source,
@@ -21,3 +26,7 @@ export type {
   IntegrationCounts,
   DataIntegrationProvider,
 } from './components/integrations-widget';
+export {
+  SOURCE_TYPE_ICONS,
+  getSourceTypeIcon,
+} from './constants/sourceTypeIcons';

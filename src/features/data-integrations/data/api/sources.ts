@@ -219,9 +219,29 @@ export function createSourcesApi(axios: AxiosInstance) {
     },
 
     async getSource(id: string): Promise<Source> {
-      const response = await api.showSource({ id });
+      // Use GraphQL to get applications inline (REST showSource doesn't include them)
+      // The GraphQL schema has 'sources' (plural) with filters, not a single 'source' query
+      const query = `query GetSource($filter: [Filter]) {
+        sources(filter: $filter) {${SOURCE_FIELDS}  }
+      }`;
 
-      return response.data as Source;
+      const response = await api.postGraphQL({
+        graphQLRequest: {
+          query,
+          variables: {
+            filter: [{ name: 'id', operation: 'eq', value: [id] }],
+          },
+        },
+      });
+
+      const data = unwrap(response.data);
+      const sources = (data as SourcesQueryData).sources;
+
+      if (!sources || sources.length === 0) {
+        throw new Error('Source not found');
+      }
+
+      return sources[0];
     },
 
     async getSourceTypes(): Promise<SourceType[]> {

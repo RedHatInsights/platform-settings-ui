@@ -78,6 +78,28 @@ export interface SourceType {
   category?: string;
 }
 
+/**
+ * A Red Hat service that can attach to a data source — Cost Management, RHEL
+ * Management, Subscriptions, and so on. The table's "Connected applications"
+ * column resolves `SourceApplication.application_type_id` through this
+ * catalogue to display the service name.
+ */
+export interface ApplicationType {
+  id: string;
+  /**
+   * Stable service identifier — `cost-management`, `/insights/platform/rhel-management`,
+   * and others. Not always a clean slug; some have path-like values.
+   */
+  name: string;
+  /**
+   * Human-readable service name for display — "Cost Management",
+   * "RHEL Management", and so on.
+   */
+  display_name: string;
+  created_at?: string;
+  dependent_applications?: object;
+}
+
 export interface CollectionLinks {
   first?: string;
   last?: string;
@@ -99,6 +121,12 @@ export interface PageSource {
 
 export interface PageSourceType {
   data: SourceType[];
+  links: CollectionLinks;
+  meta: CollectionMeta;
+}
+
+export interface PageApplicationType {
+  data: ApplicationType[];
   links: CollectionLinks;
   meta: CollectionMeta;
 }

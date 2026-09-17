@@ -1,4 +1,8 @@
-import type { Source, SourceType } from '../types/sources.types';
+import type {
+  ApplicationType,
+  Source,
+  SourceType,
+} from '../types/sources.types';
 
 /**
  * Application type ids, named so a story reads as intent rather than as a
@@ -7,6 +11,32 @@ import type { Source, SourceType } from '../types/sources.types';
 export const APPLICATION_TYPE_COST = '1';
 export const APPLICATION_TYPE_SUBSCRIPTIONS = '2';
 export const APPLICATION_TYPE_RHEL = '3';
+
+/**
+ * Red Hat services that can attach to a data source. The table's
+ * "Connected applications" column resolves `application_type_id` through this
+ * catalogue to display the service name.
+ */
+export const seedApplicationTypes: ApplicationType[] = [
+  {
+    id: APPLICATION_TYPE_COST,
+    name: '/insights/platform/cost-management',
+    display_name: 'Cost Management',
+    created_at: '2020-01-15T10:00:00Z',
+  },
+  {
+    id: APPLICATION_TYPE_SUBSCRIPTIONS,
+    name: '/insights/platform/subscriptions',
+    display_name: 'Subscriptions',
+    created_at: '2020-02-20T12:30:00Z',
+  },
+  {
+    id: APPLICATION_TYPE_RHEL,
+    name: '/insights/platform/rhel-management',
+    display_name: 'RHEL Management',
+    created_at: '2020-03-10T14:15:00Z',
+  },
+];
 
 /**
  * The four providers this island offers. Ids are the stage values, so a story
@@ -168,5 +198,35 @@ export const seedSources: Source[] = [
     source_type_id: '4',
     created_at: '2026-04-05T21:10:00Z',
     applications: [],
+  },
+  {
+    id: '108',
+    name: 'AWS development account',
+    source_type_id: '2',
+    created_at: '2026-09-15T20:00:00Z', // Recent timestamp for testing
+    availability_status: 'in_progress',
+    applications: [
+      {
+        id: '209',
+        application_type_id: APPLICATION_TYPE_COST,
+        availability_status: 'in_progress',
+      },
+    ],
+  },
+  {
+    id: '109',
+    name: 'Google Cloud test project',
+    source_type_id: '3',
+    created_at: '2026-08-10T14:20:00Z',
+    paused_at: '2026-09-01T10:00:00Z',
+    availability_status: 'available',
+    applications: [
+      {
+        id: '210',
+        application_type_id: APPLICATION_TYPE_COST,
+        availability_status: 'available',
+        paused_at: '2026-09-01T10:00:00Z',
+      },
+    ],
   },
 ];

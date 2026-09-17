@@ -21,11 +21,14 @@ import {
 } from '@patternfly/react-core/dist/dynamic/components/EmptyState';
 import ExclamationCircleIcon from '@patternfly/react-icons/dist/js/icons/exclamation-circle-icon';
 import { useIntl } from 'react-intl';
-// eslint-disable-next-line no-restricted-imports -- updateDocumentTitle not yet in useAppServices
-import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome';
 import { useAppNavigate } from '../../../../hooks/useAppNavigate';
 import { useAppServices } from '../../../../shared/ServiceContext';
-import { useApplicationTypes, useSource, useSourceTypes } from '../../index';
+import {
+  SourceNotFoundError,
+  useApplicationTypes,
+  useSource,
+  useSourceTypes,
+} from '../../index';
 import { SourceHeader } from './components/SourceHeader';
 import { SourceFormFields } from './components/SourceFormFields';
 import { ConnectedApplicationsSection } from './components/ConnectedApplicationsSection';
@@ -48,13 +51,15 @@ const SourceDetailPage: React.FC = () => {
   const intl = useIntl();
   const { sourceId } = useParams<{ sourceId: string }>();
   const navigate = useAppNavigate();
-  const { updateDocumentTitle } = useChrome();
-  const { isOrgAdmin, notify } = useAppServices();
+  const { isOrgAdmin, notify, updateDocumentTitle } = useAppServices();
 
   // Data fetching
   const { data: source, isLoading, isError, error } = useSource(sourceId ?? '');
-  const { data: sourceTypes = [], isLoading: isLoadingTypes } =
-    useSourceTypes();
+  const {
+    data: sourceTypes = [],
+    isLoading: isLoadingTypes,
+    isError: isSourceTypesError,
+  } = useSourceTypes();
   const { data: applicationTypes = [] } = useApplicationTypes();
 
   // Find the source type for this source
@@ -65,7 +70,7 @@ const SourceDetailPage: React.FC = () => {
   // Update document title when source loads
   useEffect(() => {
     if (source?.name) {
-      updateDocumentTitle?.(source.name);
+      updateDocumentTitle(source.name);
     }
   }, [source?.name, updateDocumentTitle]);
 
@@ -80,10 +85,40 @@ const SourceDetailPage: React.FC = () => {
     );
   }
 
-  // Error state - 404 Not Found
+  // Error state - source types failed to load
+  if (isSourceTypesError) {
+    return (
+      <Main>
+        <Bullseye>
+          <EmptyState>
+            <ExclamationCircleIcon
+              style={{
+                fontSize: '4rem',
+                color:
+                  'var(--pf-t--global--icon--color--status--danger--default)',
+                marginBottom: 'var(--pf-t--global--spacer--md)',
+              }}
+            />
+            <Title headingLevel="h1" size="lg">
+              {intl.formatMessage(messages.loadFailedTitle)}
+            </Title>
+            <EmptyStateBody>
+              {intl.formatMessage(messages.loadFailedMessage)}
+            </EmptyStateBody>
+            <EmptyStateFooter>
+              <Button variant="primary" onClick={() => navigate('')}>
+                {intl.formatMessage(messages.backToListLink)}
+              </Button>
+            </EmptyStateFooter>
+          </EmptyState>
+        </Bullseye>
+      </Main>
+    );
+  }
+
+  // Error state - source not found or failed to load
   if (isError) {
-    const is404 =
-      error?.message?.includes('404') || error?.message?.includes('not found');
+    const is404 = error instanceof SourceNotFoundError;
 
     return (
       <Main>

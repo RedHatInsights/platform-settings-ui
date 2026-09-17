@@ -22,25 +22,29 @@ function getRelativeTime(dateString: string): {
   unit: 'second' | 'minute' | 'hour' | 'day' | 'month';
 } {
   const diff = new Date(dateString).getTime() - Date.now();
-  const seconds = Math.round(diff / 1000);
-  const minutes = Math.round(seconds / 60);
-  const hours = Math.round(minutes / 60);
-  const days = Math.round(hours / 24);
-  const months = Math.round(days / 30);
+  const absDiff = Math.abs(diff);
 
-  if (Math.abs(months) >= 1) {
-    return { value: months, unit: 'month' };
+  // Select unit based on absolute duration thresholds before rounding
+  if (absDiff >= 30 * 24 * 60 * 60 * 1000) {
+    // 30 days in milliseconds
+    return {
+      value: Math.round(diff / (30 * 24 * 60 * 60 * 1000)),
+      unit: 'month',
+    };
   }
-  if (Math.abs(days) >= 1) {
-    return { value: days, unit: 'day' };
+  if (absDiff >= 24 * 60 * 60 * 1000) {
+    // 1 day in milliseconds
+    return { value: Math.round(diff / (24 * 60 * 60 * 1000)), unit: 'day' };
   }
-  if (Math.abs(hours) >= 1) {
-    return { value: hours, unit: 'hour' };
+  if (absDiff >= 60 * 60 * 1000) {
+    // 1 hour in milliseconds
+    return { value: Math.round(diff / (60 * 60 * 1000)), unit: 'hour' };
   }
-  if (Math.abs(minutes) >= 1) {
-    return { value: minutes, unit: 'minute' };
+  if (absDiff >= 60 * 1000) {
+    // 1 minute in milliseconds
+    return { value: Math.round(diff / (60 * 1000)), unit: 'minute' };
   }
-  return { value: seconds, unit: 'second' };
+  return { value: Math.round(diff / 1000), unit: 'second' };
 }
 
 /**
@@ -58,7 +62,9 @@ export const SourceFormFields: React.FC<SourceFormFieldsProps> = ({
   const configModeText =
     source.app_creation_workflow === 'account_authorization'
       ? intl.formatMessage(messages.accountAuthorization)
-      : intl.formatMessage(messages.manualConfiguration);
+      : source.app_creation_workflow === 'manual_configuration'
+        ? intl.formatMessage(messages.manualConfiguration)
+        : intl.formatMessage(messages.unknown);
 
   const dateAdded = getRelativeTime(source.created_at);
 

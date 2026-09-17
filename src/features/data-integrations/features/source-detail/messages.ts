@@ -54,6 +54,11 @@ export default defineMessages({
     description: 'Relative time for very recent timestamps',
     defaultMessage: 'Just now',
   },
+  checkingAvailabilityAriaLabel: {
+    id: 'dataIntegrations.sourceDetail.metadata.checkingAvailabilityAriaLabel',
+    description: 'Aria label for spinner when checking availability',
+    defaultMessage: 'Checking availability',
+  },
 
   // Form field labels
   nameLabel: {
@@ -88,6 +93,11 @@ export default defineMessages({
     description: 'Account authorization mode',
     defaultMessage: 'Account authorization',
   },
+  unknown: {
+    id: 'dataIntegrations.sourceDetail.configMode.unknown',
+    description: 'Unknown configuration mode',
+    defaultMessage: 'Unknown',
+  },
 
   // Actions
   pauseAction: {
@@ -99,6 +109,12 @@ export default defineMessages({
     id: 'dataIntegrations.sourceDetail.actions.pauseDescription',
     description: 'Description for pause action',
     defaultMessage: 'Temporarily disable data connection',
+  },
+  pauseDisabledDescription: {
+    id: 'dataIntegrations.sourceDetail.actions.pauseDisabledDescription',
+    description:
+      'Description for disabled pause action during availability check',
+    defaultMessage: 'Cannot pause while availability check is in progress',
   },
   resumeAction: {
     id: 'dataIntegrations.sourceDetail.actions.resume',
@@ -130,6 +146,27 @@ export default defineMessages({
     id: 'dataIntegrations.sourceDetail.actions.label',
     description: 'Actions dropdown aria label',
     defaultMessage: 'Actions',
+  },
+  pauseModalTitle: {
+    id: 'dataIntegrations.sourceDetail.actions.pauseModalTitle',
+    description: 'Title for pause data integration modal',
+    defaultMessage: 'Pause data integration',
+  },
+  resumeModalTitle: {
+    id: 'dataIntegrations.sourceDetail.actions.resumeModalTitle',
+    description: 'Title for resume data integration modal',
+    defaultMessage: 'Resume data integration',
+  },
+  okButton: {
+    id: 'dataIntegrations.sourceDetail.actions.okButton',
+    description: 'OK button text for modals',
+    defaultMessage: 'OK',
+  },
+  fallbackIconAlt: {
+    id: 'dataIntegrations.sourceDetail.fallbackIconAlt',
+    description:
+      'Fallback alt text for source type icon when name is unavailable',
+    defaultMessage: 'Source type {id}',
   },
 
   // Toast messages (deferred functionality)

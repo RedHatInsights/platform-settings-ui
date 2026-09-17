@@ -47,22 +47,23 @@ function getRelativeTime(dateString?: string): {
   }
 
   const diff = new Date(dateString).getTime() - Date.now();
-  const seconds = Math.round(diff / 1000);
-  const minutes = Math.round(seconds / 60);
-  const hours = Math.round(minutes / 60);
-  const days = Math.round(hours / 24);
+  const absDiff = Math.abs(diff);
 
-  if (Math.abs(days) >= 1) {
-    return { value: days, unit: 'day' };
+  // Select unit based on absolute millisecond thresholds before rounding
+  if (absDiff >= 86400000) {
+    // 24 hours in milliseconds
+    return { value: Math.round(diff / 86400000), unit: 'day' };
   }
-  if (Math.abs(hours) >= 1) {
-    return { value: hours, unit: 'hour' };
+  if (absDiff >= 3600000) {
+    // 1 hour in milliseconds
+    return { value: Math.round(diff / 3600000), unit: 'hour' };
   }
-  if (Math.abs(minutes) >= 1) {
-    return { value: minutes, unit: 'minute' };
+  if (absDiff >= 60000) {
+    // 1 minute in milliseconds
+    return { value: Math.round(diff / 60000), unit: 'minute' };
   }
 
-  return { value: seconds, unit: 'second' };
+  return { value: Math.round(diff / 1000), unit: 'second' };
 }
 
 interface SourceHeaderProps {
@@ -161,7 +162,12 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
               alignItems={{ default: 'alignItemsCenter' }}
             >
               <FlexItem>
-                <Spinner size="md" aria-label="Checking availability" />
+                <Spinner
+                  size="md"
+                  aria-label={intl.formatMessage(
+                    messages.checkingAvailabilityAriaLabel,
+                  )}
+                />
               </FlexItem>
               <FlexItem>
                 {intl.formatMessage(messages.waitingForUpdate)}
@@ -215,7 +221,7 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
           icon={<PauseIcon />}
           description={
             isInProgress
-              ? 'Cannot pause while availability check is in progress'
+              ? intl.formatMessage(messages.pauseDisabledDescription)
               : intl.formatMessage(messages.pauseActionDescription)
           }
         >
@@ -252,7 +258,12 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
           iconUrl && (
             <img
               src={iconUrl}
-              alt={sourceType?.product_name || ''}
+              alt={
+                sourceType?.product_name ||
+                intl.formatMessage(messages.fallbackIconAlt, {
+                  id: source.source_type_id,
+                })
+              }
               width={48}
               height={48}
               style={iconStyle}
@@ -270,9 +281,9 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
         aria-labelledby="pause-modal-title"
       >
         <ModalHeader
-          title={
-            isPaused ? 'Resume data integration' : 'Pause data integration'
-          }
+          title={intl.formatMessage(
+            isPaused ? messages.resumeModalTitle : messages.pauseModalTitle,
+          )}
           labelId="pause-modal-title"
         />
         <ModalBody>
@@ -280,7 +291,7 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
         </ModalBody>
         <ModalFooter>
           <Button variant="primary" onClick={() => setIsPauseModalOpen(false)}>
-            OK
+            {intl.formatMessage(messages.okButton)}
           </Button>
         </ModalFooter>
       </Modal>
@@ -301,7 +312,7 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
         </ModalBody>
         <ModalFooter>
           <Button variant="primary" onClick={() => setIsDeleteModalOpen(false)}>
-            OK
+            {intl.formatMessage(messages.okButton)}
           </Button>
         </ModalFooter>
       </Modal>

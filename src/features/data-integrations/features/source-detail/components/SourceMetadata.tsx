@@ -31,22 +31,23 @@ function getRelativeTime(dateString?: string): {
   }
 
   const diff = new Date(dateString).getTime() - Date.now();
-  const seconds = Math.round(diff / 1000);
-  const minutes = Math.round(seconds / 60);
-  const hours = Math.round(minutes / 60);
-  const days = Math.round(hours / 24);
+  const absDiff = Math.abs(diff);
 
-  if (Math.abs(days) >= 1) {
-    return { value: days, unit: 'day' };
+  // Select unit based on absolute millisecond thresholds before rounding
+  if (absDiff >= 86400000) {
+    // 24 hours in milliseconds
+    return { value: Math.round(diff / 86400000), unit: 'day' };
   }
-  if (Math.abs(hours) >= 1) {
-    return { value: hours, unit: 'hour' };
+  if (absDiff >= 3600000) {
+    // 1 hour in milliseconds
+    return { value: Math.round(diff / 3600000), unit: 'hour' };
   }
-  if (Math.abs(minutes) >= 1) {
-    return { value: minutes, unit: 'minute' };
+  if (absDiff >= 60000) {
+    // 1 minute in milliseconds
+    return { value: Math.round(diff / 60000), unit: 'minute' };
   }
 
-  return { value: seconds, unit: 'second' };
+  return { value: Math.round(diff / 1000), unit: 'second' };
 }
 
 /**
@@ -59,9 +60,7 @@ function getRelativeTime(dateString?: string): {
 export const SourceMetadata: React.FC<SourceMetadataProps> = ({ source }) => {
   const intl = useIntl();
 
-  const lastModified = source.updated_at
-    ? getRelativeTime(source.updated_at)
-    : null;
+  const lastModified = getRelativeTime(source.updated_at || source.created_at);
 
   const lastChecked = source.last_checked_at
     ? getRelativeTime(source.last_checked_at)
@@ -102,18 +101,14 @@ export const SourceMetadata: React.FC<SourceMetadataProps> = ({ source }) => {
           {intl.formatMessage(messages.lastModified)}
         </DescriptionListTerm>
         <DescriptionListDescription>
-          {lastModified ? (
-            <FormattedRelativeTime
-              value={lastModified.value}
-              numeric="auto"
-              updateIntervalInSeconds={
-                lastModified.unit !== 'day' ? 60 : undefined
-              }
-              unit={lastModified.unit}
-            />
-          ) : (
-            intl.formatMessage(messages.justNow)
-          )}
+          <FormattedRelativeTime
+            value={lastModified.value}
+            numeric="auto"
+            updateIntervalInSeconds={
+              lastModified.unit !== 'day' ? 60 : undefined
+            }
+            unit={lastModified.unit}
+          />
         </DescriptionListDescription>
       </DescriptionListGroup>
 

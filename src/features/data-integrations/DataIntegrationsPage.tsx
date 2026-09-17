@@ -79,11 +79,7 @@ const DataIntegrationsPage: React.FC = () => {
 
   // Detail pages render standalone without the parent header/tabs
   if (isDetailPage) {
-    return (
-      <Main>
-        <Outlet />
-      </Main>
-    );
+    return <Outlet />;
   }
 
   return (

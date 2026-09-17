@@ -8,6 +8,7 @@ export {
   applicationTypesKeys,
   useApplicationTypes,
 } from './data/queries/useApplicationTypes';
+export { SourceNotFoundError } from './data/errors';
 export type {
   ApplicationType,
   PageSource,

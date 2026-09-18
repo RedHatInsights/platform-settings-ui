@@ -8,19 +8,19 @@ import {
 } from '../../shared/interactionHelpers';
 import DataIntegrationsPage from './DataIntegrationsPage';
 import MyDataIntegrationsTab from './components/MyDataIntegrationsTab';
-import AboutTab from './components/AboutTab';
 import { createSourcesHandlers, sourcesDb } from './data/mocks/sources';
 
 const DOCS_URL =
   'https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/configuring_cloud_integrations_for_red_hat_services/index';
 
 /**
- * Renders the current pathname so play functions can assert on tab navigation
- * without reaching into router internals.
+ * Renders the current location so play functions can assert on tab navigation
+ * without reaching into router internals. Tabs live in the query string
+ * (`?tab=about`), so the search has to be part of the probe.
  */
 const LocationProbe = () => {
-  const { pathname } = useLocation();
-  return <div data-testid="location-probe">{pathname}</div>;
+  const { pathname, search } = useLocation();
+  return <div data-testid="location-probe">{`${pathname}${search}`}</div>;
 };
 
 /**
@@ -51,7 +51,6 @@ const meta = {
           <Routes>
             <Route path="/settings/data-integrations" element={<Story />}>
               <Route index element={<MyDataIntegrationsTab />} />
-              <Route path="about" element={<AboutTab />} />
             </Route>
           </Routes>
         </MemoryRouter>
@@ -123,8 +122,8 @@ export const Default: Story = {
 };
 
 /**
- * Selecting a tab swaps the routed body and updates the URL, so a reload or a
- * shared link lands on the same tab.
+ * Selecting a tab swaps the body and updates the query string, so a reload or
+ * a shared link lands on the same tab.
  */
 export const SwitchToAboutTab: Story = {
   play: async ({ canvasElement, step }) => {
@@ -140,7 +139,7 @@ export const SwitchToAboutTab: Story = {
 
     await step('Click the About tab', async () => {
       await user.click(canvas.getByRole('tab', { name: 'About' }));
-      await canvas.findByText('/settings/data-integrations/about');
+      await canvas.findByText('/settings/data-integrations?tab=about');
     });
 
     await step('About becomes active and renders its body', async () => {
@@ -169,11 +168,11 @@ export const SwitchToAboutTab: Story = {
 };
 
 /**
- * Deep-linking straight to /about restores the About tab. This is the payoff of
- * routing the tabs rather than holding the active tab in component state.
+ * Deep-linking straight to `?tab=about` restores the About tab. This is the
+ * payoff of keeping the active tab in the URL rather than in component state.
  */
 export const DeepLinkedAboutTab: Story = {
-  parameters: { initialRoute: '/settings/data-integrations/about' },
+  parameters: { initialRoute: '/settings/data-integrations?tab=about' },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
 

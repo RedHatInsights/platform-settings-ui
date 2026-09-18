@@ -226,7 +226,9 @@ export const ListStateSurvivesDetailRoundTrip: Story = {
       );
 
       await canvas.findByText('/settings/data-integrations/101');
-      expect(canvas.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+      // The route changes before the source query resolves, so the probe
+      // updating is not enough — wait for the form itself.
+      await canvas.findByRole('button', { name: 'Save' }, { timeout: 10000 });
     });
 
     await step('Cancel returns to the list with that state', async () => {
@@ -257,7 +259,13 @@ export const DeepLinkedDetailFallsBackToPlainList: Story = {
     });
 
     await step('Cancel lands on the list with no query string', async () => {
-      await user.click(canvas.getByRole('button', { name: 'Cancel' }));
+      await user.click(
+        await canvas.findByRole(
+          'button',
+          { name: 'Cancel' },
+          { timeout: 10000 },
+        ),
+      );
 
       await canvas.findByText('/settings/data-integrations/');
       await canvas.findByTestId('table-view', {}, { timeout: 10000 });

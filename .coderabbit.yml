@@ -228,12 +228,16 @@ reviews:
 
   # Pre-merge checks
   #
-  # Testing Strategy:
-  # - BOT PRs (dependabot, renovate, github-actions): E2E tests ignored, basic review only
-  # - REGULAR PRs: Tiered testing approach based on complexity
-  #   * ALWAYS: Unit tests required (src/**/*.{ts,tsx} changes must have tests)
-  #   * SOMETIMES: Component tests for complex/interactive UI components
-  #   * CONDITIONAL: E2E tests based on feature complexity (high/medium/low)
+  # Testing strategy, per experience-ui-governance/standards/testing.md:
+  # - BOT PRs (dependabot, renovate, github-actions): testing check skipped
+  # - REACT code: Storybook play functions are the first-class test artifact
+  # - NON-REACT code: Jest unit tests (utilities, pure logic, transformations)
+  # - E2E (Playwright): advisory — the suite needs live SSO credentials, so it
+  #   cannot gate a PR
+  #
+  # Note on Jest coverage: jest.config.js excludes `*.stories.{ts,tsx}` from
+  # collectCoverageFrom, so a repo-wide coverage percentage measures only the
+  # non-React slice. Do not quote it as a threshold for React changes.
   #
   pre_merge_checks:
     # PR title validation
@@ -295,56 +299,61 @@ reviews:
         instructions: |
           IMPORTANT: Skip this check for bot PRs (dependabot, renovate, github-actions).
 
-          For NON-BOT Pull Requests:
+          This repo follows experience-ui-governance/standards/testing.md. Which
+          test layer a change owes depends on what kind of code it is, not on how
+          large the diff looks.
 
-          **ALWAYS REQUIRED - Unit Tests:**
-          - Any source code changes (src/**/*.{ts,tsx}) MUST include corresponding unit tests
-          - Minimum test coverage: 60% overall (block PR if not met)
-          - New/modified code should have 80%+ coverage
-          - Critical paths require 100% coverage (auth, data mutation, error handling)
-          - Tests use @testing-library/react for DOM interactions (not enzyme)
-          - Snapshot tests are meaningful and minimal (not just for coverage)
+          **REACT CODE - Storybook play functions (required):**
+          Components, hooks, and pages under src/**/*.tsx are covered by
+          `.stories.tsx` files with play functions and MSW handlers. Governance
+          calls this "the first-class test artifact for React code" — it is the
+          unit layer here, not an optional extra on top of Jest.
 
-          **SOMETIMES REQUIRED - Component/Integration Tests (Storybook):**
-          Consider requiring Storybook stories with play functions when:
-          - New UI components are added (especially complex interactive components)
-          - Existing components have significant behavior changes
-          - Complex user interactions need testing (multi-step forms, drag-drop, etc.)
-          - PatternFly component integration needs verification
-          - Component props/state management is complex
+          BLOCK when a React behavior change ships with none of:
+          - a new story exercising the new behavior
+          - an updated play function asserting the changed behavior
+          - an existing story that already covers it (say which one)
 
-          Flag as WARNING if component tests would be beneficial but aren't critical.
+          A story must assert behavior a user can observe. A story that only
+          renders the component does not discharge this.
 
-          **CONDITIONALLY REQUIRED - E2E Tests (Playwright):**
-          E2E tests should be added/updated for:
+          Do NOT ask for a Jest test of a React component. Do NOT ask for
+          @testing-library/react DOM tests as a substitute for a play function.
 
-          HIGH COMPLEXITY (REQUIRED - block PR):
-          - New user authentication/authorization flows
-          - New application routes or navigation changes
-          - Critical user workflows (checkout, form submission, data export)
-          - Integration with Chrome shell navigation
-          - Cross-page data persistence or state management
-          - Changes to Frontend Operator configuration affecting routing
+          **NON-REACT CODE - Jest (required):**
+          Utilities, pure logic, data transformations, and other non-React
+          modules get a colocated Jest unit test. BLOCK if such a module is added
+          or its logic changed with no test.
 
-          MEDIUM COMPLEXITY (STRONGLY RECOMMENDED - warning):
-          - New major features with multiple pages/views
-          - Changes to existing critical workflows
-          - Integration with backend APIs for core features
-          - Changes affecting multiple components working together
+          **COVERAGE NUMBERS:**
+          Do not assert a repo-wide coverage percentage. jest.config.js excludes
+          `*.stories.{ts,tsx}` from collectCoverageFrom, so Storybook coverage —
+          the bulk of this repo's testing — is invisible to that number. Quoting
+          it produces a threshold no React PR can meet. Reason about whether the
+          changed behavior is tested, not about a percentage.
 
-          LOW COMPLEXITY (OPTIONAL - mention if helpful):
-          - Minor UI tweaks or styling changes
-          - Documentation updates
-          - Dependency updates
-          - Internal refactoring without behavior changes
-          - Bug fixes with unit test coverage
+          **SNAPSHOTS:**
+          `toMatchSnapshot` and `toMatchInlineSnapshot` are banned (governance,
+          and the experience-ui/no-jest-snapshot ESLint rule). Never suggest one.
 
-          **Assessment Guidance:**
-          1. Check if unit tests exist - if not, BLOCK PR
-          2. Assess feature complexity and user impact
-          3. Recommend component tests for new/complex UI components
-          4. Require E2E tests for high-complexity features
-          5. Explain WHY each test level is needed for this specific change
+          **E2E - Playwright (advisory only, never blocking):**
+          The Playwright suite runs against a live console and needs E2E_USER /
+          E2E_PASSWORD, so it cannot be a merge gate. Mention an E2E test as a
+          suggestion — not a blocker, and not a "required" — for:
+          - new authentication/authorization flows
+          - new top-level routes or Chrome shell navigation changes
+          - Frontend Operator configuration changes affecting routing
+
+          Cross-component flows inside the app are covered by user-journey
+          stories, not Playwright. Ask for a user journey story instead.
+
+          **ASSESSMENT GUIDANCE:**
+          1. Classify each changed file as React or non-React.
+          2. Check for the layer that file's kind actually owes.
+          3. Before blocking, name the specific behavior you believe is untested
+             and the file it lives in. If you cannot, do not block.
+          4. Verify the claim against the diff — stories added in this PR count,
+             including ones that assert on existing components.
 
       - name: "TypeScript Quality"
         mode: "error"

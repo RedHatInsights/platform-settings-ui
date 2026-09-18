@@ -157,6 +157,68 @@ export const Pagination: Story = {
   },
 };
 
+/**
+ * Two days old, so `format: 'date'` stays on the relative side of its
+ * three-month threshold. Computed rather than seeded, because a fixed
+ * timestamp would cross the threshold three months after it was written.
+ */
+const twoDaysAgo = () =>
+  new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+
+/**
+ * Pins how the table renders a "Date added" older than three months.
+ *
+ * `SourceDetailPage.stories.tsx` > `DateAddedMatchesTable` asserts this exact
+ * string for this exact source. The two surfaces drifted once already, so if
+ * either one changes format, one of the two stories fails.
+ */
+export const DateAddedFormat: Story = {
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Date added renders as an absolute date', async () => {
+      const nameCell = await canvas.findByText(
+        'AWS production account',
+        {},
+        { timeout: 10000 },
+      );
+      const row = nameCell.closest('tr');
+      expect(row).not.toBeNull();
+
+      // created_at 2026-01-14T09:12:00Z, rendered by DateFormat onlyDate.
+      expect(within(row as HTMLElement).getByText('14 Jan 2026')).toBeVisible();
+    });
+  },
+};
+
+/**
+ * The other half of `format: 'date'` — under three months old, the column
+ * renders relative time instead.
+ *
+ * `SourceDetailPage.stories.tsx` > `DateAddedRelativeMatchesTable` pins the
+ * same source against the same expected string.
+ */
+export const DateAddedRelativeFormat: Story = {
+  beforeEach: () => {
+    sourcesDb.update('101', { created_at: twoDaysAgo() });
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Date added renders as relative time', async () => {
+      const nameCell = await canvas.findByText(
+        'AWS production account',
+        {},
+        { timeout: 10000 },
+      );
+      const row = nameCell.closest('tr');
+      expect(row).not.toBeNull();
+
+      expect(within(row as HTMLElement).getByText('2 days ago')).toBeVisible();
+    });
+  },
+};
+
 export const SortByType: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);

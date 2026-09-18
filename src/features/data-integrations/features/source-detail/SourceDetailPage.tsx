@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { Main } from '@redhat-cloud-services/frontend-components/Main';
 import { Spinner } from '@patternfly/react-core/dist/dynamic/components/Spinner';
 import { Bullseye } from '@patternfly/react-core/dist/dynamic/layouts/Bullseye';
@@ -35,6 +35,24 @@ import { ConnectedApplicationsSection } from './components/ConnectedApplications
 import messages from './messages';
 
 /**
+ * Reads the sources table's query string back out of router history state.
+ *
+ * `SourcesTable` stashes it under `from` when it renders a source link, so
+ * returning to the list can restore the page, page size, sort, and filters the
+ * user had set. History state is user-writable, so it is narrowed rather than
+ * asserted; anything unexpected falls back to the default list view, which is
+ * also what a deep link into this page gets.
+ */
+const listSearchFrom = (state: unknown): string => {
+  if (typeof state !== 'object' || state === null || !('from' in state)) {
+    return '';
+  }
+
+  const { from } = state as { from: unknown };
+  return typeof from === 'string' ? from : '';
+};
+
+/**
  * Source detail/edit view page for Data Integrations.
  *
  * Displays and allows viewing (future: editing) of a single data integration.
@@ -51,7 +69,15 @@ const SourceDetailPage: React.FC = () => {
   const intl = useIntl();
   const { sourceId } = useParams<{ sourceId: string }>();
   const navigate = useAppNavigate();
+  const { state } = useLocation();
   const { isOrgAdmin, notify, updateDocumentTitle } = useAppServices();
+
+  /**
+   * `useAppNavigate` prefixes the basename, so a bare query string resolves to
+   * the list route — `/settings/data-integrations/?page=2&perPage=100`. An
+   * empty string is the plain list, which is the pre-existing behaviour.
+   */
+  const backToList = () => navigate(listSearchFrom(state));
 
   // Data fetching
   const { data: source, isLoading, isError, error } = useSource(sourceId ?? '');
@@ -106,7 +132,7 @@ const SourceDetailPage: React.FC = () => {
               {intl.formatMessage(messages.loadFailedMessage)}
             </EmptyStateBody>
             <EmptyStateFooter>
-              <Button variant="primary" onClick={() => navigate('')}>
+              <Button variant="primary" onClick={backToList}>
                 {intl.formatMessage(messages.backToListLink)}
               </Button>
             </EmptyStateFooter>
@@ -143,7 +169,7 @@ const SourceDetailPage: React.FC = () => {
                 : intl.formatMessage(messages.loadFailedMessage)}
             </EmptyStateBody>
             <EmptyStateFooter>
-              <Button variant="primary" onClick={() => navigate('')}>
+              <Button variant="primary" onClick={backToList}>
                 {intl.formatMessage(messages.backToListLink)}
               </Button>
             </EmptyStateFooter>
@@ -161,10 +187,6 @@ const SourceDetailPage: React.FC = () => {
   // Action handlers (deferred functionality)
   const handleSave = () => {
     notify('info', intl.formatMessage(messages.saveComingSoon));
-  };
-
-  const handleCancel = () => {
-    navigate(''); // Navigate to /settings/data-integrations (useAppNavigate handles basename)
   };
 
   return (
@@ -201,7 +223,7 @@ const SourceDetailPage: React.FC = () => {
               </Button>
             </FlexItem>
             <FlexItem>
-              <Button variant="secondary" onClick={handleCancel}>
+              <Button variant="secondary" onClick={backToList}>
                 {intl.formatMessage(messages.cancelButton)}
               </Button>
             </FlexItem>

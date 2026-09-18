@@ -77,8 +77,8 @@ export const Default: Story = {
       );
     });
 
-    await step('Status badge reads Active', async () => {
-      expect(canvas.getByText('Active')).toBeInTheDocument();
+    await step('Status badge reads Available', async () => {
+      expect(canvas.getByText('Available')).toBeInTheDocument();
     });
 
     await step('Header metadata lists both timestamps', async () => {
@@ -111,6 +111,59 @@ export const Default: Story = {
       expect(
         canvas.getByRole('button', { name: 'Actions' }),
       ).toBeInTheDocument();
+    });
+  },
+};
+
+/**
+ * Two days old, so `getDateFormatType` stays on the relative side of the
+ * three-month threshold it mirrors from TableView. Computed rather than
+ * seeded, because a fixed timestamp would cross the threshold three months
+ * after it was written.
+ */
+const twoDaysAgo = () =>
+  new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+
+/**
+ * Pins how the detail page renders a "Date added" older than three months.
+ *
+ * `SourcesTable.stories.tsx` > `DateAddedFormat` asserts this exact string for
+ * this exact source. The two surfaces drifted once already, so if either one
+ * changes format, one of the two stories fails.
+ */
+export const DateAddedMatchesTable: Story = {
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Date added matches the sources table', async () => {
+      await canvas.findAllByText('AWS production account');
+
+      // created_at 2026-01-14T09:12:00Z, rendered by DateFormat onlyDate.
+      expect(canvas.getByText('14 Jan 2026')).toBeVisible();
+    });
+  },
+};
+
+/**
+ * The other half of the mirrored rule — under three months old, the detail
+ * page switches to relative time, exactly as the table's `format: 'date'`
+ * column does.
+ *
+ * `SourcesTable.stories.tsx` > `DateAddedRelativeFormat` pins the same source
+ * against the same expected string. The header's "Last modified" also renders
+ * relative time, but from `updated_at`, so it never collides with this.
+ */
+export const DateAddedRelativeMatchesTable: Story = {
+  beforeEach: () => {
+    sourcesDb.update('101', { created_at: twoDaysAgo() });
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Date added matches the sources table', async () => {
+      await canvas.findAllByText('AWS production account');
+
+      expect(canvas.getByText('2 days ago')).toBeVisible();
     });
   },
 };
@@ -203,7 +256,7 @@ export const Paused: Story = {
 
     await step('Paused wins over the available status', async () => {
       expect(canvas.getByText('Paused')).toBeInTheDocument();
-      expect(canvas.queryByText('Active')).not.toBeInTheDocument();
+      expect(canvas.queryByText('Available')).not.toBeInTheDocument();
     });
 
     await step('The dropdown offers Resume, not Pause', async () => {

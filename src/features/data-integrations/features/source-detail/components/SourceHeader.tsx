@@ -29,42 +29,12 @@ import {
 } from '@patternfly/react-core/dist/dynamic/layouts/Split';
 import PauseIcon from '@patternfly/react-icons/dist/dynamic/icons/pause-icon';
 import TrashIcon from '@patternfly/react-icons/dist/dynamic/icons/trash-icon';
-import { FormattedRelativeTime, useIntl } from 'react-intl';
+import { useIntl } from 'react-intl';
+import DateFormat from '@redhat-cloud-services/frontend-components/DateFormat';
 import messages from '../messages';
-import { StatusBadge } from './StatusBadge';
+import SourceStatusLabel from '../../../components/SourceStatusLabel';
 import { getSourceTypeIcon } from '../../../constants/sourceTypeIcons';
 import type { Source, SourceType } from '../../../data/types/sources.types';
-
-/**
- * Calculates the relative time units for FormattedRelativeTime.
- */
-function getRelativeTime(dateString?: string): {
-  value: number;
-  unit: 'second' | 'minute' | 'hour' | 'day';
-} {
-  if (!dateString) {
-    return { value: 0, unit: 'second' };
-  }
-
-  const diff = new Date(dateString).getTime() - Date.now();
-  const absDiff = Math.abs(diff);
-
-  // Select unit based on absolute millisecond thresholds before rounding
-  if (absDiff >= 86400000) {
-    // 24 hours in milliseconds
-    return { value: Math.round(diff / 86400000), unit: 'day' };
-  }
-  if (absDiff >= 3600000) {
-    // 1 hour in milliseconds
-    return { value: Math.round(diff / 3600000), unit: 'hour' };
-  }
-  if (absDiff >= 60000) {
-    // 1 minute in milliseconds
-    return { value: Math.round(diff / 60000), unit: 'minute' };
-  }
-
-  return { value: Math.round(diff / 1000), unit: 'second' };
-}
 
 interface SourceHeaderProps {
   source: Source;
@@ -101,21 +71,15 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
   const isPaused = !!source.paused_at;
   const isInProgress = source.availability_status === 'in_progress';
 
-  // Calculate relative times for metadata
-  const lastModified = source.updated_at
-    ? getRelativeTime(source.updated_at)
-    : null;
-
-  const lastChecked = source.last_checked_at
-    ? getRelativeTime(source.last_checked_at)
-    : null;
-
   // Build title with source name and status badge inline
   const titleWithBadge = (
     <Split hasGutter>
       <SplitItem>{source.name}</SplitItem>
       <SplitItem>
-        <StatusBadge status={source.availability_status} isPaused={isPaused} />
+        <SourceStatusLabel
+          status={source.availability_status}
+          pausedAt={source.paused_at}
+        />
       </SplitItem>
     </Split>
   );
@@ -126,35 +90,19 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
       <StackItem>
         <div>
           <strong>{intl.formatMessage(messages.lastModified)}:</strong>{' '}
-          {lastModified ? (
-            <FormattedRelativeTime
-              value={lastModified.value}
-              numeric="auto"
-              updateIntervalInSeconds={
-                lastModified.unit !== 'day' ? 60 : undefined
-              }
-              unit={lastModified.unit}
-            />
-          ) : (
-            intl.formatMessage(messages.justNow)
-          )}
+          {/*
+            A source that has never been edited has no `updated_at`, so fall
+            back to its creation time rather than claiming "Just now".
+          */}
+          <DateFormat date={source.updated_at ?? source.created_at} />
         </div>
       </StackItem>
       <StackItem>
         <div>
           <strong>{intl.formatMessage(messages.lastAvailabilityCheck)}:</strong>{' '}
-          {lastChecked ? (
+          {source.last_checked_at ? (
             intl.formatMessage(messages.checkedAgo, {
-              time: (
-                <FormattedRelativeTime
-                  value={lastChecked.value}
-                  numeric="auto"
-                  updateIntervalInSeconds={
-                    lastChecked.unit !== 'day' ? 60 : undefined
-                  }
-                  unit={lastChecked.unit}
-                />
-              ),
+              time: <DateFormat date={source.last_checked_at} />,
             })
           ) : (
             <Flex

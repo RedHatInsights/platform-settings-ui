@@ -8,6 +8,7 @@ import {
 } from '../../shared/interactionHelpers';
 import DataIntegrationsPage from './DataIntegrationsPage';
 import MyDataIntegrationsTab from './components/MyDataIntegrationsTab';
+import SourceDetailPage from './features/source-detail/SourceDetailPage';
 import { createSourcesHandlers, sourcesDb } from './data/mocks/sources';
 
 const DOCS_URL =
@@ -51,6 +52,10 @@ const meta = {
           <Routes>
             <Route path="/settings/data-integrations" element={<Story />}>
               <Route index element={<MyDataIntegrationsTab />} />
+              {/* Mirrors Routing.tsx: the detail view is a child of the shell,
+                  which renders it standalone. Needed so a play function can
+                  walk list -> detail -> list the way a user does. */}
+              <Route path=":sourceId" element={<SourceDetailPage />} />
             </Route>
           </Routes>
         </MemoryRouter>
@@ -182,6 +187,80 @@ export const DeepLinkedAboutTab: Story = {
       expect(
         canvas.getByText('Data integration onboarding content is coming soon.'),
       ).toBeInTheDocument();
+    });
+  },
+};
+
+/**
+ * Opening a source and coming back keeps the list as the user left it.
+ *
+ * `useTableState({ syncWithUrl: true })` puts page size, page, sort, and
+ * filters in the list's query string, but the detail route does not inherit
+ * it — so the table hands it over as router state and the detail page
+ * navigates back to it. Without that, Cancel dropped the user on a default
+ * list and their page size was silently gone.
+ */
+export const ListStateSurvivesDetailRoundTrip: Story = {
+  parameters: {
+    // Standing in for a user who set the page size and sorted the table.
+    // Reaching the same state through the PatternFly pagination menu would
+    // pin the story to a toggle whose only accessible name is its
+    // "1 - 9 of 9" template.
+    initialRoute:
+      '/settings/data-integrations?perPage=100&sortBy=type&sortDir=asc',
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const user = userEvent.setup();
+
+    await step('The list starts with page size and sort applied', async () => {
+      await canvas.findByTestId('table-view', {}, { timeout: 10000 });
+      await canvas.findByText(
+        '/settings/data-integrations?perPage=100&sortBy=type&sortDir=asc',
+      );
+    });
+
+    await step('Open a source from the table', async () => {
+      await user.click(
+        await canvas.findByRole('link', { name: 'AWS production account' }),
+      );
+
+      await canvas.findByText('/settings/data-integrations/101');
+      expect(canvas.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    });
+
+    await step('Cancel returns to the list with that state', async () => {
+      await user.click(canvas.getByRole('button', { name: 'Cancel' }));
+
+      // The trailing slash is how useAppNavigate joins onto the basename; the
+      // route matches either way.
+      await canvas.findByText(
+        '/settings/data-integrations/?perPage=100&sortBy=type&sortDir=asc',
+      );
+      await canvas.findByTestId('table-view', {}, { timeout: 10000 });
+    });
+  },
+};
+
+/**
+ * Reaching the detail view by deep link leaves no list state to return to, so
+ * Cancel falls back to the default list rather than erroring.
+ */
+export const DeepLinkedDetailFallsBackToPlainList: Story = {
+  parameters: { initialRoute: '/settings/data-integrations/101' },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const user = userEvent.setup();
+
+    await step('The detail view renders', async () => {
+      await canvas.findAllByText('AWS production account');
+    });
+
+    await step('Cancel lands on the list with no query string', async () => {
+      await user.click(canvas.getByRole('button', { name: 'Cancel' }));
+
+      await canvas.findByText('/settings/data-integrations/');
+      await canvas.findByTestId('table-view', {}, { timeout: 10000 });
     });
   },
 };

@@ -5,46 +5,15 @@ import {
   DescriptionListGroup,
   DescriptionListTerm,
 } from '@patternfly/react-core/dist/dynamic/components/DescriptionList';
-import { FormattedRelativeTime, useIntl } from 'react-intl';
+import { useIntl } from 'react-intl';
+import DateFormat from '@redhat-cloud-services/frontend-components/DateFormat';
 import messages from '../messages';
+import { getDateFormatType } from '../../../utils/dateFormatType';
 import type { Source, SourceType } from '../../../data/types/sources.types';
 
 interface SourceFormFieldsProps {
   source: Source;
   sourceType?: SourceType;
-}
-
-/**
- * Calculates relative time for FormattedRelativeTime (same logic as SourceHeader).
- */
-function getRelativeTime(dateString: string): {
-  value: number;
-  unit: 'second' | 'minute' | 'hour' | 'day' | 'month';
-} {
-  const diff = new Date(dateString).getTime() - Date.now();
-  const absDiff = Math.abs(diff);
-
-  // Select unit based on absolute duration thresholds before rounding
-  if (absDiff >= 30 * 24 * 60 * 60 * 1000) {
-    // 30 days in milliseconds
-    return {
-      value: Math.round(diff / (30 * 24 * 60 * 60 * 1000)),
-      unit: 'month',
-    };
-  }
-  if (absDiff >= 24 * 60 * 60 * 1000) {
-    // 1 day in milliseconds
-    return { value: Math.round(diff / (24 * 60 * 60 * 1000)), unit: 'day' };
-  }
-  if (absDiff >= 60 * 60 * 1000) {
-    // 1 hour in milliseconds
-    return { value: Math.round(diff / (60 * 60 * 1000)), unit: 'hour' };
-  }
-  if (absDiff >= 60 * 1000) {
-    // 1 minute in milliseconds
-    return { value: Math.round(diff / (60 * 1000)), unit: 'minute' };
-  }
-  return { value: Math.round(diff / 1000), unit: 'second' };
 }
 
 /**
@@ -66,8 +35,6 @@ export const SourceFormFields: React.FC<SourceFormFieldsProps> = ({
         ? intl.formatMessage(messages.manualConfiguration)
         : intl.formatMessage(messages.unknown);
 
-  const dateAdded = getRelativeTime(source.created_at);
-
   return (
     <DescriptionList isHorizontal isCompact>
       <DescriptionListGroup>
@@ -82,10 +49,11 @@ export const SourceFormFields: React.FC<SourceFormFieldsProps> = ({
           {intl.formatMessage(messages.dateAddedLabel)}
         </DescriptionListTerm>
         <DescriptionListDescription>
-          <FormattedRelativeTime
-            value={dateAdded.value}
-            numeric="auto"
-            unit={dateAdded.unit}
+          {/* Mirrors the sources table's format: 'date' column so both
+              surfaces print the same string for the same source. */}
+          <DateFormat
+            date={source.created_at}
+            type={getDateFormatType(source.created_at)}
           />
         </DescriptionListDescription>
       </DescriptionListGroup>

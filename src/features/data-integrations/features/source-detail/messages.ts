@@ -1,32 +1,8 @@
 import { defineMessages } from 'react-intl';
 
 export default defineMessages({
-  // Status labels
-  statusActive: {
-    id: 'dataIntegrations.sourceDetail.status.active',
-    description: 'Status label for available/active sources',
-    defaultMessage: 'Active',
-  },
-  statusInProgress: {
-    id: 'dataIntegrations.sourceDetail.status.inProgress',
-    description: 'Status label for sources being checked',
-    defaultMessage: 'In progress',
-  },
-  statusPaused: {
-    id: 'dataIntegrations.sourceDetail.status.paused',
-    description: 'Status label for paused sources',
-    defaultMessage: 'Paused',
-  },
-  statusUnavailable: {
-    id: 'dataIntegrations.sourceDetail.status.unavailable',
-    description: 'Status label for unavailable sources',
-    defaultMessage: 'Unavailable',
-  },
-  statusPartiallyAvailable: {
-    id: 'dataIntegrations.sourceDetail.status.partiallyAvailable',
-    description: 'Status label for partially available sources',
-    defaultMessage: 'Partially available',
-  },
+  // Status labels live in the island-level messages file, shared with the
+  // sources table via SourceStatusLabel.
 
   // Metadata labels
   lastModified: {
@@ -48,11 +24,6 @@ export default defineMessages({
     id: 'dataIntegrations.sourceDetail.metadata.checkedAgo',
     description: 'Checked timestamp with relative time',
     defaultMessage: 'Checked {time}',
-  },
-  justNow: {
-    id: 'dataIntegrations.sourceDetail.metadata.justNow',
-    description: 'Relative time for very recent timestamps',
-    defaultMessage: 'Just now',
   },
   checkingAvailabilityAriaLabel: {
     id: 'dataIntegrations.sourceDetail.metadata.checkingAvailabilityAriaLabel',
@@ -185,33 +156,12 @@ export default defineMessages({
     description: 'Toast message for delete functionality coming soon',
     defaultMessage: 'Delete functionality coming soon',
   },
-  editNameComingSoon: {
-    id: 'dataIntegrations.sourceDetail.toast.editNameComingSoon',
-    description: 'Tooltip for edit name coming soon',
-    defaultMessage: 'Edit name coming soon',
-  },
 
   // Confirmation dialog
   deleteConfirmTitle: {
     id: 'dataIntegrations.sourceDetail.deleteConfirm.title',
     description: 'Delete confirmation dialog title',
     defaultMessage: 'Delete data integration?',
-  },
-  deleteConfirmMessage: {
-    id: 'dataIntegrations.sourceDetail.deleteConfirm.message',
-    description: 'Delete confirmation dialog message',
-    defaultMessage:
-      'This will permanently delete {name} and disconnect all applications. This action cannot be undone.',
-  },
-  deleteConfirmButton: {
-    id: 'dataIntegrations.sourceDetail.deleteConfirm.confirm',
-    description: 'Delete confirmation button',
-    defaultMessage: 'Delete',
-  },
-  deleteConfirmCancel: {
-    id: 'dataIntegrations.sourceDetail.deleteConfirm.cancel',
-    description: 'Delete confirmation cancel button',
-    defaultMessage: 'Cancel',
   },
 
   // Connected applications section
@@ -224,17 +174,6 @@ export default defineMessages({
     id: 'dataIntegrations.sourceDetail.connectedApps.none',
     description: 'Message when no applications are connected',
     defaultMessage: 'No applications connected',
-  },
-  applicationFieldsReadOnly: {
-    id: 'dataIntegrations.sourceDetail.connectedApps.fieldsReadOnly',
-    description: 'Helper text for fields set via API',
-    defaultMessage:
-      'Value cannot be modified since it has been set using the API',
-  },
-  clusterIdentifierLabel: {
-    id: 'dataIntegrations.sourceDetail.connectedApps.clusterIdentifier',
-    description: 'Label for cluster identifier field',
-    defaultMessage: 'Cluster Identifier',
   },
 
   // Error states
@@ -264,10 +203,5 @@ export default defineMessages({
     description: 'Error message when source fails to load',
     defaultMessage:
       'An error occurred while loading the data integration. Please try again.',
-  },
-  retryButton: {
-    id: 'dataIntegrations.sourceDetail.error.retry',
-    description: 'Retry button for failed load',
-    defaultMessage: 'Retry',
   },
 });

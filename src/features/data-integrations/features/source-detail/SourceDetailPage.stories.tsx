@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { StorybookMockProvider } from '@redhat-cloud-services/hcc-storybook-hub';
 import { waitForModal } from '../../../../shared/interactionHelpers';
@@ -194,6 +194,45 @@ export const DeferredSave: Story = {
       expect(
         await alerts.findByText('Save functionality coming soon'),
       ).toBeInTheDocument();
+    });
+  },
+};
+
+/**
+ * The Actions menu is reachable and reports its state by keyboard alone.
+ *
+ * `Dropdown` does not pass its open state into a render-prop toggle, so
+ * `MenuToggle` needs `isExpanded` explicitly — without it the control stays
+ * `aria-expanded="false"` while the menu is open and assistive technology
+ * announces it as collapsed.
+ */
+export const ActionsMenuKeyboardAccessible: Story = {
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const user = userEvent.setup();
+    const body = within(document.body);
+
+    await canvas.findAllByText('AWS production account');
+    const toggle = canvas.getByRole('button', { name: 'Actions' });
+
+    await step('The toggle starts collapsed', async () => {
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    await step('Enter opens the menu and updates the state', async () => {
+      toggle.focus();
+      await user.keyboard('{Enter}');
+
+      await body.findByRole('menuitem', { name: /Delete/ });
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    await step('Escape closes it and restores the state', async () => {
+      await user.keyboard('{Escape}');
+
+      await waitFor(() =>
+        expect(toggle).toHaveAttribute('aria-expanded', 'false'),
+      );
     });
   },
 };

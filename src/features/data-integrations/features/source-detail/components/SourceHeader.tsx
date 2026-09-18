@@ -155,6 +155,10 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
         <MenuToggle
           ref={toggleRef}
           onClick={() => setIsActionsOpen(!isActionsOpen)}
+          // Dropdown does not push its open state into a render-prop toggle,
+          // and MenuToggle defaults isExpanded to false, so without this the
+          // control reports aria-expanded="false" while the menu is open.
+          isExpanded={isActionsOpen}
           variant="secondary"
           aria-label={intl.formatMessage(messages.actionsLabel)}
         >

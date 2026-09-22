@@ -3,6 +3,7 @@ import componentTypes from '@data-driven-forms/react-form-renderer/component-typ
 import validatorTypes from '@data-driven-forms/react-form-renderer/validator-types';
 import {
   CARD_SELECT_COMPONENT,
+  SOURCE_NAME_FIELD,
   SOURCE_TYPE_FIELD,
   WizardStepId,
   buildSourceTypeOptions,
@@ -10,6 +11,7 @@ import {
   createWizardInitialValues,
 } from './integrationWizardSchema';
 import type { SourceType } from '../../data/types/sources.types';
+import type { SourceTypeName } from '../../types';
 
 /**
  * A stub rather than a real `createIntl`: react-intl and its @formatjs
@@ -19,8 +21,14 @@ import type { SourceType } from '../../data/types/sources.types';
  * `defaultMessage` is enough — and keeps the expected strings readable.
  */
 const intl = {
-  formatMessage: (descriptor: MessageDescriptor) =>
-    String(descriptor.defaultMessage),
+  formatMessage: (
+    descriptor: MessageDescriptor,
+    values: Record<string, string> = {},
+  ) =>
+    String(descriptor.defaultMessage).replace(
+      /\{(\w+)\}/g,
+      (placeholder, key: string) => values[key] ?? placeholder,
+    ),
 } as unknown as IntlShape;
 
 const sourceTypes: SourceType[] = [
@@ -30,15 +38,21 @@ const sourceTypes: SourceType[] = [
   { id: '4', name: 'azure', product_name: 'Microsoft Azure' },
 ];
 
-/** Pulls the wizard's single step out of the schema. */
-const firstStep = (types: SourceType[] = sourceTypes) => {
-  const [wizard] = createIntegrationWizardSchema({
-    sourceTypes: types,
-    intl,
-  }).fields;
+/** Pulls the wizard field out of the schema. */
+const wizardField = (
+  types: SourceType[] = sourceTypes,
+  selectedType?: SourceTypeName,
+) =>
+  createIntegrationWizardSchema({ sourceTypes: types, intl, selectedType })
+    .fields[0];
 
-  return wizard.fields[0];
-};
+/** Pulls the source type step out of the schema. */
+const firstStep = (types: SourceType[] = sourceTypes) =>
+  wizardField(types).fields[0];
+
+/** Pulls the naming step out of the schema. */
+const nameStep = (types: SourceType[] = sourceTypes) =>
+  wizardField(types).fields[1];
 
 describe('buildSourceTypeOptions', () => {
   it('lists the offered providers in dropdown order', () => {
@@ -120,14 +134,52 @@ describe('createIntegrationWizardSchema', () => {
     });
   });
 
-  it('implements only the source type step', () => {
-    const [wizard] = createIntegrationWizardSchema({
-      sourceTypes,
-      intl,
-    }).fields;
+  it('implements the source type and naming steps, in that order', () => {
+    expect(
+      wizardField().fields.map((step: { name: string }) => step.name),
+    ).toEqual([WizardStepId.SourceTypeSelection, WizardStepId.NameIntegration]);
+  });
 
-    expect(wizard.fields).toHaveLength(1);
-    expect(wizard.fields[0].name).toBe(WizardStepId.SourceTypeSelection);
+  it('sends the source type step on to naming', () => {
+    expect(firstStep().nextStep).toBe(WizardStepId.NameIntegration);
+    // Naming is the last step, which is what makes its primary button submit.
+    expect(nameStep().nextStep).toBeUndefined();
+  });
+
+  it('starts on naming when the provider is already chosen', () => {
+    expect(wizardField(sourceTypes, 'amazon').initialState).toEqual({
+      activeStep: WizardStepId.NameIntegration,
+      activeStepIndex: 1,
+      maxStepIndex: 1,
+      prevSteps: [WizardStepId.SourceTypeSelection],
+    });
+  });
+
+  it('starts on the source type step when no provider was chosen', () => {
+    expect(wizardField().initialState).toBeUndefined();
+  });
+
+  it('requires a name, and describes the provider it is for', () => {
+    const [firstDescription] = nameStep().fields;
+
+    expect(firstDescription.condition).toEqual({
+      when: SOURCE_TYPE_FIELD,
+      is: 'openshift',
+    });
+    expect(firstDescription.label).toBe(
+      'Enter a name for your OpenShift Container Platform integration.',
+    );
+
+    const nameField = nameStep().fields[sourceTypes.length];
+
+    expect(nameField.name).toBe(SOURCE_NAME_FIELD);
+    expect(nameField.isRequired).toBe(true);
+    expect(nameField.validate).toEqual([
+      {
+        type: validatorTypes.REQUIRED,
+        message: 'Enter a name for your integration.',
+      },
+    ]);
   });
 
   it('renders the provider choice as a required card select', () => {

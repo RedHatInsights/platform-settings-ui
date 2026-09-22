@@ -17,6 +17,7 @@ import type { SourceType } from '../../data/types/sources.types';
  */
 export enum WizardStepId {
   SourceTypeSelection = 'source-type-selection',
+  NameIntegration = 'name-integration',
   AuthTypeSelection = 'auth-type-selection',
   AuthCredentials = 'auth-credentials',
   EndpointConfiguration = 'endpoint-configuration',
@@ -29,6 +30,9 @@ export enum WizardStepId {
  * auth schemas that stories 2-4 port over keep working unchanged.
  */
 export const SOURCE_TYPE_FIELD = 'source_type';
+
+/** Field name for the integration's display name, likewise from `sources-ui`. */
+export const SOURCE_NAME_FIELD = 'source.name';
 
 /** Custom component key registered in `IntegrationsFormRenderer`'s mapper. */
 export const CARD_SELECT_COMPONENT = 'card-select';
@@ -96,6 +100,11 @@ export interface IntegrationWizardSchemaOptions {
   /** The provider catalogue, as returned by `useSourceTypes()`. */
   sourceTypes: SourceType[];
   intl: IntlShape;
+  /**
+   * Provider the wizard was opened with, if any. Its only effect on the schema
+   * is where the wizard starts — see {@link createIntegrationWizardSchema}.
+   */
+  selectedType?: SourceTypeName | null;
 }
 
 /**
@@ -116,10 +125,16 @@ export function createWizardInitialValues(
  *
  * Pure: everything it needs is an argument, so the shape can be asserted in a
  * unit test and rendered in Storybook from fixtures.
+ *
+ * Opening with a provider already chosen skips straight to naming. The user
+ * answered step one in the dropdown, so showing it again just to have them
+ * press Next would be asking twice; step one stays in the nav and Back returns
+ * to it, which is what makes the choice reviewable rather than hidden.
  */
 export function createIntegrationWizardSchema({
   sourceTypes,
   intl,
+  selectedType,
 }: IntegrationWizardSchemaOptions): LegacySchemaType {
   return {
     fields: [
@@ -137,10 +152,10 @@ export function createIntegrationWizardSchema({
         // that inner node the same accessible name as the modal around it.
         'aria-labelledby': WIZARD_TITLE_ID,
         buttonLabels: {
-          // Labelled "Next" rather than "Add": the source type step is the only
-          // step that exists today, so data-driven-forms renders the submit
-          // button as the primary action. Stories 2-4 append the auth steps,
-          // at which point this becomes a genuine submit and reverts to "Add".
+          // Labelled "Next" rather than "Add": naming is the last step that
+          // exists today, so data-driven-forms renders the submit button as
+          // its primary action. The application and review steps turn this
+          // into a genuine submit, at which point it reverts to "Add".
           submit: intl.formatMessage(messages.wizardNext),
           next: intl.formatMessage(messages.wizardNext),
           back: intl.formatMessage(messages.wizardBack),
@@ -152,7 +167,21 @@ export function createIntegrationWizardSchema({
          * stories 2-4 add them, instead of shipping stale answers.
          */
         crossroads: [SOURCE_TYPE_FIELD],
-        fields: [sourceTypeStep(sourceTypes, intl)],
+        initialState: selectedType
+          ? {
+              activeStep: WizardStepId.NameIntegration,
+              activeStepIndex: 1,
+              maxStepIndex: 1,
+              // Listing step one as already visited is what leaves Back and
+              // its nav link enabled; without it the user would be stranded
+              // on step two with no way to change provider.
+              prevSteps: [WizardStepId.SourceTypeSelection],
+            }
+          : undefined,
+        fields: [
+          sourceTypeStep(sourceTypes, intl),
+          nameIntegrationStep(sourceTypes, intl),
+        ],
       },
     ],
   };
@@ -162,9 +191,9 @@ function sourceTypeStep(sourceTypes: SourceType[], intl: IntlShape) {
   return {
     name: WizardStepId.SourceTypeSelection,
     title: intl.formatMessage(messages.wizardSourceTypeStepTitle),
-    // No `nextStep`: this is the last step until the auth stories land, which
-    // is what makes the primary button the submit button. Those stories add a
-    // resolver here that branches on `source_type`.
+    // A plain string for now. The auth stories replace it with a resolver that
+    // branches on `source_type`, which is why `crossroads` is already wired.
+    nextStep: WizardStepId.NameIntegration,
     fields: [
       {
         component: componentTypes.PLAIN_TEXT,
@@ -181,6 +210,48 @@ function sourceTypeStep(sourceTypes: SourceType[], intl: IntlShape) {
           {
             type: validatorTypes.REQUIRED,
             message: intl.formatMessage(messages.wizardSourceTypeRequired),
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * The naming step.
+ *
+ * Its description names the provider, so there is one `condition`-gated line
+ * per option rather than a single line built from the current value: plain
+ * text is not a field, so it cannot subscribe to `source_type` and re-render
+ * when the user goes back and picks something else. `condition` is evaluated
+ * by the renderer against live form state, which gets the same result without
+ * a custom component.
+ */
+function nameIntegrationStep(sourceTypes: SourceType[], intl: IntlShape) {
+  return {
+    name: WizardStepId.NameIntegration,
+    title: intl.formatMessage(messages.wizardNameStepTitle),
+    // No `nextStep`: naming is the last step until the application and review
+    // steps land, which is what makes the primary button the submit button.
+    fields: [
+      ...buildSourceTypeOptions(sourceTypes, intl).map(({ value, label }) => ({
+        component: componentTypes.PLAIN_TEXT,
+        name: `name-step-description-${value}`,
+        condition: { when: SOURCE_TYPE_FIELD, is: value },
+        label: intl.formatMessage(messages.wizardNameStepDescription, {
+          provider: label,
+        }),
+      })),
+      {
+        component: componentTypes.TEXT_FIELD,
+        name: SOURCE_NAME_FIELD,
+        label: intl.formatMessage(messages.wizardNameLabel),
+        placeholder: intl.formatMessage(messages.wizardNamePlaceholder),
+        isRequired: true,
+        validate: [
+          {
+            type: validatorTypes.REQUIRED,
+            message: intl.formatMessage(messages.wizardNameRequired),
           },
         ],
       },

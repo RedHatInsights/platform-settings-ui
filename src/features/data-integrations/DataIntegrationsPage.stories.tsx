@@ -272,7 +272,7 @@ export const DeepLinkedDetailFallsBackToPlainList: Story = {
 
 /**
  * The dropdown lists the four supported providers in two groups and opens the
- * (placeholder) creation wizard for whichever one is picked.
+ * creation wizard for whichever one is picked.
  */
 export const AddIntegrationDropdown: Story = {
   play: async ({ canvasElement, step }) => {
@@ -314,9 +314,14 @@ export const AddIntegrationDropdown: Story = {
 
       // The wizard replaces a loading modal once the provider catalogue
       // answers, so the dialog to assert on is not the first one rendered.
+      // Picking from the dropdown answers the provider step, so it opens on
+      // naming.
+      await body.findByRole('heading', { name: 'Name integration' });
       expect(
-        await body.findByRole('radio', { name: 'Amazon Web Services' }),
-      ).toBeChecked();
+        body.getByText(
+          'Enter a name for your Amazon Web Services integration.',
+        ),
+      ).toBeInTheDocument();
     });
 
     await step('Closing the wizard returns to the page', async () => {

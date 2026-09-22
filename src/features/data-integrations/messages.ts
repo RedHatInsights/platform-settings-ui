@@ -168,6 +168,33 @@ export default defineMessages({
     defaultMessage: 'Select an integration type to continue.',
   },
 
+  // Name integration step
+  wizardNameStepTitle: {
+    id: 'dataIntegrations.wizard.name.stepTitle',
+    description: 'Title of the integration naming wizard step',
+    defaultMessage: 'Name integration',
+  },
+  wizardNameStepDescription: {
+    id: 'dataIntegrations.wizard.name.stepDescription',
+    description: 'Introductory text above the integration name field',
+    defaultMessage: 'Enter a name for your {provider} integration.',
+  },
+  wizardNameLabel: {
+    id: 'dataIntegrations.wizard.name.label',
+    description: 'Label for the integration name field',
+    defaultMessage: 'Integration name',
+  },
+  wizardNamePlaceholder: {
+    id: 'dataIntegrations.wizard.name.placeholder',
+    description: 'Placeholder shown in the empty integration name field',
+    defaultMessage: 'integration_name',
+  },
+  wizardNameRequired: {
+    id: 'dataIntegrations.wizard.name.required',
+    description: 'Validation message when the integration name is empty',
+    defaultMessage: 'Enter a name for your integration.',
+  },
+
   // Wizard loading and error states
   wizardLoading: {
     id: 'dataIntegrations.wizard.loading',

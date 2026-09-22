@@ -67,8 +67,9 @@ export const Default: Story = {
 };
 
 /**
- * Each provider opens the wizard with that provider's card already selected,
- * confirming the chosen source type is handed through rather than hardcoded.
+ * Each provider opens the wizard straight on the naming step, described for
+ * that provider — which is what confirms the chosen source type is handed
+ * through rather than hardcoded.
  */
 export const SelectsEachProvider: Story = {
   play: async ({ canvasElement, step }) => {
@@ -94,9 +95,10 @@ export const SelectsEachProvider: Story = {
 
         // The wizard replaces a loading modal once the provider catalogue
         // answers, so the dialog to assert on is not the first one rendered.
+        await body.findByRole('heading', { name: 'Name integration' });
         expect(
-          await body.findByRole('radio', { name: provider }),
-        ).toBeChecked();
+          body.getByText(`Enter a name for your ${provider} integration.`),
+        ).toBeInTheDocument();
 
         // Cancelling always confirms first — see AddIntegrationWizard.
         await user.click(body.getByRole('button', { name: 'Cancel' }));

@@ -60,9 +60,13 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
   const schema = useMemo(
     () =>
       sourceTypes
-        ? createIntegrationWizardSchema({ sourceTypes, intl })
+        ? createIntegrationWizardSchema({
+            sourceTypes,
+            intl,
+            selectedType: sourceType,
+          })
         : undefined,
-    [sourceTypes, intl],
+    [sourceTypes, intl, sourceType],
   );
 
   const initialValues = useMemo(

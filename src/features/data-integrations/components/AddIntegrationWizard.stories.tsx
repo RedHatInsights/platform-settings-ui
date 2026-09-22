@@ -6,15 +6,16 @@ import {
   createPendingSourceTypesHandler,
   createSourcesHandlers,
 } from '../data/mocks/sources';
-import { waitForModal } from '../../../shared/interactionHelpers';
+import { clearAndType, waitForModal } from '../../../shared/interactionHelpers';
 
 /**
  * The Add Data Integration wizard, built as a data-driven-forms schema — see
  * `wizard/integrationWizardSchema.ts`.
  *
- * Only the source type step exists so far, so the primary button is the
- * wizard's submit button labelled "Next"; the auth, application and review
- * steps arrive in the follow-up stories and turn it into real navigation.
+ * Two steps exist so far — choose a provider, then name the integration — so
+ * the primary button on the naming step is the wizard's submit button, still
+ * labelled "Next". The application and review steps arrive in the follow-up
+ * stories and turn it into a real submit.
  *
  * The cards are a radio group, which is why every assertion here reaches for
  * them by `role: 'radio'` — doing so also proves each card carries the
@@ -94,12 +95,46 @@ export const Default: Story = {
         expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
       );
     });
+
+    await step(
+      'Next moves on to naming, which names the provider',
+      async () => {
+        await user.click(modal.getByRole('button', { name: 'Next' }));
+
+        await modal.findByRole('heading', { name: 'Name integration' });
+        expect(
+          modal.getByText(
+            'Enter a name for your Amazon Web Services integration.',
+          ),
+        ).toBeInTheDocument();
+        expect(
+          modal.getByRole('textbox', { name: 'Integration name' }),
+        ).toHaveValue('');
+      },
+    );
+
+    await step('Naming the integration enables Next again', async () => {
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
+      );
+
+      await clearAndType(
+        user,
+        () => modal.getByRole('textbox', { name: 'Integration name' }),
+        'aws-production',
+      );
+
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+      );
+    });
   },
 };
 
 /**
- * Opened from the dropdown with a provider already picked. The card is selected
- * through `initialValues`, so the wizard starts valid.
+ * Opened from a dropdown with the provider already picked, which is how every
+ * entry point in the app opens it. The provider step is answered, so the
+ * wizard starts on naming rather than asking the same question twice.
  */
 export const PreSelected: Story = {
   args: { sourceType: 'azure' },
@@ -107,12 +142,22 @@ export const PreSelected: Story = {
     const user = userEvent.setup();
     const modal = within(document.body);
 
-    await step('The provider from the dropdown is selected', async () => {
+    await step('It opens on the naming step, not the first', async () => {
+      await modal.findByRole('heading', { name: 'Name integration' });
+
+      expect(
+        modal.getByText('Enter a name for your Microsoft Azure integration.'),
+      ).toBeInTheDocument();
+      expect(modal.queryByRole('radio')).not.toBeInTheDocument();
+    });
+
+    await step('Back returns to the provider step, choice intact', async () => {
+      await user.click(modal.getByRole('button', { name: 'Back' }));
+
       const azure = await modal.findByRole('radio', {
         name: 'Microsoft Azure',
       });
       expect(azure).toBeChecked();
-      expect(modal.getByRole('button', { name: 'Next' })).toBeEnabled();
     });
 
     await step('A different provider can be chosen instead', async () => {
@@ -141,7 +186,11 @@ export const CancelAsksForConfirmation: Story = {
     // The confirmation is a second dialog stacked over the wizard, so both live
     // in the body at once — query from there rather than from either one.
     const body = within(document.body);
-    await body.findByRole('radio', { name: 'Amazon Web Services' });
+    const nameField = () =>
+      body.getByRole('textbox', { name: 'Integration name' });
+
+    await body.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(user, nameField, 'aws-production');
 
     await step('Cancel raises the confirmation', async () => {
       await user.click(body.getByRole('button', { name: 'Cancel' }));
@@ -149,7 +198,7 @@ export const CancelAsksForConfirmation: Story = {
       expect(args.onClose).not.toHaveBeenCalled();
     });
 
-    await step('Staying returns to the wizard, selection intact', async () => {
+    await step('Staying returns to the wizard, answers intact', async () => {
       await user.click(body.getByRole('button', { name: 'Stay' }));
       await waitFor(() =>
         expect(
@@ -157,9 +206,7 @@ export const CancelAsksForConfirmation: Story = {
         ).not.toBeInTheDocument(),
       );
 
-      expect(
-        body.getByRole('radio', { name: 'Amazon Web Services' }),
-      ).toBeChecked();
+      expect(nameField()).toHaveValue('aws-production');
     });
 
     await step('Exiting closes the wizard', async () => {

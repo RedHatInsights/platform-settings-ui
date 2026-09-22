@@ -258,3 +258,35 @@ export const SortByType: Story = {
     });
   },
 };
+
+/**
+ * The toolbar carries its own "Add integration" dropdown, as primary: the page
+ * header offers the same thing, but it scrolls out of reach on a long list.
+ */
+export const AddIntegrationFromToolbar: Story = {
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    // The dropdown menu and the wizard are both appended to the body.
+    const body = within(document.body);
+    const user = userEvent.setup();
+
+    await step('The toolbar offers the providers', async () => {
+      await user.click(
+        await canvas.findByRole('button', { name: 'Add integration' }),
+      );
+
+      await expect(
+        body.findByRole('menuitem', { name: 'OpenShift Container Platform' }),
+      ).resolves.toBeInTheDocument();
+    });
+
+    await step('Picking one opens the wizard on naming', async () => {
+      await user.click(body.getByRole('menuitem', { name: 'Microsoft Azure' }));
+
+      await body.findByRole('heading', { name: 'Name integration' });
+      await expect(
+        body.getByText('Enter a name for your Microsoft Azure integration.'),
+      ).toBeInTheDocument();
+    });
+  },
+};

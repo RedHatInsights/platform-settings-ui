@@ -22,11 +22,24 @@ export interface AddDataIntegrationDropdownProps {
    * widgets or other entry points via query parameters.
    */
   initialSourceType?: SourceTypeName | null;
+  /**
+   * Toggle styling. The page header offers this alongside other header
+   * actions, so it sits back as `secondary`; the table toolbar has it as the
+   * only call to action, where the design makes it `primary`.
+   */
+  variant?: 'primary' | 'secondary';
+  /**
+   * Toggle text. Defaults to "Add data integration"; the table toolbar uses
+   * the shorter "Add integration" because the page already says what kind.
+   */
+  toggleLabel?: string;
 }
 
 const AddDataIntegrationDropdown: React.FC<AddDataIntegrationDropdownProps> = ({
   isDisabled = false,
   initialSourceType = null,
+  variant = 'secondary',
+  toggleLabel,
 }) => {
   const intl = useIntl();
   const [isOpen, setIsOpen] = useState(false);
@@ -68,9 +81,9 @@ const AddDataIntegrationDropdown: React.FC<AddDataIntegrationDropdownProps> = ({
             onClick={() => setIsOpen(!isOpen)}
             isExpanded={isOpen}
             isDisabled={isDisabled}
-            variant="secondary"
+            variant={variant}
           >
-            {intl.formatMessage(messages.addDataIntegration)}
+            {toggleLabel ?? intl.formatMessage(messages.addDataIntegration)}
           </MenuToggle>
         )}
       >

@@ -36,7 +36,7 @@ const SourceTypesHarness: React.FC = () => {
 };
 
 const meta: Meta<typeof SourceTypesHarness> = {
-  title: 'features/data-integrations/data/useSourceTypes',
+  title: 'Features/DataIntegrations/Data/useSourceTypes',
   component: SourceTypesHarness,
   parameters: {
     msw: { handlers: createSourcesHandlers() },

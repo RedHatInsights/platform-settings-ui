@@ -12,7 +12,7 @@ import { createErrorSourcesHandler } from '../../../data/mocks/sources';
 const BASENAME = '/settings/platform-settings';
 
 const meta: Meta<typeof DataIntegrationsWidget> = {
-  title: 'Features/Data Integrations Widget/DataIntegrationsWidget',
+  title: 'Features/DataIntegrations/DataIntegrationsWidget',
   component: DataIntegrationsWidget,
   decorators: [
     (Story) => (

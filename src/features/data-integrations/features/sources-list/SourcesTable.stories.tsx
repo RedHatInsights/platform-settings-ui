@@ -28,7 +28,7 @@ const SourcesTableWithProviders: React.FC = () => {
 };
 
 const meta: Meta<typeof SourcesTableWithProviders> = {
-  title: 'features/data-integrations/SourcesTable',
+  title: 'Features/DataIntegrations/SourcesTable',
   component: SourcesTableWithProviders,
   parameters: {
     msw: { handlers: createSourcesHandlers() },

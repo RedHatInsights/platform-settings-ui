@@ -13,7 +13,6 @@ import {
   Flex,
   FlexItem,
 } from '@patternfly/react-core/dist/dynamic/layouts/Flex';
-import { Title } from '@patternfly/react-core/dist/dynamic/components/Title';
 import {
   EmptyState,
   EmptyStateBody,
@@ -79,6 +78,33 @@ const SourceDetailPage: React.FC = () => {
    */
   const backToList = () => navigate(listSearchFrom(state));
 
+  /**
+   * Both failure modes — source types unavailable and the source itself
+   * missing — render the same empty state, so they share one renderer.
+   *
+   * `status` and `icon` let PatternFly own the icon's size, colour, and
+   * spacing; styling them here would pin us to the current PF theme tokens.
+   */
+  const renderError = (title: string, body: string) => (
+    <Main>
+      <Bullseye>
+        <EmptyState
+          status="danger"
+          icon={ExclamationCircleIcon}
+          titleText={title}
+          headingLevel="h1"
+        >
+          <EmptyStateBody>{body}</EmptyStateBody>
+          <EmptyStateFooter>
+            <Button variant="primary" onClick={backToList}>
+              {intl.formatMessage(messages.backToListLink)}
+            </Button>
+          </EmptyStateFooter>
+        </EmptyState>
+      </Bullseye>
+    </Main>
+  );
+
   // Data fetching
   const { data: source, isLoading, isError, error } = useSource(sourceId ?? '');
   const {
@@ -113,32 +139,9 @@ const SourceDetailPage: React.FC = () => {
 
   // Error state - source types failed to load
   if (isSourceTypesError) {
-    return (
-      <Main>
-        <Bullseye>
-          <EmptyState>
-            <ExclamationCircleIcon
-              style={{
-                fontSize: '4rem',
-                color:
-                  'var(--pf-t--global--icon--color--status--danger--default)',
-                marginBottom: 'var(--pf-t--global--spacer--md)',
-              }}
-            />
-            <Title headingLevel="h1" size="lg">
-              {intl.formatMessage(messages.loadFailedTitle)}
-            </Title>
-            <EmptyStateBody>
-              {intl.formatMessage(messages.loadFailedMessage)}
-            </EmptyStateBody>
-            <EmptyStateFooter>
-              <Button variant="primary" onClick={backToList}>
-                {intl.formatMessage(messages.backToListLink)}
-              </Button>
-            </EmptyStateFooter>
-          </EmptyState>
-        </Bullseye>
-      </Main>
+    return renderError(
+      intl.formatMessage(messages.loadFailedTitle),
+      intl.formatMessage(messages.loadFailedMessage),
     );
   }
 
@@ -146,37 +149,15 @@ const SourceDetailPage: React.FC = () => {
   if (isError) {
     const is404 = error instanceof SourceNotFoundError;
 
-    return (
-      <Main>
-        <Bullseye>
-          <EmptyState>
-            <ExclamationCircleIcon
-              style={{
-                fontSize: '4rem',
-                color:
-                  'var(--pf-t--global--icon--color--status--danger--default)',
-                marginBottom: 'var(--pf-t--global--spacer--md)',
-              }}
-            />
-            <Title headingLevel="h1" size="lg">
-              {is404
-                ? intl.formatMessage(messages.sourceNotFoundTitle)
-                : intl.formatMessage(messages.loadFailedTitle)}
-            </Title>
-            <EmptyStateBody>
-              {is404
-                ? intl.formatMessage(messages.sourceNotFoundMessage)
-                : intl.formatMessage(messages.loadFailedMessage)}
-            </EmptyStateBody>
-            <EmptyStateFooter>
-              <Button variant="primary" onClick={backToList}>
-                {intl.formatMessage(messages.backToListLink)}
-              </Button>
-            </EmptyStateFooter>
-          </EmptyState>
-        </Bullseye>
-      </Main>
-    );
+    return is404
+      ? renderError(
+          intl.formatMessage(messages.sourceNotFoundTitle),
+          intl.formatMessage(messages.sourceNotFoundMessage),
+        )
+      : renderError(
+          intl.formatMessage(messages.loadFailedTitle),
+          intl.formatMessage(messages.loadFailedMessage),
+        );
   }
 
   // Should not happen (isLoading handles this), but TypeScript guard

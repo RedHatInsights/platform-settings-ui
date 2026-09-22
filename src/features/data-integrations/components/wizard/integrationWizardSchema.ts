@@ -83,13 +83,17 @@ export interface SourceTypeOption {
  * so the cards read identically to the dropdown that opened the wizard, and so
  * the names are translatable.
  */
+function buildSourceTypeValues(sourceTypes: SourceType[]): SourceTypeName[] {
+  return OFFERED_PROVIDERS.filter((provider) =>
+    sourceTypes.some((sourceType) => sourceType.name === provider),
+  );
+}
+
 export function buildSourceTypeOptions(
   sourceTypes: SourceType[],
   intl: IntlShape,
 ): SourceTypeOption[] {
-  return OFFERED_PROVIDERS.filter((provider) =>
-    sourceTypes.some((sourceType) => sourceType.name === provider),
-  ).map((provider) => ({
+  return buildSourceTypeValues(sourceTypes).map((provider) => ({
     value: provider,
     label: intl.formatMessage(PROVIDER_LABELS[provider]),
     iconUrl: getSourceTypeIcon(provider),
@@ -108,11 +112,36 @@ export interface IntegrationWizardSchemaOptions {
 }
 
 /**
+ * Narrows a requested pre-selection to one the catalogue actually offers.
+ *
+ * The provider can arrive from a caller that has not seen the catalogue — a
+ * deep link, or a dropdown rendered from a stale one. Seeding the field with a
+ * provider that has no card would satisfy the REQUIRED validator while leaving
+ * step one showing nothing selected, so the wizard would skip past a step the
+ * user never answered and submit a provider it cannot offer.
+ */
+export function resolveSelectedType(
+  sourceTypes: SourceType[],
+  selectedType?: SourceTypeName | null,
+): SourceTypeName | undefined {
+  if (!selectedType) {
+    return undefined;
+  }
+
+  const isOffered = buildSourceTypeValues(sourceTypes).includes(selectedType);
+
+  return isOffered ? selectedType : undefined;
+}
+
+/**
  * Pre-selects the card for the provider the wizard was opened with.
  *
  * Handed to `FormRenderer`'s `initialValues` so final-form seeds the field —
  * the card component never reads the prop, which is what keeps the selection
  * in one place once the user starts clicking.
+ *
+ * Pass a provider already narrowed by {@link resolveSelectedType}; this only
+ * shapes the value it is given.
  */
 export function createWizardInitialValues(
   selectedType?: SourceTypeName | null,
@@ -136,6 +165,10 @@ export function createIntegrationWizardSchema({
   intl,
   selectedType,
 }: IntegrationWizardSchemaOptions): LegacySchemaType {
+  // A provider with no card cannot start the wizard on step two: there would
+  // be nothing selected to go Back to.
+  const startingType = resolveSelectedType(sourceTypes, selectedType);
+
   return {
     fields: [
       {
@@ -167,7 +200,7 @@ export function createIntegrationWizardSchema({
          * stories 2-4 add them, instead of shipping stale answers.
          */
         crossroads: [SOURCE_TYPE_FIELD],
-        initialState: selectedType
+        initialState: startingType
           ? {
               activeStep: WizardStepId.NameIntegration,
               activeStepIndex: 1,

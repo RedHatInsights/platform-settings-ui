@@ -9,6 +9,7 @@ import {
   buildSourceTypeOptions,
   createIntegrationWizardSchema,
   createWizardInitialValues,
+  resolveSelectedType,
 } from './integrationWizardSchema';
 import type { SourceType } from '../../data/types/sources.types';
 import type { SourceTypeName } from '../../types';
@@ -159,6 +160,14 @@ describe('createIntegrationWizardSchema', () => {
     expect(wizardField().initialState).toBeUndefined();
   });
 
+  it('starts on the source type step when the chosen provider has no card', () => {
+    const withoutAzure = sourceTypes.filter(({ name }) => name !== 'azure');
+
+    // Skipping to naming would strand the user: Back would return to a step
+    // with nothing selected, and there is no card to change the answer with.
+    expect(wizardField(withoutAzure, 'azure').initialState).toBeUndefined();
+  });
+
   it('requires a name, and describes the provider it is for', () => {
     const [firstDescription] = nameStep().fields;
 
@@ -198,6 +207,34 @@ describe('createIntegrationWizardSchema', () => {
 
   it('offers a card per provider in the catalogue', () => {
     expect(firstStep().fields[1].options).toHaveLength(sourceTypes.length);
+  });
+});
+
+describe('resolveSelectedType', () => {
+  it('keeps a provider the catalogue offers', () => {
+    expect(resolveSelectedType(sourceTypes, 'azure')).toBe('azure');
+  });
+
+  it('drops a provider the catalogue does not offer', () => {
+    const withoutAzure = sourceTypes.filter(({ name }) => name !== 'azure');
+
+    expect(resolveSelectedType(withoutAzure, 'azure')).toBeUndefined();
+  });
+
+  it('drops a provider we do not offer cards for at all', () => {
+    const withExtra = [
+      ...sourceTypes,
+      { id: '5', name: 'ansible-tower', product_name: 'Ansible Tower' },
+    ] as SourceType[];
+
+    expect(
+      resolveSelectedType(withExtra, 'ansible-tower' as SourceTypeName),
+    ).toBeUndefined();
+  });
+
+  it('resolves to nothing when no provider was given', () => {
+    expect(resolveSelectedType(sourceTypes, null)).toBeUndefined();
+    expect(resolveSelectedType(sourceTypes)).toBeUndefined();
   });
 });
 

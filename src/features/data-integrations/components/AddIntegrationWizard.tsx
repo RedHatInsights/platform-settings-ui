@@ -12,8 +12,10 @@ import { Spinner } from '@patternfly/react-core/dist/dynamic/components/Spinner'
 import { Bullseye } from '@patternfly/react-core/dist/dynamic/layouts/Bullseye';
 import IntegrationsFormRenderer from './wizard/IntegrationsFormRenderer';
 import {
+  buildSourceTypeOptions,
   createIntegrationWizardSchema,
   createWizardInitialValues,
+  resolveSelectedType,
 } from './wizard/integrationWizardSchema';
 import { useSourceTypes } from '../data/queries/useSourceTypes';
 import messages from '../messages';
@@ -57,21 +59,37 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
    */
   const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
 
-  const schema = useMemo(
+  /**
+   * A catalogue that offers none of the providers we support is as unusable as
+   * a failed fetch: the wizard would open on a step with no cards and a Next
+   * that can never enable, since the card field is required.
+   */
+  const hasProviders = useMemo(
     () =>
       sourceTypes
+        ? buildSourceTypeOptions(sourceTypes, intl).length > 0
+        : false,
+    [sourceTypes, intl],
+  );
+
+  const schema = useMemo(
+    () =>
+      sourceTypes && hasProviders
         ? createIntegrationWizardSchema({
             sourceTypes,
             intl,
             selectedType: sourceType,
           })
         : undefined,
-    [sourceTypes, intl, sourceType],
+    [sourceTypes, hasProviders, intl, sourceType],
   );
 
   const initialValues = useMemo(
-    () => createWizardInitialValues(sourceType),
-    [sourceType],
+    () =>
+      createWizardInitialValues(
+        sourceTypes ? resolveSelectedType(sourceTypes, sourceType) : undefined,
+      ),
+    [sourceTypes, sourceType],
   );
 
   if (!isOpen) {
@@ -83,7 +101,11 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
     onClose();
   };
 
-  if (isLoading || isError || !schema) {
+  const isUnavailable = isError || (!isLoading && !schema);
+
+  // `!schema` is redundant with `isUnavailable` but narrows it for the render
+  // below, which cannot take `undefined`.
+  if (isLoading || isUnavailable || !schema) {
     /*
      * `onEscapePress` rather than `onClose`: PatternFly only renders the
      * header's ✕ when `onClose` is given, and it hardcodes that button's
@@ -100,12 +122,12 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
       >
         <ModalHeader
           title={intl.formatMessage(
-            isError ? messages.wizardErrorTitle : messages.wizardTitle,
+            isUnavailable ? messages.wizardErrorTitle : messages.wizardTitle,
           )}
           labelId="add-data-integration-status-title"
         />
         <ModalBody>
-          {isError ? (
+          {isUnavailable ? (
             intl.formatMessage(messages.wizardErrorBody)
           ) : (
             <Bullseye>

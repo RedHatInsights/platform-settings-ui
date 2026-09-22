@@ -4,6 +4,7 @@ import AddIntegrationWizard from './AddIntegrationWizard';
 import {
   createFailingSourceTypesHandler,
   createPendingSourceTypesHandler,
+  createSourceTypesSubsetHandler,
   createSourcesHandlers,
 } from '../data/mocks/sources';
 import { clearAndType, waitForModal } from '../../../shared/interactionHelpers';
@@ -171,6 +172,82 @@ export const PreSelected: Story = {
       expect(
         modal.getByRole('radio', { name: 'Microsoft Azure' }),
       ).not.toBeChecked();
+    });
+  },
+};
+
+/**
+ * Opened for a provider the catalogue turns out not to offer — a stale
+ * dropdown, or a deep link. The pre-selection is dropped rather than carried
+ * as an answer no card can show, so the wizard asks the question instead of
+ * skipping it.
+ */
+export const PreSelectedUnavailable: Story = {
+  args: { sourceType: 'azure' },
+  parameters: {
+    msw: {
+      handlers: createSourceTypesSubsetHandler([
+        'openshift',
+        'amazon',
+        'google',
+      ]),
+    },
+  },
+  play: async ({ step }) => {
+    const modal = within(document.body);
+
+    await step(
+      'It opens on the provider step with nothing chosen',
+      async () => {
+        await modal.findByRole('radio', { name: 'Amazon Web Services' });
+
+        expect(
+          modal.queryByRole('radio', { name: 'Microsoft Azure' }),
+        ).not.toBeInTheDocument();
+        expect(
+          modal.queryByRole('heading', { name: 'Name integration' }),
+        ).not.toBeInTheDocument();
+
+        for (const radio of modal.getAllByRole('radio')) {
+          expect(radio).not.toBeChecked();
+        }
+      },
+    );
+
+    await step(
+      'The unanswered step still gates the primary button',
+      async () => {
+        // Waited for: the cards mount before final-form has run the validator,
+        // so Next is briefly enabled on the first paint.
+        await waitFor(() =>
+          expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
+        );
+      },
+    );
+  },
+};
+
+/**
+ * A catalogue that offers none of the providers we have cards for. There is
+ * nothing to choose and the required card field could never be satisfied, so
+ * this is treated the same as a catalogue that failed to load.
+ */
+export const NoProvidersOffered: Story = {
+  parameters: {
+    msw: { handlers: createSourceTypesSubsetHandler([]) },
+  },
+  play: async ({ args, step }) => {
+    const user = userEvent.setup();
+    const modal = await waitForModal();
+
+    await step('The wizard reports itself unavailable', async () => {
+      await modal.findByText('Unable to load integration types');
+      expect(modal.queryByRole('radio')).not.toBeInTheDocument();
+    });
+
+    await step('Closing is the only action offered', async () => {
+      await user.click(modal.getByRole('button', { name: 'Close' }));
+      expect(args.onClose).toHaveBeenCalledTimes(1);
     });
   },
 };

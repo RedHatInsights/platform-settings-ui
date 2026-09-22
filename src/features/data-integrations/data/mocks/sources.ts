@@ -178,6 +178,29 @@ export function createFailingSourceTypesHandler(baseUrl = SOURCES_API_BASE) {
   ];
 }
 
+/**
+ * Serves only the named providers. Covers the catalogues that are narrower
+ * than the caller expects: one missing the provider a consumer was opened
+ * with, or — passed `[]` — one offering nothing we have a card for.
+ */
+export function createSourceTypesSubsetHandler(
+  names: string[],
+  baseUrl = SOURCES_API_BASE,
+) {
+  const data = seedSourceTypes.filter(({ name }) => names.includes(name));
+
+  return [
+    http.get(`${baseUrl}/source_types`, () => {
+      const response: PageSourceType = {
+        data,
+        links: {},
+        meta: { count: data.length },
+      };
+      return HttpResponse.json(response);
+    }),
+  ];
+}
+
 export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
   return [
     http.post(`${baseUrl}/graphql`, async ({ request }) => {

@@ -1,24 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { expect, userEvent, within } from 'storybook/test';
-import {
-  waitForModal,
-  waitForModalClose,
-} from '../../../shared/interactionHelpers';
+import { waitForModalClose } from '../../../shared/interactionHelpers';
 import AddDataIntegrationDropdown from './AddDataIntegrationDropdown';
+import { createSourcesHandlers } from '../data/mocks/sources';
 
 /**
  * The "Add data integration" split of providers, adapted from the
  * `IntegrationsDropdown` in sources-ui. Two differences: the items are
  * providers rather than categories, and there are exactly four of them.
  *
- * Picking one opens `AddIntegrationWizard`, which is a placeholder until the
- * creation wizard is rebuilt here. The `{ isOpen, sourceType, onClose }`
- * contract is deliberately stable so the real wizard can drop in without
- * touching this component.
+ * Picking one opens `AddIntegrationWizard` with that provider pre-selected.
+ * These stories only check the handoff — the wizard's own behaviour is covered
+ * in `AddIntegrationWizard.stories.tsx`.
  */
 const meta = {
   title: 'Features/DataIntegrations/AddDataIntegrationDropdown',
   component: AddDataIntegrationDropdown,
+  parameters: {
+    msw: { handlers: createSourcesHandlers() },
+  },
 } satisfies Meta<typeof AddDataIntegrationDropdown>;
 
 export default meta;
@@ -67,8 +67,8 @@ export const Default: Story = {
 };
 
 /**
- * Each provider opens the wizard naming that provider, confirming the selected
- * source type is handed through rather than hardcoded.
+ * Each provider opens the wizard with that provider's card already selected,
+ * confirming the chosen source type is handed through rather than hardcoded.
  */
 export const SelectsEachProvider: Story = {
   play: async ({ canvasElement, step }) => {
@@ -92,15 +92,15 @@ export const SelectsEachProvider: Story = {
         );
         await user.click(body.getByRole('menuitem', { name: provider }));
 
-        const modal = await waitForModal();
+        // The wizard replaces a loading modal once the provider catalogue
+        // answers, so the dialog to assert on is not the first one rendered.
         expect(
-          modal.getByText(
-            `The creation wizard for ${provider} is not available yet. It will be added in a follow-up release.`,
-          ),
-        ).toBeInTheDocument();
+          await body.findByRole('radio', { name: provider }),
+        ).toBeChecked();
 
-        const closeButtons = modal.getAllByRole('button', { name: /close/i });
-        await user.click(closeButtons[closeButtons.length - 1]);
+        // Cancelling always confirms first — see AddIntegrationWizard.
+        await user.click(body.getByRole('button', { name: 'Cancel' }));
+        await user.click(await body.findByRole('button', { name: 'Exit' }));
         await waitForModalClose();
       });
     }

@@ -26,6 +26,8 @@
     "verify": "npm-run-all build lint test"
   },
   "dependencies": {
+    "@data-driven-forms/pf4-component-mapper": "^4.2.0",
+    "@data-driven-forms/react-form-renderer": "^4.2.0",
     "@patternfly/patternfly": "^6.6.0",
     "@patternfly/react-component-groups": "^6.4.0",
     "@patternfly/react-core": "^6.4.3",
@@ -46,6 +48,7 @@
     "react-router-dom": "^6.30.3"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.29.7",
     "@playwright/test": "^1.59.1",
     "@redhat-cloud-services/eslint-config-redhat-cloud-services": "^3.1.1",
     "@redhat-cloud-services/frontend-components-config": "^6.10.0",

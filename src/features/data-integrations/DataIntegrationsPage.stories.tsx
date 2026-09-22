@@ -2,10 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { expect, userEvent, within } from 'storybook/test';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { StorybookMockProvider } from '@redhat-cloud-services/hcc-storybook-hub';
-import {
-  waitForModal,
-  waitForModalClose,
-} from '../../shared/interactionHelpers';
+import { waitForModalClose } from '../../shared/interactionHelpers';
 import DataIntegrationsPage from './DataIntegrationsPage';
 import MyDataIntegrationsTab from './components/MyDataIntegrationsTab';
 import SourceDetailPage from './features/source-detail/SourceDetailPage';
@@ -315,18 +312,16 @@ export const AddIntegrationDropdown: Story = {
         body.getByRole('menuitem', { name: 'Amazon Web Services' }),
       );
 
-      const modal = await waitForModal();
+      // The wizard replaces a loading modal once the provider catalogue
+      // answers, so the dialog to assert on is not the first one rendered.
       expect(
-        modal.getByText(
-          'The creation wizard for Amazon Web Services is not available yet. It will be added in a follow-up release.',
-        ),
-      ).toBeInTheDocument();
+        await body.findByRole('radio', { name: 'Amazon Web Services' }),
+      ).toBeChecked();
     });
 
     await step('Closing the wizard returns to the page', async () => {
-      const modal = await waitForModal();
-      const closeButtons = modal.getAllByRole('button', { name: /close/i });
-      await user.click(closeButtons[closeButtons.length - 1]);
+      await user.click(body.getByRole('button', { name: 'Cancel' }));
+      await user.click(await body.findByRole('button', { name: 'Exit' }));
       await waitForModalClose();
     });
   },

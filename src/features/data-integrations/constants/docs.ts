@@ -1,3 +1,5 @@
+import type { SourceTypeName } from '../types';
+
 /**
  * Documentation targets for the Data Integrations feature island.
  *
@@ -15,10 +17,14 @@ export const DOCS_URL =
  * These are section anchors rather than separate documents. An anchor that no
  * longer resolves degrades to the top of the guide rather than a 404, so a
  * docs restructure downgrades these from precise to merely correct.
+ *
+ * `satisfies` rather than a type annotation: it still fails the build if a new
+ * SourceTypeName arrives without a link here, but keeps the literal keys, so
+ * indexing by SourceTypeName yields string rather than string | undefined.
  */
-export const PROVIDER_DOCS_URLS: Record<string, string> = {
+export const PROVIDER_DOCS_URLS = {
   amazon: `${DOCS_URL}#adding-an-amazon-web-services-integration`,
   azure: `${DOCS_URL}#adding-a-microsoft-azure-integration`,
   google: `${DOCS_URL}#adding-a-google-cloud-integration`,
   openshift: `${DOCS_URL}#adding-an-openshift-container-platform-integration`,
-};
+} satisfies Record<SourceTypeName, string>;

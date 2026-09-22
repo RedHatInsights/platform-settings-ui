@@ -32,6 +32,7 @@ export const Default: Story = {
   args: { canWrite: true },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
+    const user = userEvent.setup();
 
     await step('Hero section renders', async () => {
       await expect(
@@ -82,7 +83,7 @@ export const Default: Story = {
     await step(
       'Add integration opens the wizard for that provider',
       async () => {
-        await userEvent.click(
+        await user.click(
           await canvas.findByRole('button', {
             name: 'Add Microsoft Azure integration',
           }),
@@ -102,6 +103,7 @@ export const NonAdmin: Story = {
   args: { canWrite: false },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
+    const user = userEvent.setup();
 
     await step('Add integration is disabled on every card', async () => {
       const addButtons = await canvas.findAllByRole('button', {
@@ -120,7 +122,7 @@ export const NonAdmin: Story = {
     await step(
       'Clicking a disabled action does not open the wizard',
       async () => {
-        await userEvent.click(
+        await user.click(
           await canvas.findByRole('button', {
             name: 'Add Microsoft Azure integration',
           }),

@@ -4,9 +4,12 @@ import { Outlet, useMatch, useSearchParams } from 'react-router-dom';
 import { Divider } from '@patternfly/react-core/dist/dynamic/components/Divider';
 import {
   Tab,
+  TabTitleIcon,
   TabTitleText,
   Tabs,
 } from '@patternfly/react-core/dist/dynamic/components/Tabs';
+import InfoCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/info-circle-icon';
+import ListIcon from '@patternfly/react-icons/dist/dynamic/icons/list-icon';
 import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHeader';
 import Main from '@redhat-cloud-services/frontend-components/Main';
 // eslint-disable-next-line no-restricted-imports -- Page component needs chrome for document title
@@ -119,15 +122,27 @@ const DataIntegrationsPage: React.FC = () => {
         <Tab
           eventKey="my-integrations"
           title={
-            <TabTitleText>
-              {intl.formatMessage(messages.myDataIntegrationsTab)}
-            </TabTitleText>
+            <>
+              <TabTitleIcon>
+                <ListIcon />
+              </TabTitleIcon>
+              <TabTitleText>
+                {intl.formatMessage(messages.myDataIntegrationsTab)}
+              </TabTitleText>
+            </>
           }
         />
         <Tab
           eventKey="about"
           title={
-            <TabTitleText>{intl.formatMessage(messages.aboutTab)}</TabTitleText>
+            <>
+              <TabTitleIcon>
+                <InfoCircleIcon />
+              </TabTitleIcon>
+              <TabTitleText>
+                {intl.formatMessage(messages.aboutTab)}
+              </TabTitleText>
+            </>
           }
         />
       </Tabs>

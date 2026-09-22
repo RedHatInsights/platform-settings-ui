@@ -15,6 +15,7 @@ import type {
   SourceType,
   SourcesParams,
 } from '../types/sources.types';
+import { SourceNotFoundError } from '../errors';
 
 /**
  * Sources has no v2 line — v3.1 is current. The repo-wide "use v2" convention
@@ -77,6 +78,10 @@ interface SourcesQueryVariables {
 interface SourcesQueryData {
   sources: Source[];
   meta: { count: number };
+}
+
+interface SourceQueryData {
+  sources: Source[];
 }
 
 /**
@@ -178,10 +183,7 @@ function buildSortBy({
  * status, so a failed query has to be turned into a rejection by hand —
  * otherwise TanStack Query treats it as a successful empty result.
  */
-function unwrap(response: {
-  data?: object;
-  errors?: Array<object>;
-}): SourcesQueryData {
+function unwrap<T>(response: { data?: object; errors?: Array<object> }): T {
   if (response.errors && response.errors.length > 0) {
     const [first] = response.errors as Array<{ message?: string }>;
     throw new Error(first.message ?? 'Sources GraphQL query failed');
@@ -190,7 +192,7 @@ function unwrap(response: {
     throw new Error('Sources GraphQL query returned no data');
   }
 
-  return response.data as SourcesQueryData;
+  return response.data as T;
 }
 
 export function createSourcesApi(axios: AxiosInstance) {
@@ -209,7 +211,7 @@ export function createSourcesApi(axios: AxiosInstance) {
         graphQLRequest: { query: SOURCES_QUERY, variables },
       });
 
-      const { sources, meta } = unwrap(response.data);
+      const { sources, meta } = unwrap<SourcesQueryData>(response.data);
 
       return {
         data: sources,
@@ -219,9 +221,28 @@ export function createSourcesApi(axios: AxiosInstance) {
     },
 
     async getSource(id: string): Promise<Source> {
-      const response = await api.showSource({ id });
+      // Use GraphQL to get applications inline (REST showSource doesn't include them)
+      // The GraphQL schema has 'sources' (plural) with filters, not a single 'source' query
+      const query = `query GetSource($filter: [Filter]) {
+        sources(filter: $filter) {${SOURCE_FIELDS}  }
+      }`;
 
-      return response.data as Source;
+      const response = await api.postGraphQL({
+        graphQLRequest: {
+          query,
+          variables: {
+            filter: [{ name: 'id', operation: 'eq', value: [id] }],
+          },
+        },
+      });
+
+      const { sources } = unwrap<SourceQueryData>(response.data);
+
+      if (!sources || sources.length === 0) {
+        throw new SourceNotFoundError(id);
+      }
+
+      return sources[0];
     },
 
     async getSourceTypes(): Promise<SourceType[]> {

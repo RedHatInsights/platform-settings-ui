@@ -15,6 +15,7 @@ export function createBrowserServices(
     auth: { getToken: () => Promise<string | undefined> };
     isBeta: () => boolean;
     isProd: () => boolean;
+    updateDocumentTitle?: (title: string) => void;
   },
   addNotification: (notification: Notification) => void,
   isOrgAdmin: boolean,
@@ -42,6 +43,9 @@ export function createBrowserServices(
     isOrgAdmin,
     axios: axiosInstance,
     notify,
+    updateDocumentTitle: (title: string) => {
+      chrome.updateDocumentTitle?.(title);
+    },
     fetchCVEs: async (params = {}) => {
       const url = new URL(CVE_API_URL);
       url.searchParams.set('per_page', String(params.per_page ?? 10));

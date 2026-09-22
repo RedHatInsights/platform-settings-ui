@@ -75,6 +75,43 @@ export default defineMessages({
     defaultMessage: 'Microsoft Azure',
   },
 
+  // Availability status labels.
+  //
+  // Island-level rather than per-feature: the table and the detail page both
+  // render them, and when they each owned a copy they drifted — the table said
+  // "Available" where the detail page said "Active" for the same source.
+  statusAvailable: {
+    id: 'dataIntegrations.status.available',
+    description: 'Status badge label for a healthy source',
+    defaultMessage: 'Available',
+  },
+  statusInProgress: {
+    id: 'dataIntegrations.status.inProgress',
+    description: 'Status badge label while the availability check runs',
+    defaultMessage: 'In progress',
+  },
+  statusPartiallyAvailable: {
+    id: 'dataIntegrations.status.partiallyAvailable',
+    description: 'Status badge label when some applications are unhealthy',
+    defaultMessage: 'Partially available',
+  },
+  statusUnavailable: {
+    id: 'dataIntegrations.status.unavailable',
+    description: 'Status badge label for a failing source',
+    defaultMessage: 'Unavailable',
+  },
+  statusPaused: {
+    id: 'dataIntegrations.status.paused',
+    description: 'Status badge label for a paused source',
+    defaultMessage: 'Paused',
+  },
+  statusUnknown: {
+    id: 'dataIntegrations.status.unknown',
+    description:
+      'Status badge label when the availability checker has not run yet',
+    defaultMessage: 'Unknown',
+  },
+
   // Placeholder wizard (removed once the real wizard lands)
   wizardPlaceholderTitle: {
     id: 'dataIntegrations.wizardPlaceholder.title',

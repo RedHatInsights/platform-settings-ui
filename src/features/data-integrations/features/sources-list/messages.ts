@@ -28,38 +28,8 @@ export default defineMessages({
     defaultMessage: 'Status',
   },
 
-  // Status values
-  statusAvailable: {
-    id: 'dataIntegrations.sourcesTable.status.available',
-    description: 'Available status badge label',
-    defaultMessage: 'Available',
-  },
-  statusInProgress: {
-    id: 'dataIntegrations.sourcesTable.status.inProgress',
-    description: 'In progress status badge label',
-    defaultMessage: 'In progress',
-  },
-  statusPartiallyAvailable: {
-    id: 'dataIntegrations.sourcesTable.status.partiallyAvailable',
-    description: 'Partially available status badge label',
-    defaultMessage: 'Partially available',
-  },
-  statusUnavailable: {
-    id: 'dataIntegrations.sourcesTable.status.unavailable',
-    description: 'Unavailable status badge label',
-    defaultMessage: 'Unavailable',
-  },
-  statusUnknown: {
-    id: 'dataIntegrations.sourcesTable.status.unknown',
-    description:
-      'Unknown status badge label (availability checker has not run yet)',
-    defaultMessage: 'Unknown',
-  },
-  statusPaused: {
-    id: 'dataIntegrations.sourcesTable.status.paused',
-    description: 'Paused status badge label',
-    defaultMessage: 'Paused',
-  },
+  // Status values live in the island-level messages file, shared with the
+  // source detail page via SourceStatusLabel.
 
   // Empty states
   noApplications: {

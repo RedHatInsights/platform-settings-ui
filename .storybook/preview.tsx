@@ -24,6 +24,7 @@ const baseMockServices: Omit<AppServices, 'addNotification' | 'notify'> = {
   isOrgAdmin: true,
   fetchCVEs: async () => [],
   axios: Axios.create(),
+  updateDocumentTitle: () => {},
 };
 
 const ServiceProviderWithNotifications: React.FC<{

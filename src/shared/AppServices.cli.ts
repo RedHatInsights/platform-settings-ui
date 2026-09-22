@@ -10,6 +10,7 @@ export function createCliServices(): AppServices {
     isOrgAdmin: true,
     axios: Axios.create(),
     notify: () => undefined,
+    updateDocumentTitle: () => undefined,
     fetchCVEs: async () => [],
   };
 }

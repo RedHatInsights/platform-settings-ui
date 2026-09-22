@@ -35,7 +35,7 @@ const ApplicationTypesHarness: React.FC = () => {
 };
 
 const meta: Meta<typeof ApplicationTypesHarness> = {
-  title: 'features/data-integrations/data/useApplicationTypes',
+  title: 'Features/DataIntegrations/Data/useApplicationTypes',
   component: ApplicationTypesHarness,
   parameters: {
     msw: { handlers: createSourcesHandlers() },

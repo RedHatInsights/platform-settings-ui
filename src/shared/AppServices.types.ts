@@ -35,4 +35,5 @@ export interface AppServices {
   fetchCVEs: (params?: { per_page?: number }) => Promise<CVE[]>;
   axios: AxiosInstance;
   notify: NotifyFn;
+  updateDocumentTitle: (title: string) => void;
 }

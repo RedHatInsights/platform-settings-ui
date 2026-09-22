@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useIntl } from 'react-intl';
+import { useLocation } from 'react-router-dom';
 import {
   type CellRendererMap,
   type ColumnConfigMap,
@@ -17,7 +18,7 @@ import type { Source } from '../../data/types/sources.types';
 import type { SourceTypeName } from '../../types';
 import { AppLink } from '../../../../Components/AppLink';
 import ConnectedApplicationsCell from './components/ConnectedApplicationsCell';
-import StatusCell from './components/StatusCell';
+import SourceStatusLabel from '../../components/SourceStatusLabel';
 import messages from './messages';
 import pageMessages from '../../messages';
 
@@ -32,6 +33,7 @@ type ColumnKey = (typeof columns)[number];
 
 const SourcesTable: React.FC = () => {
   const intl = useIntl();
+  const location = useLocation();
 
   // Table state with URL sync
   const tableState = useTableState<typeof columns, Source, ColumnKey>({
@@ -127,8 +129,13 @@ const SourcesTable: React.FC = () => {
 
   // Cell renderers
   const cellRenderers: CellRendererMap<typeof columns, Source> = {
+    // `useTableState` keeps page, perPage, sort, and filters in the query
+    // string, which the detail route does not inherit. Handing it over as
+    // router state lets the detail page put the user back where they were.
     name: (row) => (
-      <AppLink to={`/data-integrations/${row.id}`}>{row.name}</AppLink>
+      <AppLink to={row.id} state={{ from: location.search }}>
+        {row.name}
+      </AppLink>
     ),
     type: (row) => {
       const sourceType = sourceTypes?.find(
@@ -144,7 +151,10 @@ const SourcesTable: React.FC = () => {
     ),
     dateAdded: (row) => row.created_at,
     status: (row) => (
-      <StatusCell status={row.availability_status} pausedAt={row.paused_at} />
+      <SourceStatusLabel
+        status={row.availability_status}
+        pausedAt={row.paused_at}
+      />
     ),
   };
 

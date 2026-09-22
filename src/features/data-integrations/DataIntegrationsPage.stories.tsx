@@ -8,19 +8,20 @@ import {
 } from '../../shared/interactionHelpers';
 import DataIntegrationsPage from './DataIntegrationsPage';
 import MyDataIntegrationsTab from './components/MyDataIntegrationsTab';
-import AboutTab from './components/AboutTab';
+import SourceDetailPage from './features/source-detail/SourceDetailPage';
 import { createSourcesHandlers, sourcesDb } from './data/mocks/sources';
 
 const DOCS_URL =
   'https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/configuring_cloud_integrations_for_red_hat_services/index';
 
 /**
- * Renders the current pathname so play functions can assert on tab navigation
- * without reaching into router internals.
+ * Renders the current location so play functions can assert on tab navigation
+ * without reaching into router internals. Tabs live in the query string
+ * (`?tab=about`), so the search has to be part of the probe.
  */
 const LocationProbe = () => {
-  const { pathname } = useLocation();
-  return <div data-testid="location-probe">{pathname}</div>;
+  const { pathname, search } = useLocation();
+  return <div data-testid="location-probe">{`${pathname}${search}`}</div>;
 };
 
 /**
@@ -51,7 +52,10 @@ const meta = {
           <Routes>
             <Route path="/settings/data-integrations" element={<Story />}>
               <Route index element={<MyDataIntegrationsTab />} />
-              <Route path="about" element={<AboutTab />} />
+              {/* Mirrors Routing.tsx: the detail view is a child of the shell,
+                  which renders it standalone. Needed so a play function can
+                  walk list -> detail -> list the way a user does. */}
+              <Route path=":sourceId" element={<SourceDetailPage />} />
             </Route>
           </Routes>
         </MemoryRouter>
@@ -123,8 +127,8 @@ export const Default: Story = {
 };
 
 /**
- * Selecting a tab swaps the routed body and updates the URL, so a reload or a
- * shared link lands on the same tab.
+ * Selecting a tab swaps the body and updates the query string, so a reload or
+ * a shared link lands on the same tab.
  */
 export const SwitchToAboutTab: Story = {
   play: async ({ canvasElement, step }) => {
@@ -140,7 +144,7 @@ export const SwitchToAboutTab: Story = {
 
     await step('Click the About tab', async () => {
       await user.click(canvas.getByRole('tab', { name: 'About' }));
-      await canvas.findByText('/settings/data-integrations/about');
+      await canvas.findByText('/settings/data-integrations?tab=about');
     });
 
     await step('About becomes active and renders its body', async () => {
@@ -169,11 +173,11 @@ export const SwitchToAboutTab: Story = {
 };
 
 /**
- * Deep-linking straight to /about restores the About tab. This is the payoff of
- * routing the tabs rather than holding the active tab in component state.
+ * Deep-linking straight to `?tab=about` restores the About tab. This is the
+ * payoff of keeping the active tab in the URL rather than in component state.
  */
 export const DeepLinkedAboutTab: Story = {
-  parameters: { initialRoute: '/settings/data-integrations/about' },
+  parameters: { initialRoute: '/settings/data-integrations?tab=about' },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
 
@@ -183,6 +187,88 @@ export const DeepLinkedAboutTab: Story = {
       expect(
         canvas.getByText('Data integration onboarding content is coming soon.'),
       ).toBeInTheDocument();
+    });
+  },
+};
+
+/**
+ * Opening a source and coming back keeps the list as the user left it.
+ *
+ * `useTableState({ syncWithUrl: true })` puts page size, page, sort, and
+ * filters in the list's query string, but the detail route does not inherit
+ * it — so the table hands it over as router state and the detail page
+ * navigates back to it. Without that, Cancel dropped the user on a default
+ * list and their page size was silently gone.
+ */
+export const ListStateSurvivesDetailRoundTrip: Story = {
+  parameters: {
+    // Standing in for a user who set the page size and sorted the table.
+    // Reaching the same state through the PatternFly pagination menu would
+    // pin the story to a toggle whose only accessible name is its
+    // "1 - 9 of 9" template.
+    initialRoute:
+      '/settings/data-integrations?perPage=100&sortBy=type&sortDir=asc',
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const user = userEvent.setup();
+
+    await step('The list starts with page size and sort applied', async () => {
+      await canvas.findByTestId('table-view', {}, { timeout: 10000 });
+      await canvas.findByText(
+        '/settings/data-integrations?perPage=100&sortBy=type&sortDir=asc',
+      );
+    });
+
+    await step('Open a source from the table', async () => {
+      await user.click(
+        await canvas.findByRole('link', { name: 'AWS production account' }),
+      );
+
+      await canvas.findByText('/settings/data-integrations/101');
+      // The route changes before the source query resolves, so the probe
+      // updating is not enough — wait for the form itself.
+      await canvas.findByRole('button', { name: 'Save' }, { timeout: 10000 });
+    });
+
+    await step('Cancel returns to the list with that state', async () => {
+      await user.click(canvas.getByRole('button', { name: 'Cancel' }));
+
+      // The trailing slash is how useAppNavigate joins onto the basename; the
+      // route matches either way.
+      await canvas.findByText(
+        '/settings/data-integrations/?perPage=100&sortBy=type&sortDir=asc',
+      );
+      await canvas.findByTestId('table-view', {}, { timeout: 10000 });
+    });
+  },
+};
+
+/**
+ * Reaching the detail view by deep link leaves no list state to return to, so
+ * Cancel falls back to the default list rather than erroring.
+ */
+export const DeepLinkedDetailFallsBackToPlainList: Story = {
+  parameters: { initialRoute: '/settings/data-integrations/101' },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const user = userEvent.setup();
+
+    await step('The detail view renders', async () => {
+      await canvas.findAllByText('AWS production account');
+    });
+
+    await step('Cancel lands on the list with no query string', async () => {
+      await user.click(
+        await canvas.findByRole(
+          'button',
+          { name: 'Cancel' },
+          { timeout: 10000 },
+        ),
+      );
+
+      await canvas.findByText('/settings/data-integrations/');
+      await canvas.findByTestId('table-view', {}, { timeout: 10000 });
     });
   },
 };

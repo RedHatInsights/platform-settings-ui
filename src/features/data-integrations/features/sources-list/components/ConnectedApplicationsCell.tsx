@@ -7,6 +7,7 @@ import type {
   SourceApplication,
 } from '../../../data/types/sources.types';
 import messages from '../messages';
+import { getSourceStatusVariant } from '../../../components/SourceStatusLabel';
 
 interface ConnectedApplicationsCellProps {
   applications?: SourceApplication[];
@@ -27,28 +28,6 @@ const ConnectedApplicationsCell: React.FC<ConnectedApplicationsCellProps> = ({
     return <span>{intl.formatMessage(messages.noApplications)}</span>;
   }
 
-  const getLabelStatus = (
-    application: SourceApplication,
-  ): 'success' | 'warning' | 'danger' | 'info' | 'custom' | undefined => {
-    // Paused takes precedence over availability status
-    if (application.paused_at) {
-      return 'info';
-    }
-
-    switch (application.availability_status) {
-      case 'available':
-        return 'success';
-      case 'in_progress':
-        return 'custom';
-      case 'partially_available':
-        return 'warning';
-      case 'unavailable':
-        return 'danger';
-      default:
-        return undefined;
-    }
-  };
-
   const getApplicationName = (applicationTypeId: string): string => {
     const applicationType = applicationTypes?.find(
       (type) => type.id === applicationTypeId,
@@ -59,7 +38,10 @@ const ConnectedApplicationsCell: React.FC<ConnectedApplicationsCellProps> = ({
   return (
     <Flex gap={{ default: 'gapSm' }}>
       {applications.map((application) => {
-        const labelStatus = getLabelStatus(application);
+        const labelStatus = getSourceStatusVariant(
+          application.availability_status,
+          application.paused_at,
+        );
         return (
           <Label key={application.id} variant="outline" status={labelStatus}>
             {getApplicationName(application.application_type_id)}

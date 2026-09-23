@@ -112,22 +112,133 @@ export default defineMessages({
     defaultMessage: 'Unknown',
   },
 
-  // Placeholder wizard (removed once the real wizard lands)
-  wizardPlaceholderTitle: {
-    id: 'dataIntegrations.wizardPlaceholder.title',
-    description: 'Placeholder creation wizard modal title',
+  // Creation wizard shell
+  wizardTitle: {
+    id: 'dataIntegrations.wizard.title',
+    description: 'Add data integration wizard title',
     defaultMessage: 'Add data integration',
   },
-  wizardPlaceholderBody: {
-    id: 'dataIntegrations.wizardPlaceholder.body',
-    description: 'Placeholder creation wizard modal body',
+  wizardDescription: {
+    id: 'dataIntegrations.wizard.description',
+    description: 'Add data integration wizard subtitle',
     defaultMessage:
-      'The creation wizard for {provider} is not available yet. It will be added in a follow-up release.',
+      'Configure an integration to start importing data from your provider.',
   },
-  wizardPlaceholderClose: {
-    id: 'dataIntegrations.wizardPlaceholder.close',
-    description: 'Placeholder creation wizard close button',
+  wizardClose: {
+    id: 'dataIntegrations.wizard.close',
+    description: 'Aria label for the wizard header close button',
+    defaultMessage: 'Close wizard',
+  },
+  wizardNext: {
+    id: 'dataIntegrations.wizard.next',
+    description: 'Wizard Next button',
+    defaultMessage: 'Next',
+  },
+  wizardBack: {
+    id: 'dataIntegrations.wizard.back',
+    description: 'Wizard Back button',
+    defaultMessage: 'Back',
+  },
+  wizardCancel: {
+    id: 'dataIntegrations.wizard.cancel',
+    description: 'Wizard Cancel button',
+    defaultMessage: 'Cancel',
+  },
+  // Source type selection step
+  wizardSourceTypeStepTitle: {
+    id: 'dataIntegrations.wizard.sourceType.stepTitle',
+    description: 'Title of the source type selection wizard step',
+    defaultMessage: 'Select integration type',
+  },
+  wizardSourceTypeStepDescription: {
+    id: 'dataIntegrations.wizard.sourceType.stepDescription',
+    description: 'Introductory text above the source type cards',
+    defaultMessage:
+      'To import data for an application, you need to configure an integration. Start by selecting the type of integration you want to add.',
+  },
+  wizardSourceTypeLabel: {
+    id: 'dataIntegrations.wizard.sourceType.label',
+    description:
+      'Label for the source type card group, read as the radio group name',
+    defaultMessage: 'Integration type',
+  },
+  wizardSourceTypeRequired: {
+    id: 'dataIntegrations.wizard.sourceType.required',
+    description: 'Validation message when no source type card is selected',
+    defaultMessage: 'Select an integration type to continue.',
+  },
+
+  // Name integration step
+  wizardNameStepTitle: {
+    id: 'dataIntegrations.wizard.name.stepTitle',
+    description: 'Title of the integration naming wizard step',
+    defaultMessage: 'Name integration',
+  },
+  wizardNameStepDescription: {
+    id: 'dataIntegrations.wizard.name.stepDescription',
+    description: 'Introductory text above the integration name field',
+    defaultMessage: 'Enter a name for your {provider} integration.',
+  },
+  wizardNameLabel: {
+    id: 'dataIntegrations.wizard.name.label',
+    description: 'Label for the integration name field',
+    defaultMessage: 'Integration name',
+  },
+  wizardNamePlaceholder: {
+    id: 'dataIntegrations.wizard.name.placeholder',
+    description: 'Placeholder shown in the empty integration name field',
+    defaultMessage: 'integration_name',
+  },
+  wizardNameRequired: {
+    id: 'dataIntegrations.wizard.name.required',
+    description: 'Validation message when the integration name is empty',
+    defaultMessage: 'Enter a name for your integration.',
+  },
+
+  // Wizard loading and error states
+  wizardLoading: {
+    id: 'dataIntegrations.wizard.loading',
+    description: 'Accessible label for the spinner shown while providers load',
+    defaultMessage: 'Loading integration types',
+  },
+  wizardErrorTitle: {
+    id: 'dataIntegrations.wizard.error.title',
+    description: 'Title shown when the provider catalogue fails to load',
+    defaultMessage: 'Unable to load integration types',
+  },
+  wizardErrorBody: {
+    id: 'dataIntegrations.wizard.error.body',
+    description: 'Body shown when the provider catalogue fails to load',
+    defaultMessage:
+      'The list of integration types could not be retrieved. Close the wizard and try again.',
+  },
+  wizardErrorClose: {
+    id: 'dataIntegrations.wizard.error.close',
+    description: 'Button that dismisses the wizard from its error state',
     defaultMessage: 'Close',
+  },
+
+  // Cancel confirmation
+  wizardCancelTitle: {
+    id: 'dataIntegrations.wizard.cancelConfirm.title',
+    description: 'Title of the confirmation shown when cancelling the wizard',
+    defaultMessage: 'Exit integration creation?',
+  },
+  wizardCancelBody: {
+    id: 'dataIntegrations.wizard.cancelConfirm.body',
+    description: 'Body of the confirmation shown when cancelling the wizard',
+    defaultMessage:
+      'Are you sure you want to cancel? Your integration will not be created and any progress will be lost.',
+  },
+  wizardCancelConfirm: {
+    id: 'dataIntegrations.wizard.cancelConfirm.confirm',
+    description: 'Button that confirms exiting the wizard',
+    defaultMessage: 'Exit',
+  },
+  wizardCancelDismiss: {
+    id: 'dataIntegrations.wizard.cancelConfirm.dismiss',
+    description: 'Button that returns to the wizard instead of exiting',
+    defaultMessage: 'Stay',
   },
 
   // Tab placeholders (removed by RHCLOUD-50925 / RHCLOUD-49534)

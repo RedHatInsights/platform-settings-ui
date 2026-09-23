@@ -17,6 +17,7 @@ import { useApplicationTypes } from '../../data/queries/useApplicationTypes';
 import type { Source } from '../../data/types/sources.types';
 import type { SourceTypeName } from '../../types';
 import { AppLink } from '../../../../Components/AppLink';
+import AddDataIntegrationDropdown from '../../components/AddDataIntegrationDropdown';
 import ConnectedApplicationsCell from './components/ConnectedApplicationsCell';
 import SourceStatusLabel from '../../components/SourceStatusLabel';
 import messages from './messages';
@@ -233,6 +234,15 @@ const SourcesTable: React.FC = () => {
       filters={tableState.filters}
       onFiltersChange={tableState.onFiltersChange}
       clearAllFilters={tableState.clearAllFilters}
+      // The same dropdown the page header offers, repeated as the toolbar's
+      // primary action: the header scrolls away on long lists, and picking a
+      // provider here is the shortest route into the wizard.
+      toolbarActions={
+        <AddDataIntegrationDropdown
+          variant="primary"
+          toggleLabel={intl.formatMessage(messages.addIntegrationLabel)}
+        />
+      }
       error={combinedError as Error | null}
       emptyStateNoData={emptyStateNoData}
       emptyStateNoResults={emptyStateNoResults}

@@ -1,0 +1,11 @@
+.data-integrations-source-type-card {
+  // The icon sits under the title, so the card reads top-down rather than as a
+  // row; without this the logomark crowds the selection radio on narrow cards.
+  text-align: center;
+
+  &__icon {
+    display: block;
+    margin: 0 auto;
+    margin-block-start: var(--pf-t--global--spacer--sm);
+  }
+}

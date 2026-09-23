@@ -1,4 +1,4 @@
-import { HttpResponse, http } from 'msw';
+import { HttpResponse, delay, http } from 'msw';
 import { createResettableCollection } from '../../../../shared/mockCollections';
 import type {
   PageApplicationType,
@@ -144,6 +144,57 @@ export function createErrorSourcesHandler(baseUrl = SOURCES_API_BASE) {
         data: seedApplicationTypes,
         links: {},
         meta: { count: seedApplicationTypes.length },
+      };
+      return HttpResponse.json(response);
+    }),
+  ];
+}
+
+/**
+ * Never answers the provider catalogue, pinning a consumer in its loading
+ * state. Nothing here resolves, so a story using this must not wait for
+ * content that depends on it.
+ */
+export function createPendingSourceTypesHandler(baseUrl = SOURCES_API_BASE) {
+  return [
+    http.get(`${baseUrl}/source_types`, async () => {
+      await delay('infinite');
+
+      return HttpResponse.json({} as PageSourceType);
+    }),
+  ];
+}
+
+/**
+ * Fails the provider catalogue outright. Unlike the GraphQL collection, this
+ * is a plain REST endpoint, so a failure really is an HTTP error status.
+ */
+export function createFailingSourceTypesHandler(baseUrl = SOURCES_API_BASE) {
+  return [
+    http.get(
+      `${baseUrl}/source_types`,
+      () => new HttpResponse(null, { status: 500 }),
+    ),
+  ];
+}
+
+/**
+ * Serves only the named providers. Covers the catalogues that are narrower
+ * than the caller expects: one missing the provider a consumer was opened
+ * with, or — passed `[]` — one offering nothing we have a card for.
+ */
+export function createSourceTypesSubsetHandler(
+  names: string[],
+  baseUrl = SOURCES_API_BASE,
+) {
+  const data = seedSourceTypes.filter(({ name }) => names.includes(name));
+
+  return [
+    http.get(`${baseUrl}/source_types`, () => {
+      const response: PageSourceType = {
+        data,
+        links: {},
+        meta: { count: data.length },
       };
       return HttpResponse.json(response);
     }),

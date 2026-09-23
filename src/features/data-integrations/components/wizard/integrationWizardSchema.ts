@@ -84,9 +84,8 @@ export interface SourceTypeOption {
  * the names are translatable.
  */
 function buildSourceTypeValues(sourceTypes: SourceType[]): SourceTypeName[] {
-  return OFFERED_PROVIDERS.filter((provider) =>
-    sourceTypes.some((sourceType) => sourceType.name === provider),
-  );
+  const availableNames = new Set(sourceTypes.map((t) => t.name));
+  return OFFERED_PROVIDERS.filter((provider) => availableNames.has(provider));
 }
 
 export function buildSourceTypeOptions(

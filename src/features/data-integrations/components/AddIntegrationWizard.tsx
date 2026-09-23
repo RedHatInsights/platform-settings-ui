@@ -69,7 +69,7 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
       sourceTypes
         ? buildSourceTypeOptions(sourceTypes, intl).length > 0
         : false,
-    [sourceTypes, intl],
+    [sourceTypes],
   );
 
   const schema = useMemo(

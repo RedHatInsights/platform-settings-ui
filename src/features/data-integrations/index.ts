@@ -1,6 +1,7 @@
 export { default as DataIntegrationsPage } from './DataIntegrationsPage';
 export { default as MyDataIntegrationsTab } from './components/MyDataIntegrationsTab';
-export { default as AboutTab } from './components/AboutTab';
+export { default as AboutTab } from './features/about/AboutTab';
+export type { AboutTabProps } from './features/about/AboutTab';
 export type { SourceTypeName, IntegrationTypeOption } from './types';
 export { sourcesKeys, useSource, useSources } from './data/queries/useSources';
 export { sourceTypesKeys, useSourceTypes } from './data/queries/useSourceTypes';
@@ -31,3 +32,4 @@ export {
   SOURCE_TYPE_ICONS,
   getSourceTypeIcon,
 } from './constants/sourceTypeIcons';
+export { DOCS_URL, PROVIDER_DOCS_URLS } from './constants/docs';

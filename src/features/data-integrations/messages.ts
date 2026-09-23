@@ -247,9 +247,4 @@ export default defineMessages({
     description: 'Placeholder text for the not-yet-built integrations table',
     defaultMessage: 'The data integrations table is coming soon.',
   },
-  aboutPlaceholder: {
-    id: 'dataIntegrations.about.placeholder',
-    description: 'Placeholder text for the not-yet-built About tab',
-    defaultMessage: 'Data integration onboarding content is coming soon.',
-  },
 });

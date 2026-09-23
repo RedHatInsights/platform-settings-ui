@@ -12,12 +12,10 @@ import Main from '@redhat-cloud-services/frontend-components/Main';
 // eslint-disable-next-line no-restricted-imports -- Page component needs chrome for document title
 import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome';
 import AddDataIntegrationDropdown from './components/AddDataIntegrationDropdown';
-import AboutTab from './components/AboutTab';
+import AboutTab from './features/about/AboutTab';
 import messages from './messages';
+import { DOCS_URL } from './constants/docs';
 import type { SourceTypeName } from './types';
-
-const DOCS_URL =
-  'https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/configuring_cloud_integrations_for_red_hat_services/index';
 
 const INTEGRATIONS_ICON =
   '/apps/frontend-assets/technology-icons/integrations.svg';

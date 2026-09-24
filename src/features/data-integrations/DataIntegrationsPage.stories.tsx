@@ -25,8 +25,8 @@ const LocationProbe = () => {
  * The Data Integrations page shell — page header, the "Add data integration"
  * dropdown, and the two routed tabs.
  *
- * The tab bodies are placeholders: the integrations table lands with
- * RHCLOUD-50925 and the About content with RHCLOUD-49534.
+ * The About tab renders its real content; the integrations table is still a
+ * placeholder and lands with RHCLOUD-50925.
  *
  * The decorator nests a `StorybookMockProvider` with `app="data-integrations"`
  * because `useAppNavigate` builds its basename from Chrome's
@@ -153,7 +153,9 @@ export const SwitchToAboutTab: Story = {
         canvas.getByRole('tab', { name: 'My data integrations' }),
       ).toHaveAttribute('aria-selected', 'false');
       expect(
-        canvas.getByText('Data integration onboarding content is coming soon.'),
+        canvas.getByRole('heading', {
+          name: 'Get started with Data Integration',
+        }),
       ).toBeInTheDocument();
     });
 
@@ -182,7 +184,9 @@ export const DeepLinkedAboutTab: Story = {
       const aboutTab = await canvas.findByRole('tab', { name: 'About' });
       expect(aboutTab).toHaveAttribute('aria-selected', 'true');
       expect(
-        canvas.getByText('Data integration onboarding content is coming soon.'),
+        canvas.getByRole('heading', {
+          name: 'Get started with Data Integration',
+        }),
       ).toBeInTheDocument();
     });
   },

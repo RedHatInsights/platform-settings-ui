@@ -22,7 +22,7 @@ bodies and the creation wizard are still placeholders — **nothing renders this
 | Page shell, routing, header, dropdown | Done | RHCLOUD-49532 |
 | Data layer (`data/api`, `data/queries`, `data/mocks`) | Done | RHCLOUD-49536 |
 | "My data integrations" table | Placeholder | RHCLOUD-50925 |
-| About tab content | Placeholder | RHCLOUD-49534 |
+| About tab content | Done — hero CTA copy still placeholder | RHCLOUD-49534, copy in RHCLOUD-51526 |
 | Creation wizard | Placeholder | No story yet — needs filing |
 | Non-admin / permission gating | `isDisabled` prop, unwired | RHCLOUD-50927 |
 
@@ -35,14 +35,25 @@ data-integrations/
 ├── index.ts                           # named re-exports
 ├── messages.ts                        # react-intl defineMessages, namespaced dataIntegrations.*
 ├── types.ts                           # SourceTypeName union
+├── constants/
+│   ├── docs.ts                        # guide URL + per-provider anchors
+│   └── sourceTypeIcons.ts             # frontend-assets logo paths
 ├── data/                              # see "Data layer" below
+├── features/
+│   └── about/                         # About tab (RHCLOUD-49534)
+│       ├── AboutTab.tsx
+│       ├── AboutTab.stories.tsx
+│       ├── messages.ts
+│       └── components/UseCaseCard.tsx
 └── components/
     ├── AddDataIntegrationDropdown.tsx
     ├── AddDataIntegrationDropdown.stories.tsx
     ├── AddIntegrationWizard.tsx       # PLACEHOLDER
-    ├── MyDataIntegrationsTab.tsx      # PLACEHOLDER
-    └── AboutTab.tsx                   # PLACEHOLDER
+    └── MyDataIntegrationsTab.tsx      # PLACEHOLDER
 ```
+
+The tree above lists only what the About tab touches; `features/sources-list` and
+`features/source-detail` are documented in their own sections below.
 
 `experience-ui/no-boundary-violations` is set to `error`, so nothing here may import from
 `alert-manager` or `settings-overview`. Shared code goes through `src/shared/`,

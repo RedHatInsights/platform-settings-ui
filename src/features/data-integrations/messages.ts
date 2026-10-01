@@ -144,6 +144,11 @@ export default defineMessages({
     description: 'Wizard Cancel button',
     defaultMessage: 'Cancel',
   },
+  wizardAdd: {
+    id: 'dataIntegrations.wizard.add',
+    description: 'Wizard submit button, shown on the review step',
+    defaultMessage: 'Add',
+  },
   // Source type selection step
   wizardSourceTypeStepTitle: {
     id: 'dataIntegrations.wizard.sourceType.stepTitle',
@@ -218,10 +223,175 @@ export default defineMessages({
     description: 'Validation message when no application checkbox is selected',
     defaultMessage: 'Select at least one application to continue.',
   },
-  wizardSubmit: {
-    id: 'dataIntegrations.wizard.submit',
-    description: 'Wizard submit button on the final step',
-    defaultMessage: 'Add',
+
+  // Authentication type step
+  wizardAuthTypeStepTitle: {
+    id: 'dataIntegrations.wizard.authType.stepTitle',
+    description: 'Title of the authentication type wizard step',
+    defaultMessage: 'Select authentication type',
+  },
+  wizardAuthTypeStepDescription: {
+    id: 'dataIntegrations.wizard.authType.stepDescription',
+    description: 'Introductory text above the authentication type cards',
+    defaultMessage:
+      'Select how you want to authenticate with your provider. The credentials you enter next depend on this choice.',
+  },
+  wizardAuthTypeLabel: {
+    id: 'dataIntegrations.wizard.authType.label',
+    description:
+      'Label for the authentication type card group, read as the radio group name',
+    defaultMessage: 'Authentication type',
+  },
+  wizardAuthTypeRequired: {
+    id: 'dataIntegrations.wizard.authType.required',
+    description: 'Validation message when no authentication type is selected',
+    defaultMessage: 'Select an authentication type to continue.',
+  },
+  wizardAuthTypeUnavailable: {
+    id: 'dataIntegrations.wizard.authType.unavailable',
+    description:
+      'Shown on the authentication step for providers with no supported authentication yet',
+    defaultMessage:
+      'Adding this integration type is not supported yet. Go back and select a different integration type.',
+  },
+  wizardAuthTypeAccessKey: {
+    id: 'dataIntegrations.wizard.authType.accessKey',
+    description: 'Label for the AWS access key authentication type',
+    defaultMessage: 'Access key',
+  },
+
+  // Credentials step
+  wizardCredentialsStepTitle: {
+    id: 'dataIntegrations.wizard.credentials.stepTitle',
+    description: 'Title of the credentials wizard step',
+    defaultMessage: 'Enter credentials',
+  },
+  wizardCredentialsStepDescription: {
+    id: 'dataIntegrations.wizard.credentials.stepDescription',
+    description: 'Introductory text above the AWS access key fields',
+    defaultMessage:
+      'Create an access key in your AWS user account and enter the details below.',
+  },
+  wizardAccessKeyIdLabel: {
+    id: 'dataIntegrations.wizard.credentials.accessKeyId',
+    description: 'Label for the AWS access key ID field',
+    defaultMessage: 'Access key ID',
+  },
+  wizardAccessKeyIdRequired: {
+    id: 'dataIntegrations.wizard.credentials.accessKeyIdRequired',
+    description: 'Validation message when the AWS access key ID is empty',
+    defaultMessage: 'Enter your AWS access key ID.',
+  },
+  wizardSecretAccessKeyLabel: {
+    id: 'dataIntegrations.wizard.credentials.secretAccessKey',
+    description: 'Label for the AWS secret access key field',
+    defaultMessage: 'Secret access key',
+  },
+  wizardSecretAccessKeyRequired: {
+    id: 'dataIntegrations.wizard.credentials.secretAccessKeyRequired',
+    description: 'Validation message when the AWS secret access key is empty',
+    defaultMessage: 'Enter your AWS secret access key.',
+  },
+
+  // Review step
+  wizardReviewStepTitle: {
+    id: 'dataIntegrations.wizard.review.stepTitle',
+    description: 'Title of the review wizard step',
+    defaultMessage: 'Review details',
+  },
+  wizardReviewStepDescription: {
+    id: 'dataIntegrations.wizard.review.stepDescription',
+    description: 'Introductory text above the review summary',
+    defaultMessage:
+      'Review the details below, then add your integration. Credentials are hidden for security.',
+  },
+  wizardReviewType: {
+    id: 'dataIntegrations.wizard.review.type',
+    description: 'Review row label for the integration type',
+    defaultMessage: 'Integration type',
+  },
+  wizardReviewAuthType: {
+    id: 'dataIntegrations.wizard.review.authType',
+    description: 'Review row label for the authentication type',
+    defaultMessage: 'Authentication type',
+  },
+  wizardReviewName: {
+    id: 'dataIntegrations.wizard.review.name',
+    description: 'Review row label for the integration name',
+    defaultMessage: 'Integration name',
+  },
+  wizardReviewEditDetails: {
+    id: 'dataIntegrations.wizard.review.editDetails',
+    description:
+      'Button on the review step that returns to the naming step to change the integration name',
+    defaultMessage: 'Edit integration details',
+  },
+  wizardReviewEditCredentials: {
+    id: 'dataIntegrations.wizard.review.editCredentials',
+    description:
+      'Button on the review step that returns to the credentials step',
+    defaultMessage: 'Edit credentials',
+  },
+  wizardReviewSecretMasked: {
+    id: 'dataIntegrations.wizard.review.secretMasked',
+    description:
+      'Stands in for the secret access key on the review step, which is never displayed',
+    defaultMessage: 'Hidden',
+  },
+
+  // Submission result
+  wizardResultStepTitle: {
+    id: 'dataIntegrations.wizard.result.stepTitle',
+    description: 'Title of the wizard step shown after submitting',
+    defaultMessage: 'Add integration',
+  },
+  wizardResultSubmitting: {
+    id: 'dataIntegrations.wizard.result.submitting',
+    description: 'Shown while the integration is being created',
+    defaultMessage: 'Adding your integration',
+  },
+  wizardResultSuccessTitle: {
+    id: 'dataIntegrations.wizard.result.successTitle',
+    description: 'Title shown when the integration was created',
+    defaultMessage: 'Integration added',
+  },
+  wizardResultSuccessBody: {
+    id: 'dataIntegrations.wizard.result.successBody',
+    description: 'Body shown when the integration was created',
+    defaultMessage:
+      '{name} was created. It may take a few minutes before data starts arriving.',
+  },
+  wizardResultViewIntegration: {
+    id: 'dataIntegrations.wizard.result.viewIntegration',
+    description: 'Button that opens the newly created integration',
+    defaultMessage: 'View integration',
+  },
+  wizardResultAddAnother: {
+    id: 'dataIntegrations.wizard.result.addAnother',
+    description: 'Button that restarts the wizard to add another integration',
+    defaultMessage: 'Add another integration',
+  },
+  wizardResultErrorTitle: {
+    id: 'dataIntegrations.wizard.result.errorTitle',
+    description: 'Title shown when the integration could not be created',
+    defaultMessage: 'Unable to add integration',
+  },
+  wizardResultErrorBody: {
+    id: 'dataIntegrations.wizard.result.errorBody',
+    description:
+      'Body shown when the failure gave no reason, such as a network error',
+    defaultMessage:
+      'Your integration was not created. Check your connection and try again.',
+  },
+  wizardResultRetry: {
+    id: 'dataIntegrations.wizard.result.retry',
+    description: 'Button that submits the integration again after a failure',
+    defaultMessage: 'Retry',
+  },
+  wizardResultEdit: {
+    id: 'dataIntegrations.wizard.result.edit',
+    description: 'Button that returns to the review step after a failure',
+    defaultMessage: 'Edit details',
   },
 
   // Wizard loading and error states
@@ -247,28 +417,6 @@ export default defineMessages({
     defaultMessage: 'Close',
   },
 
-  // Review step
-  wizardReviewStepTitle: {
-    id: 'dataIntegrations.wizard.review.stepTitle',
-    description: 'Title of the review wizard step',
-    defaultMessage: 'Review integration details',
-  },
-  wizardReviewStepDescription: {
-    id: 'dataIntegrations.wizard.review.stepDescription',
-    description: 'Introductory text above the review summary',
-    defaultMessage:
-      'Review the information below and click Add to add your integration. To edit details in previous steps, click Back.',
-  },
-  wizardReviewSourceTypeLabel: {
-    id: 'dataIntegrations.wizard.review.sourceType',
-    description: 'Label for the integration type field in the review step',
-    defaultMessage: 'Integration type',
-  },
-  wizardReviewNameLabel: {
-    id: 'dataIntegrations.wizard.review.name',
-    description: 'Label for the integration name field in the review step',
-    defaultMessage: 'Name',
-  },
   wizardReviewApplicationsLabel: {
     id: 'dataIntegrations.wizard.review.applications',
     description: 'Label for the applications field in the review step',
@@ -280,20 +428,6 @@ export default defineMessages({
     id: 'dataIntegrations.wizard.success.body',
     description: 'Toast body when integration creation succeeds',
     defaultMessage: '{name} was successfully created.',
-  },
-  wizardPartialFailureTitle: {
-    id: 'dataIntegrations.wizard.partialFailure.title',
-    description:
-      'Toast title when integration was created but app association failed',
-    defaultMessage:
-      '{name} was created, but one or more application associations failed.',
-  },
-  wizardPartialFailureBody: {
-    id: 'dataIntegrations.wizard.partialFailure.body',
-    description:
-      'Toast body when integration was created but app association failed',
-    defaultMessage:
-      'You can add applications manually from the integration detail page.',
   },
   wizardCreateFailureTitle: {
     id: 'dataIntegrations.wizard.createFailure.title',

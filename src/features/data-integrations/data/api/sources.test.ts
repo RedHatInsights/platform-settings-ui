@@ -30,7 +30,9 @@ describe('createSourcesApi', () => {
 
     it('posts one bulk create binding the authentication and applications to the source', async () => {
       const created = { id: 'src-1', name: 'my-source', source_type_id: '2' };
-      const post = jest.fn().mockResolvedValue({ data: { sources: [created] } });
+      const post = jest
+        .fn()
+        .mockResolvedValue({ data: { sources: [created] } });
 
       const api = createSourcesApi({ post } as unknown as AxiosInstance);
       const result = await api.createSource(input);

@@ -7,6 +7,8 @@ import { getSourceTypeIcon } from '../../constants/sourceTypeIcons';
 import type { SourceTypeName } from '../../types';
 import type {
   ApplicationType,
+  AuthenticationType,
+  CreateSourceInput,
   SourceType,
 } from '../../data/types/sources.types';
 import type { ApplicationOption } from './ApplicationCheckboxSelect';
@@ -27,6 +29,7 @@ export enum WizardStepId {
   EndpointConfiguration = 'endpoint-configuration',
   ApplicationSelection = 'application-selection',
   Review = 'review',
+  SubmissionResult = 'submission-result',
 }
 
 /**
@@ -36,16 +39,60 @@ export enum WizardStepId {
 export const SOURCE_TYPE_FIELD = 'source_type';
 
 /** Field name for the integration's display name. */
-export const SOURCE_NAME_FIELD = 'source_name';
+export const SOURCE_NAME_FIELD = 'source.name';
 
-/** Custom component key registered in `IntegrationsFormRenderer`'s mapper. */
+/**
+ * Credential field names, all from `sources-ui`.
+ *
+ * `username` and `password` are the Sources API's generic credential slots, not
+ * literal user credentials — for AWS they hold the access key id and the secret
+ * access key. Keeping the names identical is what lets the auth schemas port
+ * over unchanged.
+ */
+export const AUTH_TYPE_FIELD = 'authentication.authtype';
+export const AUTH_USERNAME_FIELD = 'authentication.username';
+export const AUTH_PASSWORD_FIELD = 'authentication.password';
+
+/** The only authentication type offered today. */
+export const ACCESS_KEY_AUTH_TYPE = 'access_key_secret_key';
+
+/** Custom component keys registered in `IntegrationsFormRenderer`'s mapper. */
 export const CARD_SELECT_COMPONENT = 'card-select';
+export const REVIEW_SUMMARY_COMPONENT = 'review-summary';
+export const SUBMISSION_RESULT_COMPONENT = 'submission-result';
+
+/**
+ * Authentication types each provider offers, in card order.
+ *
+ * AWS has exactly one, which is why the wizard routes straight past the
+ * authentication step for it — see {@link createIntegrationWizardSchema}. The
+ * other three are empty until RHCLOUD-51315 implements them; an empty list is
+ * what makes that step a dead end they cannot advance past, rather than a
+ * broken one.
+ */
+const AUTH_TYPES_BY_PROVIDER: Record<SourceTypeName, string[]> = {
+  amazon: [ACCESS_KEY_AUTH_TYPE],
+  openshift: [],
+  google: [],
+  azure: [],
+};
+
+const AUTH_TYPE_LABELS: Record<
+  string,
+  (typeof messages)[keyof typeof messages]
+> = {
+  [ACCESS_KEY_AUTH_TYPE]: messages.wizardAuthTypeAccessKey,
+};
+
+/** Translated label for an authentication type, for the cards and the review. */
+export function authTypeLabel(authType: string, intl: IntlShape): string {
+  const message = AUTH_TYPE_LABELS[authType];
+
+  return message ? intl.formatMessage(message) : authType;
+}
 
 /** Custom component key for the application checkbox select. */
 export const APPLICATION_SELECT_COMPONENT = 'application-checkbox-select';
-
-/** Custom component key for the review step summary. */
-export const REVIEW_STEP_COMPONENT = 'review-step';
 
 /** Field name for the selected application type ids. */
 export const APPLICATIONS_FIELD = 'applications';
@@ -92,6 +139,14 @@ const PROVIDER_LABELS = {
   azure: messages.azureLabel,
 } as const;
 
+/** Translated provider name, for the cards and the review summary. */
+export function providerLabel(
+  provider: SourceTypeName,
+  intl: IntlShape,
+): string {
+  return intl.formatMessage(PROVIDER_LABELS[provider]);
+}
+
 /** One selectable card in the source type step. */
 export interface SourceTypeOption {
   value: SourceTypeName;
@@ -120,7 +175,7 @@ export function buildSourceTypeOptions(
 ): SourceTypeOption[] {
   return buildSourceTypeValues(sourceTypes).map((provider) => ({
     value: provider,
-    label: intl.formatMessage(PROVIDER_LABELS[provider]),
+    label: providerLabel(provider, intl),
     iconUrl: getSourceTypeIcon(provider),
   }));
 }
@@ -213,7 +268,10 @@ export function createIntegrationWizardSchema({
         // that inner node the same accessible name as the modal around it.
         'aria-labelledby': WIZARD_TITLE_ID,
         buttonLabels: {
-          submit: intl.formatMessage(messages.wizardSubmit),
+          // Review is the last step the user fills in, and the result step
+          // after it is flagged `isProgressAfterSubmissionStep`, which is what
+          // makes the mapper render this label and call `handleSubmit` there.
+          submit: intl.formatMessage(messages.wizardAdd),
           next: intl.formatMessage(messages.wizardNext),
           back: intl.formatMessage(messages.wizardBack),
           cancel: intl.formatMessage(messages.wizardCancel),
@@ -238,8 +296,11 @@ export function createIntegrationWizardSchema({
         fields: [
           sourceTypeStep(sourceTypes, intl),
           nameIntegrationStep(sourceTypes, intl),
+          authTypeSelectionStep(intl),
+          authCredentialsStep(intl),
           applicationSelectionStep(applicationTypes, intl),
-          reviewStep(sourceTypes, applicationTypes, intl),
+          reviewStep(intl),
+          submissionResultStep(intl),
         ],
       },
     ],
@@ -277,6 +338,32 @@ function sourceTypeStep(sourceTypes: SourceType[], intl: IntlShape) {
 }
 
 /**
+ * Where naming leads, per provider.
+ *
+ * A provider with exactly one authentication type skips the selection step —
+ * asking someone to pick from a list of one is a click that answers nothing.
+ * Providers with none still go there, where the required validator holds them;
+ * see {@link authTypeSelectionStep}.
+ *
+ * Every provider that can reach this resolver must be a key. `selectNext`
+ * returns `undefined` for an unmapped value while `nextStep` itself stays
+ * truthy, so the footer would offer a Next that navigates the wizard to a step
+ * that does not exist. The schema test asserts the mapping is total.
+ */
+function stepAfterNaming(sourceTypes: SourceType[]) {
+  const stepMapper: Record<string, string> = {};
+
+  for (const provider of buildSourceTypeValues(sourceTypes)) {
+    stepMapper[provider] =
+      AUTH_TYPES_BY_PROVIDER[provider].length === 1
+        ? WizardStepId.AuthCredentials
+        : WizardStepId.AuthTypeSelection;
+  }
+
+  return { when: SOURCE_TYPE_FIELD, stepMapper };
+}
+
+/**
  * The naming step.
  *
  * Its description names the provider, so there is one `condition`-gated line
@@ -290,7 +377,7 @@ function nameIntegrationStep(sourceTypes: SourceType[], intl: IntlShape) {
   return {
     name: WizardStepId.NameIntegration,
     title: intl.formatMessage(messages.wizardNameStepTitle),
-    nextStep: WizardStepId.ApplicationSelection,
+    nextStep: stepAfterNaming(sourceTypes),
     fields: [
       ...buildSourceTypeOptions(sourceTypes, intl).map(({ value, label }) => ({
         component: componentTypes.PLAIN_TEXT,
@@ -396,33 +483,192 @@ function applicationSelectionStep(
   };
 }
 
-/** The review step, showing a read-only summary of all choices before submission. */
-function reviewStep(
-  sourceTypes: SourceType[],
-  applicationTypes: ApplicationType[],
-  intl: IntlShape,
-) {
+/**
+ * The authentication type step.
+ *
+ * Only providers with something other than exactly one authentication type
+ * reach it — see {@link stepAfterNaming} — which today means the three with
+ * none at all. So it renders the "not supported yet" line and an option-less
+ * required radio group, and the failing validator is what holds the primary
+ * button disabled. That matters beyond tidiness: `selectNext` returns
+ * `undefined` for a value the `stepMapper` below has no key for, which would
+ * navigate the wizard to a step that does not exist.
+ *
+ * RHCLOUD-51315 fills `AUTH_TYPES_BY_PROVIDER` in and gives this step real
+ * per-provider options.
+ */
+function authTypeSelectionStep(intl: IntlShape) {
+  return {
+    name: WizardStepId.AuthTypeSelection,
+    title: intl.formatMessage(messages.wizardAuthTypeStepTitle),
+    nextStep: {
+      when: AUTH_TYPE_FIELD,
+      stepMapper: { [ACCESS_KEY_AUTH_TYPE]: WizardStepId.AuthCredentials },
+    },
+    fields: [
+      {
+        component: componentTypes.PLAIN_TEXT,
+        name: 'auth-type-step-description',
+        label: intl.formatMessage(messages.wizardAuthTypeUnavailable),
+      },
+      {
+        component: componentTypes.RADIO,
+        name: AUTH_TYPE_FIELD,
+        label: intl.formatMessage(messages.wizardAuthTypeLabel),
+        isRequired: true,
+        options: [],
+        validate: [
+          {
+            type: validatorTypes.REQUIRED,
+            message: intl.formatMessage(messages.wizardAuthTypeRequired),
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * The credentials step, AWS only for now.
+ *
+ * `username` and `password` are the API's generic credential slots; AWS puts
+ * the access key id and secret in them. Both are REQUIRED and nothing more —
+ * sources-ui has no access-key format check either, and a regex that rejects a
+ * key AWS accepts is worse than letting the API say no.
+ *
+ * `authtype` is not something the user picks for AWS, so it is written into
+ * the form on mount instead of being asked for. `initializeOnMount` makes that
+ * survive a Back-and-forward, which plain `initialValue` would not.
+ */
+function authCredentialsStep(intl: IntlShape) {
+  return {
+    name: WizardStepId.AuthCredentials,
+    title: intl.formatMessage(messages.wizardCredentialsStepTitle),
+    nextStep: WizardStepId.ApplicationSelection,
+    fields: [
+      {
+        component: componentTypes.PLAIN_TEXT,
+        name: 'credentials-step-description',
+        label: intl.formatMessage(messages.wizardCredentialsStepDescription),
+      },
+      {
+        component: componentTypes.TEXT_FIELD,
+        name: AUTH_TYPE_FIELD,
+        hideField: true,
+        initialValue: ACCESS_KEY_AUTH_TYPE,
+        initializeOnMount: true,
+      },
+      {
+        component: componentTypes.TEXT_FIELD,
+        name: AUTH_USERNAME_FIELD,
+        label: intl.formatMessage(messages.wizardAccessKeyIdLabel),
+        placeholder: 'AKIAIOSFODNN7EXAMPLE',
+        isRequired: true,
+        validate: [
+          {
+            type: validatorTypes.REQUIRED,
+            message: intl.formatMessage(messages.wizardAccessKeyIdRequired),
+          },
+        ],
+      },
+      {
+        component: componentTypes.TEXT_FIELD,
+        name: AUTH_PASSWORD_FIELD,
+        label: intl.formatMessage(messages.wizardSecretAccessKeyLabel),
+        type: 'password',
+        isRequired: true,
+        validate: [
+          {
+            type: validatorTypes.REQUIRED,
+            message: intl.formatMessage(messages.wizardSecretAccessKeyRequired),
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * The review step.
+ *
+ * The summary is a custom component rather than plain text because it has to
+ * read live form values and offer buttons that jump back; see
+ * {@link ReviewSummary}. `nextStep` names the result step, which is flagged
+ * `isProgressAfterSubmissionStep` — that is what turns this step's primary
+ * button into the submit button.
+ */
+function reviewStep(intl: IntlShape) {
   return {
     name: WizardStepId.Review,
     title: intl.formatMessage(messages.wizardReviewStepTitle),
-    // No `nextStep`: review is the last step, making the primary button the
-    // submit button (labelled "Add").
+    nextStep: WizardStepId.SubmissionResult,
     fields: [
       {
-        component: REVIEW_STEP_COMPONENT,
+        component: componentTypes.PLAIN_TEXT,
+        name: 'review-step-description',
+        label: intl.formatMessage(messages.wizardReviewStepDescription),
+      },
+      {
+        component: REVIEW_SUMMARY_COMPONENT,
         name: 'review-summary',
-        description: intl.formatMessage(messages.wizardReviewStepDescription),
-        labels: {
-          review: intl.formatMessage(messages.wizardReviewStepTitle),
-          sourceType: intl.formatMessage(messages.wizardReviewSourceTypeLabel),
-          name: intl.formatMessage(messages.wizardReviewNameLabel),
-          applications: intl.formatMessage(
-            messages.wizardReviewApplicationsLabel,
-          ),
-        },
-        sourceTypeOptions: buildSourceTypeOptions(sourceTypes, intl),
-        applicationOptions: buildApplicationOptions(applicationTypes),
       },
     ],
+  };
+}
+
+/**
+ * The step shown after submitting.
+ *
+ * `isProgressAfterSubmissionStep` makes the mapper render these fields in
+ * place of the whole wizard body — nav, titles and footer included — while
+ * leaving the form mounted. That is what lets the error view offer a way back
+ * to review with everything the user typed still there.
+ */
+function submissionResultStep(intl: IntlShape) {
+  return {
+    name: WizardStepId.SubmissionResult,
+    title: intl.formatMessage(messages.wizardResultStepTitle),
+    isProgressAfterSubmissionStep: true,
+    fields: [
+      {
+        component: SUBMISSION_RESULT_COMPONENT,
+        name: 'submission-result',
+      },
+    ],
+  };
+}
+
+/** The form's value shape, as final-form nests the dotted field names. */
+export interface IntegrationWizardValues {
+  [SOURCE_TYPE_FIELD]?: SourceTypeName;
+  source?: { name?: string };
+  authentication?: {
+    authtype?: AuthenticationType;
+    username?: string;
+    password?: string;
+  };
+  [APPLICATIONS_FIELD]?: string[];
+}
+
+/**
+ * Maps submitted form values onto the data layer's input.
+ *
+ * Separate from the mutation so the mapping can be asserted without a form
+ * around it, and so the wizard stays the only thing that knows the field
+ * names. Values arrive already filtered by the renderer to the fields of
+ * visited steps, so a skipped step cannot contribute.
+ */
+export function toCreateSourceInput(
+  values: IntegrationWizardValues,
+): CreateSourceInput {
+  return {
+    name: values.source?.name ?? '',
+    sourceTypeName: values[SOURCE_TYPE_FIELD] ?? '',
+    authentication: {
+      authtype: values.authentication?.authtype ?? ACCESS_KEY_AUTH_TYPE,
+      username: values.authentication?.username,
+      password: values.authentication?.password,
+    },
+    applicationTypeIds: values[APPLICATIONS_FIELD] ?? [],
   };
 }

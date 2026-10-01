@@ -6,12 +6,14 @@ import type { ValidatorMapper } from '@data-driven-forms/react-form-renderer/val
 import FormTemplate from '@data-driven-forms/pf4-component-mapper/form-template';
 import pf4ComponentMapper from '@data-driven-forms/pf4-component-mapper/component-mapper';
 import ApplicationCheckboxSelect from './ApplicationCheckboxSelect';
-import ReviewStep from './ReviewStep';
 import SourceTypeCardSelect from './SourceTypeCardSelect';
+import ReviewSummary from './ReviewSummary';
+import SubmissionResult from './SubmissionResult';
 import {
   APPLICATION_SELECT_COMPONENT,
   CARD_SELECT_COMPONENT,
-  REVIEW_STEP_COMPONENT,
+  REVIEW_SUMMARY_COMPONENT,
+  SUBMISSION_RESULT_COMPONENT,
   validateArrayNotEmpty,
 } from './integrationWizardSchema';
 
@@ -24,7 +26,8 @@ import {
 export const mapperExtension = {
   [CARD_SELECT_COMPONENT]: SourceTypeCardSelect,
   [APPLICATION_SELECT_COMPONENT]: ApplicationCheckboxSelect,
-  [REVIEW_STEP_COMPONENT]: ReviewStep,
+  [REVIEW_SUMMARY_COMPONENT]: ReviewSummary,
+  [SUBMISSION_RESULT_COMPONENT]: SubmissionResult,
 };
 
 /**

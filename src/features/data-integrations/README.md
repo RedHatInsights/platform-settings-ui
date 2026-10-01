@@ -25,7 +25,7 @@ integrations end to end.
 | "My data integrations" table | Placeholder | RHCLOUD-50925 |
 | About tab content | Done — hero CTA copy still placeholder | RHCLOUD-49534, copy in RHCLOUD-51526 |
 | Creation wizard — AWS end to end | Done | RHCLOUD-51313, RHCLOUD-51314 |
-| Creation wizard — other providers, applications | Not started | RHCLOUD-51315, RHCLOUD-51316 |
+| Creation wizard — other providers, applications | Not started | RHCLOUD-51317, RHCLOUD-51318 |
 | Non-admin / permission gating | `isDisabled` prop, unwired | RHCLOUD-50927 |
 
 ## Structure
@@ -288,7 +288,7 @@ do not call `notify()`.** The wizard's result step shows both the success and th
 and a toast behind a modal says the same thing twice. A mutation with no UI of its own
 should notify.
 
-RHCLOUD-51315 adds the other three providers' authentication, which means filling in
+RHCLOUD-51317 adds the other three providers' authentication, which means filling in
 `AUTH_TYPES_BY_PROVIDER` and giving `auth-type-selection` real options. OpenShift also needs
 an endpoint step; the hook for it is `auth-credentials`'s `nextStep`, which becomes a
 resolver at that point. AWS has no endpoint configuration at all — `amazon.endpoint` is

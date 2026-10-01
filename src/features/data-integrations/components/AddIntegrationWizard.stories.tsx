@@ -78,7 +78,7 @@ async function fillAwsDetails(
  *
  * AWS goes all the way through: provider, name, credentials, applications,
  * review, create. The other three providers stop on the authentication step,
- * which has nothing to offer them until RHCLOUD-51315 — which is also why the
+ * which has nothing to offer them until RHCLOUD-51317 — which is also why the
  * application step is only ever exercised for AWS here.
  *
  * The cards are a radio group, which is why every assertion here reaches for

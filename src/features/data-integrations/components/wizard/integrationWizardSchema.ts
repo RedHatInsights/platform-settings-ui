@@ -66,7 +66,7 @@ export const SUBMISSION_RESULT_COMPONENT = 'submission-result';
  *
  * AWS has exactly one, which is why the wizard routes straight past the
  * authentication step for it — see {@link createIntegrationWizardSchema}. The
- * other three are empty until RHCLOUD-51315 implements them; an empty list is
+ * other three are empty until RHCLOUD-51317 implements them; an empty list is
  * what makes that step a dead end they cannot advance past, rather than a
  * broken one.
  */
@@ -494,7 +494,7 @@ function applicationSelectionStep(
  * `undefined` for a value the `stepMapper` below has no key for, which would
  * navigate the wizard to a step that does not exist.
  *
- * RHCLOUD-51315 fills `AUTH_TYPES_BY_PROVIDER` in and gives this step real
+ * RHCLOUD-51317 fills `AUTH_TYPES_BY_PROVIDER` in and gives this step real
  * per-provider options.
  */
 function authTypeSelectionStep(intl: IntlShape) {

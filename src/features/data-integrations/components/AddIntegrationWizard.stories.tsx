@@ -1,23 +1,85 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { MemoryRouter } from 'react-router-dom';
+import { StorybookMockProvider } from '@redhat-cloud-services/hcc-storybook-hub';
 import AddIntegrationWizard from './AddIntegrationWizard';
 import {
-  createFailingApplicationHandlers,
+  createFailingBulkCreateHandler,
   createFailingSourceTypesHandler,
+  createFlakyBulkCreateHandler,
+  createNetworkErrorBulkCreateHandler,
   createPendingSourceTypesHandler,
   createSourceTypesSubsetHandler,
   createSourcesHandlers,
+  sourcesDb,
 } from '../data/mocks/sources';
 import { clearAndType, waitForModal } from '../../../shared/interactionHelpers';
+
+const ACCESS_KEY_ID = 'AKIAIOSFODNN7EXAMPLE';
+const SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY';
+
+/**
+ * Walks an AWS wizard that opened pre-selected from naming through to review,
+ * picking Cost Management on the way.
+ *
+ * Shared because five stories below only differ in what happens once they get
+ * there, and the walk itself is already asserted end to end by
+ * {@link AmazonHappyPath}.
+ */
+async function fillAwsDetails(
+  user: ReturnType<typeof userEvent.setup>,
+  name = 'aws-production',
+) {
+  const modal = within(document.body);
+
+  await modal.findByRole('heading', { name: 'Name integration' });
+  await clearAndType(
+    user,
+    () => modal.getByRole('textbox', { name: 'Integration name' }),
+    name,
+  );
+  await waitFor(() =>
+    expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+  );
+  await user.click(modal.getByRole('button', { name: 'Next' }));
+
+  await modal.findByRole('heading', { name: 'Enter credentials' });
+  await clearAndType(
+    user,
+    () => modal.getByRole('textbox', { name: 'Access key ID' }),
+    ACCESS_KEY_ID,
+  );
+  await clearAndType(
+    user,
+    // By label rather than by role: it is a password input, which has no
+    // role. The regex is because PatternFly puts the required asterisk inside
+    // the label element, so the text is not an exact match.
+    () => modal.getByLabelText(/Secret access key/),
+    SECRET_ACCESS_KEY,
+  );
+  await waitFor(() =>
+    expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+  );
+  await user.click(modal.getByRole('button', { name: 'Next' }));
+
+  await modal.findByRole('heading', { name: 'Select applications' });
+  await user.click(modal.getByRole('checkbox', { name: 'Cost Management' }));
+  await waitFor(() =>
+    expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+  );
+  await user.click(modal.getByRole('button', { name: 'Next' }));
+
+  await modal.findByRole('heading', { name: 'Review details' });
+}
 
 /**
  * The Add Data Integration wizard, built as a data-driven-forms schema — see
  * `wizard/integrationWizardSchema.ts`.
  *
- * Four steps: choose a provider, name the integration, select which
- * applications will consume data from it, and review the choices. The
- * primary button on the review step is the wizard's submit button,
- * labelled "Add".
+ * AWS goes all the way through: provider, name, credentials, applications,
+ * review, create. The other three providers stop on the authentication step,
+ * which has nothing to offer them until RHCLOUD-51315 — which is also why the
+ * application step is only ever exercised for AWS here.
  *
  * The cards are a radio group, which is why every assertion here reaches for
  * them by `role: 'radio'` — doing so also proves each card carries the
@@ -26,6 +88,17 @@ import { clearAndType, waitForModal } from '../../../shared/interactionHelpers';
 const meta = {
   title: 'Features/DataIntegrations/AddIntegrationWizard',
   component: AddIntegrationWizard,
+  // The success screen links to the new integration through `AppLink`, which
+  // needs both a router and Chrome's bundle/app to build the basename from.
+  decorators: [
+    (Story) => (
+      <StorybookMockProvider bundle="settings" app="data-integrations">
+        <MemoryRouter initialEntries={['/settings/data-integrations']}>
+          <Story />
+        </MemoryRouter>
+      </StorybookMockProvider>
+    ),
+  ],
   args: {
     isOpen: true,
     onClose: fn(),
@@ -36,6 +109,9 @@ const meta = {
     // problems it shipped with were only visible once this was an error.
     a11y: { test: 'error' },
     msw: { handlers: createSourcesHandlers() },
+  },
+  beforeEach: () => {
+    sourcesDb.reset();
   },
 } satisfies Meta<typeof AddIntegrationWizard>;
 
@@ -131,52 +207,365 @@ export const Default: Story = {
       );
     });
 
-    await step(
-      'Next moves to application selection, showing compatible apps',
-      async () => {
-        await user.click(modal.getByRole('button', { name: 'Next' }));
-
-        await modal.findByRole('heading', { name: 'Select applications' });
-        // AWS shows Cost Management only, not RHEL management
-        expect(
-          modal.getByRole('checkbox', { name: 'Cost Management' }),
-        ).toBeInTheDocument();
-        expect(
-          modal.queryByRole('checkbox', { name: /RHEL management/i }),
-        ).not.toBeInTheDocument();
-      },
-    );
-
-    await step(
-      'Next is disabled until an application is selected',
-      async () => {
-        await waitFor(() =>
-          expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
-        );
-
-        await user.click(
-          modal.getByRole('checkbox', { name: 'Cost Management' }),
-        );
-
-        await waitFor(() =>
-          expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
-        );
-      },
-    );
-
-    await step('Next moves to review, showing selected choices', async () => {
+    await step('AWS is not asked to pick an authentication type', async () => {
       await user.click(modal.getByRole('button', { name: 'Next' }));
 
-      await modal.findByRole('heading', {
-        name: 'Review integration details',
-      });
+      // It has exactly one, so the step that would offer it is skipped.
+      await modal.findByRole('heading', { name: 'Enter credentials' });
+      expect(
+        modal.queryByRole('heading', { name: 'Select authentication type' }),
+      ).not.toBeInTheDocument();
+    });
+  },
+};
+
+/**
+ * The whole AWS path, ending in a created source.
+ */
+export const AmazonHappyPath: Story = {
+  args: { sourceType: 'amazon' },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await fillAwsDetails(user);
+
+    await step('Review shows the answers, and hides the secret', async () => {
       expect(modal.getByText('Amazon Web Services')).toBeInTheDocument();
       expect(modal.getByText('aws-production')).toBeInTheDocument();
       expect(modal.getByText('Cost Management')).toBeInTheDocument();
+      expect(modal.getByText('Access key')).toBeInTheDocument();
+
+      // The key is recognisable but not readable, and the secret is not on the
+      // page in any form — the point of masking is defeated if it is in the
+      // DOM behind a style.
+      expect(modal.getByText(/^AKIA•+$/)).toBeInTheDocument();
+      expect(modal.getByText('Hidden')).toBeInTheDocument();
+      expect(document.body).not.toHaveTextContent(SECRET_ACCESS_KEY);
     });
 
-    await step('Add button is present on the review step', async () => {
-      expect(modal.getByRole('button', { name: 'Add' })).toBeEnabled();
+    await step('Review submits rather than advancing', async () => {
+      const add = modal.getByRole('button', { name: 'Add' });
+      await waitFor(() => expect(add).toBeEnabled());
+      await user.click(add);
+    });
+
+    await step('The created integration is confirmed by name', async () => {
+      await modal.findByRole('heading', { name: 'Integration added' });
+      expect(modal.getByText(/aws-production was created/)).toBeInTheDocument();
+
+      const created = sourcesDb
+        .findAll()
+        .find(({ name }) => name === 'aws-production');
+      expect(created).toBeDefined();
+
+      // The link has to point at the source that was just made, which is the
+      // one thing a hardcoded path would get wrong.
+      expect(
+        modal.getByRole('link', { name: 'View integration' }),
+      ).toHaveAttribute('href', expect.stringContaining(String(created?.id)));
+    });
+  },
+};
+
+/**
+ * The application step offers only what the chosen provider supports, and
+ * refuses to advance until one is ticked — an integration that feeds nothing
+ * is not something the wizard should be able to create.
+ */
+export const AmazonApplicationSelection: Story = {
+  args: { sourceType: 'amazon' },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await modal.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Integration name' }),
+      'aws-production',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+
+    await modal.findByRole('heading', { name: 'Enter credentials' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Access key ID' }),
+      ACCESS_KEY_ID,
+    );
+    await clearAndType(
+      user,
+      () => modal.getByLabelText(/Secret access key/),
+      SECRET_ACCESS_KEY,
+    );
+    await waitFor(() =>
+      expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+
+    await step('Only applications AWS supports are listed', async () => {
+      await modal.findByRole('heading', { name: 'Select applications' });
+
+      expect(
+        modal.getByRole('checkbox', { name: 'Cost Management' }),
+      ).toBeInTheDocument();
+      // RHEL management is OpenShift-only.
+      expect(
+        modal.queryByRole('checkbox', { name: /RHEL management/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    await step('Next waits for at least one application', async () => {
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
+      );
+
+      await user.click(
+        modal.getByRole('checkbox', { name: 'Cost Management' }),
+      );
+
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+      );
+    });
+
+    await step('Clearing the selection explains why', async () => {
+      await user.click(
+        modal.getByRole('checkbox', { name: 'Cost Management' }),
+      );
+
+      await waitFor(() =>
+        expect(
+          modal.queryByText('Select at least one application to continue.'),
+        ).toBeInTheDocument(),
+      );
+    });
+  },
+};
+
+/**
+ * Editing from review. The jump has to carry the user back to a step that
+ * still holds what they typed, and forward again to a review that reflects the
+ * change — which is what `jumpToStep` over `prevSteps` buys over a remount.
+ */
+export const AmazonReviewEdit: Story = {
+  args: { sourceType: 'amazon' },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await fillAwsDetails(user);
+
+    await step('Edit returns to credentials, values intact', async () => {
+      await user.click(modal.getByRole('button', { name: 'Edit credentials' }));
+
+      await modal.findByRole('heading', { name: 'Enter credentials' });
+      expect(modal.getByRole('textbox', { name: 'Access key ID' })).toHaveValue(
+        ACCESS_KEY_ID,
+      );
+    });
+
+    await step('The change shows up back on review', async () => {
+      await clearAndType(
+        user,
+        () => modal.getByRole('textbox', { name: 'Access key ID' }),
+        'AKIAEXAMPLECHANGED00',
+      );
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+
+      await modal.findByRole('heading', { name: 'Review details' });
+      expect(modal.getByText(/^AKIA•+$/)).toBeInTheDocument();
+    });
+
+    await step('Editing the name works the same way', async () => {
+      await user.click(
+        modal.getByRole('button', { name: 'Edit integration details' }),
+      );
+
+      await modal.findByRole('heading', { name: 'Name integration' });
+      expect(
+        modal.getByRole('textbox', { name: 'Integration name' }),
+      ).toHaveValue('aws-production');
+    });
+  },
+};
+
+/**
+ * A create that fails once. The error names the reason the API gave, and Retry
+ * submits the same values again rather than making the user retype them.
+ */
+export const AmazonSubmitErrorRetry: Story = {
+  args: { sourceType: 'amazon' },
+  parameters: {
+    msw: {
+      handlers: [
+        ...createFlakyBulkCreateHandler(1),
+        ...createSourcesHandlers(),
+      ],
+    },
+  },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await fillAwsDetails(user);
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+
+    await step('The failure is reported with the API reason', async () => {
+      await modal.findByRole('heading', { name: 'Unable to add integration' });
+      expect(modal.getByText('Internal Server Error')).toBeInTheDocument();
+    });
+
+    await step('Retry goes through', async () => {
+      await user.click(modal.getByRole('button', { name: 'Retry' }));
+
+      await modal.findByRole('heading', { name: 'Integration added' });
+    });
+  },
+};
+
+/**
+ * A 400 the user can act on — the name is taken. "Edit details" has to put
+ * them back on review with everything still filled in, or the reason the
+ * result step is a wizard step rather than a swapped modal body is moot.
+ */
+export const AmazonSubmitError400: Story = {
+  args: { sourceType: 'amazon' },
+  parameters: {
+    msw: {
+      handlers: [
+        ...createFailingBulkCreateHandler(400, 'Name has already been taken'),
+        ...createSourcesHandlers(),
+      ],
+    },
+  },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await fillAwsDetails(user);
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+
+    await step("The API's reason is what is shown", async () => {
+      await modal.findByRole('heading', { name: 'Unable to add integration' });
+      expect(
+        modal.getByText('Name has already been taken'),
+      ).toBeInTheDocument();
+    });
+
+    await step('Edit details returns to review, answers intact', async () => {
+      await user.click(modal.getByRole('button', { name: 'Edit details' }));
+
+      await modal.findByRole('heading', { name: 'Review details' });
+      expect(modal.getByText('aws-production')).toBeInTheDocument();
+      expect(modal.getByText(/^AKIA•+$/)).toBeInTheDocument();
+    });
+  },
+};
+
+/**
+ * A request that never reaches the API. There is no response to read a reason
+ * out of, so the generic copy stands in — and Retry is still the way forward.
+ */
+export const AmazonSubmitNetworkError: Story = {
+  args: { sourceType: 'amazon' },
+  parameters: {
+    msw: {
+      handlers: [
+        ...createNetworkErrorBulkCreateHandler(),
+        ...createSourcesHandlers(),
+      ],
+    },
+  },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await fillAwsDetails(user);
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+
+    await step('The generic failure copy stands in', async () => {
+      await modal.findByRole('heading', { name: 'Unable to add integration' });
+      expect(
+        modal.getByText(/Check your connection and try again/),
+      ).toBeInTheDocument();
+      expect(modal.getByRole('button', { name: 'Retry' })).toBeEnabled();
+    });
+  },
+};
+
+/**
+ * Adding a second integration after a successful one. The wizard has to come
+ * back empty: a form still holding the last answers would silently create a
+ * near-duplicate.
+ */
+export const SuccessAddAnother: Story = {
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await step('Add the first integration', async () => {
+      await modal.findByRole('radio', { name: 'Amazon Web Services' });
+      await user.click(
+        modal.getByRole('radio', { name: 'Amazon Web Services' }),
+      );
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+      );
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+
+      await fillAwsDetails(user);
+      await user.click(modal.getByRole('button', { name: 'Add' }));
+      await modal.findByRole('heading', { name: 'Integration added' });
+    });
+
+    await step('Add another starts over from an empty form', async () => {
+      await user.click(
+        modal.getByRole('button', { name: 'Add another integration' }),
+      );
+
+      await modal.findByRole('heading', { name: 'Select integration type' });
+      for (const radio of modal.getAllByRole('radio')) {
+        expect(radio).not.toBeChecked();
+      }
+    });
+  },
+};
+
+/**
+ * A provider with no authentication type yet. It reaches the authentication
+ * step and stops there with an explanation — the one thing it must not do is
+ * offer a Next, because there is no step mapped behind it.
+ */
+export const UnsupportedProviderStopsAtAuthType: Story = {
+  args: { sourceType: 'google' },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await modal.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Integration name' }),
+      'gcp-production',
+    );
+    await waitFor(() =>
+      expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+
+    await step('It lands on the authentication step', async () => {
+      await modal.findByRole('heading', { name: 'Select authentication type' });
+      expect(
+        modal.getByText(/Adding this integration type is not supported yet/),
+      ).toBeInTheDocument();
+    });
+
+    await step('There is no way forward, only back', async () => {
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
+      );
+      expect(modal.getByRole('button', { name: 'Back' })).toBeEnabled();
     });
   },
 };
@@ -366,49 +755,6 @@ export const Loading: Story = {
 };
 
 /**
- * OpenShift shows RHEL management only, not Cost Management.
- * Verifies the source type compatibility filter works in the other direction.
- */
-export const OpenShiftApplications: Story = {
-  args: { sourceType: 'openshift' },
-  play: async ({ step }) => {
-    const user = userEvent.setup();
-    const modal = within(document.body);
-
-    await modal.findByRole('heading', { name: 'Name integration' });
-    await clearAndType(
-      user,
-      () => modal.getByRole('textbox', { name: 'Integration name' }),
-      'ocp-east',
-    );
-    await user.click(modal.getByRole('button', { name: 'Next' }));
-
-    await step(
-      'OpenShift shows RHEL management, not Cost Management',
-      async () => {
-        await modal.findByRole('heading', { name: 'Select applications' });
-        expect(
-          modal.getByRole('checkbox', { name: 'RHEL management' }),
-        ).toBeInTheDocument();
-        expect(
-          modal.queryByRole('checkbox', { name: 'Cost Management' }),
-        ).not.toBeInTheDocument();
-      },
-    );
-
-    await step('Selecting the application enables Next', async () => {
-      await user.click(
-        modal.getByRole('checkbox', { name: 'RHEL management' }),
-      );
-
-      await waitFor(() =>
-        expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
-      );
-    });
-  },
-};
-
-/**
  * A catalogue that will not load leaves nothing to choose from, so the wizard
  * explains itself and offers only a way out.
  */
@@ -429,129 +775,5 @@ export const LoadFailed: Story = {
       await user.click(modal.getByRole('button', { name: 'Close' }));
       expect(args.onClose).toHaveBeenCalledTimes(1);
     });
-  },
-};
-
-/**
- * Reaching the application step without selecting anything shows the
- * validation error when the field is touched then emptied.
- */
-export const NoApplicationSelected: Story = {
-  args: { sourceType: 'amazon' },
-  play: async ({ step }) => {
-    const user = userEvent.setup();
-    const modal = within(document.body);
-
-    await modal.findByRole('heading', { name: 'Name integration' });
-    await clearAndType(
-      user,
-      () => modal.getByRole('textbox', { name: 'Integration name' }),
-      'aws-test',
-    );
-    await user.click(modal.getByRole('button', { name: 'Next' }));
-
-    await step(
-      'Application step shows with no checkboxes selected',
-      async () => {
-        await modal.findByRole('heading', { name: 'Select applications' });
-
-        const checkboxes = modal.getAllByRole('checkbox');
-        for (const cb of checkboxes) {
-          expect(cb).not.toBeChecked();
-        }
-      },
-    );
-
-    await step('Next is disabled when nothing is selected', async () => {
-      await waitFor(() =>
-        expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
-      );
-    });
-
-    await step(
-      'Selecting and deselecting shows the validation error',
-      async () => {
-        // Select then deselect to trigger touched + empty validation
-        await user.click(
-          modal.getByRole('checkbox', { name: 'Cost Management' }),
-        );
-        await user.click(
-          modal.getByRole('checkbox', { name: 'Cost Management' }),
-        );
-
-        await waitFor(() =>
-          expect(
-            modal.queryByText('Select at least one application to continue.'),
-          ).toBeInTheDocument(),
-        );
-      },
-    );
-  },
-};
-
-/**
- * Source creation succeeds but application association fails. The wizard
- * closes and shows a warning notification rather than a success.
- */
-export const PartialFailure: Story = {
-  args: { sourceType: 'amazon' },
-  parameters: {
-    msw: { handlers: createFailingApplicationHandlers() },
-    a11y: { test: 'error' },
-  },
-  play: async ({ args, step }) => {
-    const user = userEvent.setup();
-    const modal = within(document.body);
-
-    // Walk through the wizard to the review step
-    await modal.findByRole('heading', { name: 'Name integration' });
-    await clearAndType(
-      user,
-      () => modal.getByRole('textbox', { name: 'Integration name' }),
-      'aws-partial',
-    );
-    await user.click(modal.getByRole('button', { name: 'Next' }));
-
-    await modal.findByRole('heading', { name: 'Select applications' });
-    await user.click(modal.getByRole('checkbox', { name: 'Cost Management' }));
-    await user.click(modal.getByRole('button', { name: 'Next' }));
-
-    await modal.findByRole('heading', {
-      name: 'Review integration details',
-    });
-
-    await step(
-      'Submitting with failing app creation closes the wizard',
-      async () => {
-        await user.click(modal.getByRole('button', { name: 'Add' }));
-
-        await waitFor(() => expect(args.onClose).toHaveBeenCalledTimes(1));
-      },
-    );
-
-    await step(
-      'A warning notification appears and can be dismissed',
-      async () => {
-        // The notification is dispatched through Redux after submission and
-        // renders asynchronously via the notifications portal.
-        const notificationTitle = await modal.findByText(
-          /aws-partial was created/,
-        );
-        expect(notificationTitle).toBeInTheDocument();
-
-        // Dismiss the notification — verifies the close button works.
-        const alertContainer = notificationTitle.closest(
-          '.pf-v6-c-alert',
-        ) as HTMLElement;
-        await user.click(
-          within(alertContainer).getByRole('button', { name: /close/i }),
-        );
-        await waitFor(() =>
-          expect(
-            modal.queryByText(/aws-partial was created/),
-          ).not.toBeInTheDocument(),
-        );
-      },
-    );
   },
 };

@@ -363,6 +363,7 @@ export const validateArrayNotEmpty: (
   return meta?.message ?? 'Select at least one item.';
 };
 
+/** The application selection step, filtered to apps compatible with the chosen provider. */
 function applicationSelectionStep(
   applicationTypes: ApplicationType[],
   intl: IntlShape,
@@ -393,6 +394,7 @@ function applicationSelectionStep(
   };
 }
 
+/** The review step, showing a read-only summary of all choices before submission. */
 function reviewStep(
   sourceTypes: SourceType[],
   applicationTypes: ApplicationType[],

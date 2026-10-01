@@ -1,3 +1,4 @@
+import type { HttpHandler } from 'msw';
 import { HttpResponse, delay, http } from 'msw';
 import { createResettableCollection } from '../../../../shared/mockCollections';
 import type {
@@ -324,7 +325,9 @@ export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
  * Handlers where source creation succeeds but application creation always
  * fails. Used to test the partial-failure path in the wizard.
  */
-export function createFailingApplicationHandlers(baseUrl = SOURCES_API_BASE) {
+export function createFailingApplicationHandlers(
+  baseUrl = SOURCES_API_BASE,
+): HttpHandler[] {
   const base = createSourcesHandlers(baseUrl);
 
   return [

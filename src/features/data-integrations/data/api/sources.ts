@@ -268,12 +268,14 @@ export function createSourcesApi(axios: AxiosInstance) {
       return (collection.data ?? []) as ApplicationType[];
     },
 
+    /** Creates a new source via `POST /sources`. */
     async createSource(input: CreateSourceInput): Promise<Source> {
       const response = await api.createSource({ source: input });
 
       return response.data as Source;
     },
 
+    /** Associates an application type with a source via `POST /applications`. */
     async createApplication(
       input: CreateApplicationInput,
     ): Promise<Application> {

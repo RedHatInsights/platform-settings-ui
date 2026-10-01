@@ -332,6 +332,23 @@ describe('buildApplicationOptions', () => {
       supportedSourceTypes: ['amazon', 'google', 'azure'],
     });
   });
+
+  it('filters out application types not in the offered allowlist', () => {
+    const withImageBuilder: ApplicationType[] = [
+      ...applicationTypes,
+      {
+        id: '99',
+        name: '/insights/platform/image-builder',
+        display_name: 'Image Builder',
+        supported_source_types: ['amazon'],
+      },
+    ];
+
+    const options = buildApplicationOptions(withImageBuilder);
+
+    expect(options).toHaveLength(2);
+    expect(options.find((o) => o.label === 'Image Builder')).toBeUndefined();
+  });
 });
 
 describe('validateArrayNotEmpty', () => {

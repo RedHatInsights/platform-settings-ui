@@ -138,6 +138,11 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
         (st) => st.name === sourceTypeName,
       );
       if (!matchedSourceType) {
+        notify(
+          'danger',
+          intl.formatMessage(messages.wizardCreateFailureTitle),
+          intl.formatMessage(messages.wizardCreateFailureBody),
+        );
         return;
       }
 

@@ -14,9 +14,10 @@ import { clearAndType, waitForModal } from '../../../shared/interactionHelpers';
  * The Add Data Integration wizard, built as a data-driven-forms schema — see
  * `wizard/integrationWizardSchema.ts`.
  *
- * Three steps: choose a provider, name the integration, and select which
- * applications will consume data from it. The primary button on the
- * application step is the wizard's submit button, labelled "Add".
+ * Four steps: choose a provider, name the integration, select which
+ * applications will consume data from it, and review the choices. The
+ * primary button on the review step is the wizard's submit button,
+ * labelled "Add".
  *
  * The cards are a radio group, which is why every assertion here reaches for
  * them by `role: 'radio'` — doing so also proves each card carries the
@@ -499,7 +500,10 @@ export const PartialFailure: Story = {
     // The warning notification rendered by NotificationsProvider uses an h4,
     // which triggers heading-order because the wizard's modal headings don't
     // include h1–h3. This is a PatternFly/notifications concern, not ours.
-    a11y: { test: 'error', config: { rules: [{ id: 'heading-order', enabled: false }] } },
+    a11y: {
+      test: 'error',
+      config: { rules: [{ id: 'heading-order', enabled: false }] },
+    },
   },
   play: async ({ args, step }) => {
     const user = userEvent.setup();

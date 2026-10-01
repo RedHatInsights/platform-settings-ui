@@ -1,13 +1,13 @@
 .data-integrations-review-step {
-  margin-block-start: var(--pf-v6-global--spacer--lg);
+  margin-block-start: var(--pf-t--global--spacer--lg);
 
   .pf-v6-c-description-list {
-    margin-block-start: var(--pf-v6-global--spacer--lg);
+    margin-block-start: var(--pf-t--global--spacer--lg);
   }
 
   .pf-v6-c-description-list__group {
-    padding-block-end: var(--pf-v6-global--spacer--md);
-    border-block-end: var(--pf-v6-global--BorderWidth--sm) solid
-      var(--pf-v6-global--BorderColor--100);
+    padding-block-end: var(--pf-t--global--spacer--md);
+    border-block-end: var(--pf-t--global--border--width--box--default) solid
+      var(--pf-t--global--border--color--default);
   }
 }

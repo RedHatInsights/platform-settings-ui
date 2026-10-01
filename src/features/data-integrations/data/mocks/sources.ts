@@ -301,6 +301,20 @@ export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
         availability_status: 'available',
       };
 
+      // Append the association to the source so subsequent list and detail
+      // reads reflect the successful submission.
+      const source = sourcesDb.findById(body.source_id);
+      if (source) {
+        source.applications = [
+          ...(source.applications ?? []),
+          {
+            id: application.id,
+            application_type_id: application.application_type_id,
+            availability_status: 'available',
+          },
+        ];
+      }
+
       return HttpResponse.json(application, { status: 201 });
     }),
   ];

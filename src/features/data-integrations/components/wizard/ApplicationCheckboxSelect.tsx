@@ -61,6 +61,22 @@ const ApplicationCheckboxSelect: React.FC<UseFieldApiConfig> = (props) => {
 
   const selectedValues: string[] = input.value ?? [];
 
+  // When the source type changes, previously selected applications may no
+  // longer be compatible. Prune any stale IDs so the user cannot submit an
+  // application the chosen provider does not support.
+  const compatibleIds = React.useMemo(
+    () => new Set(compatibleOptions.map((opt) => opt.value)),
+    [compatibleOptions],
+  );
+  React.useEffect(() => {
+    const pruned = (input.value ?? []).filter((id: string) =>
+      compatibleIds.has(id),
+    );
+    if (pruned.length !== (input.value ?? []).length) {
+      input.onChange(pruned);
+    }
+  }, [compatibleIds, input]);
+
   const showError = Boolean(meta.touched && meta.error);
   const errorId = `${input.name}-error`;
 
@@ -82,7 +98,6 @@ const ApplicationCheckboxSelect: React.FC<UseFieldApiConfig> = (props) => {
       <div
         role="group"
         aria-label={label}
-        aria-required={isRequired || undefined}
         aria-invalid={showError || undefined}
         aria-errormessage={showError ? errorId : undefined}
       >

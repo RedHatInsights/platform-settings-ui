@@ -98,6 +98,42 @@ export interface ApplicationType {
   display_name: string;
   created_at?: string;
   dependent_applications?: object;
+  /**
+   * Source type ids this application is compatible with. Used by the wizard's
+   * application selection step to show only the services the chosen provider
+   * can feed data to. Absent in the real API — populated by our mock layer
+   * and, once the backend supports it, by the catalogue endpoint.
+   */
+  supported_source_types?: string[];
+}
+
+/**
+ * A created application association — the result of `POST /applications`.
+ * Links a {@link Source} to an {@link ApplicationType}.
+ */
+export interface Application {
+  id: string;
+  source_id: string;
+  application_type_id: string;
+  created_at: string;
+  updated_at?: string;
+  availability_status?: SourceAvailabilityStatus;
+}
+
+/**
+ * Payload for creating an application association via `POST /applications`.
+ */
+export interface CreateApplicationInput {
+  source_id: string;
+  application_type_id: string;
+}
+
+/**
+ * Payload for creating a source via `POST /sources`.
+ */
+export interface CreateSourceInput {
+  name: string;
+  source_type_id: string;
 }
 
 export interface CollectionLinks {

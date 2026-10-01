@@ -1,6 +1,9 @@
 import { HttpResponse, delay, http } from 'msw';
 import { createResettableCollection } from '../../../../shared/mockCollections';
 import type {
+  Application,
+  CreateApplicationInput,
+  CreateSourceInput,
   PageApplicationType,
   PageSourceType,
   Source,
@@ -162,6 +165,14 @@ export function createPendingSourceTypesHandler(baseUrl = SOURCES_API_BASE) {
 
       return HttpResponse.json({} as PageSourceType);
     }),
+    http.get(`${baseUrl}/application_types`, () => {
+      const response: PageApplicationType = {
+        data: seedApplicationTypes,
+        links: {},
+        meta: { count: seedApplicationTypes.length },
+      };
+      return HttpResponse.json(response);
+    }),
   ];
 }
 
@@ -175,6 +186,14 @@ export function createFailingSourceTypesHandler(baseUrl = SOURCES_API_BASE) {
       `${baseUrl}/source_types`,
       () => new HttpResponse(null, { status: 500 }),
     ),
+    http.get(`${baseUrl}/application_types`, () => {
+      const response: PageApplicationType = {
+        data: seedApplicationTypes,
+        links: {},
+        meta: { count: seedApplicationTypes.length },
+      };
+      return HttpResponse.json(response);
+    }),
   ];
 }
 
@@ -195,6 +214,14 @@ export function createSourceTypesSubsetHandler(
         data,
         links: {},
         meta: { count: data.length },
+      };
+      return HttpResponse.json(response);
+    }),
+    http.get(`${baseUrl}/application_types`, () => {
+      const response: PageApplicationType = {
+        data: seedApplicationTypes,
+        links: {},
+        meta: { count: seedApplicationTypes.length },
       };
       return HttpResponse.json(response);
     }),
@@ -248,5 +275,52 @@ export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
 
       return HttpResponse.json(response);
     }),
+
+    http.post(`${baseUrl}/sources`, async ({ request }) => {
+      const body = (await request.json()) as CreateSourceInput;
+      const source: Source = {
+        id: `src-${Date.now()}`,
+        name: body.name,
+        source_type_id: body.source_type_id,
+        created_at: new Date().toISOString(),
+        availability_status: 'in_progress',
+        applications: [],
+      };
+      sourcesDb.create(source);
+
+      return HttpResponse.json(source, { status: 201 });
+    }),
+
+    http.post(`${baseUrl}/applications`, async ({ request }) => {
+      const body = (await request.json()) as CreateApplicationInput;
+      const application: Application = {
+        id: `app-${Date.now()}`,
+        source_id: body.source_id,
+        application_type_id: body.application_type_id,
+        created_at: new Date().toISOString(),
+        availability_status: 'available',
+      };
+
+      return HttpResponse.json(application, { status: 201 });
+    }),
+  ];
+}
+
+/**
+ * Handlers where source creation succeeds but application creation always
+ * fails. Used to test the partial-failure path in the wizard.
+ */
+export function createFailingApplicationHandlers(baseUrl = SOURCES_API_BASE) {
+  const base = createSourcesHandlers(baseUrl);
+
+  return [
+    // Override the application POST handler with one that always errors.
+    http.post(`${baseUrl}/applications`, () =>
+      HttpResponse.json(
+        { errors: [{ detail: 'Application association failed', status: 500 }] },
+        { status: 500 },
+      ),
+    ),
+    ...base,
   ];
 }

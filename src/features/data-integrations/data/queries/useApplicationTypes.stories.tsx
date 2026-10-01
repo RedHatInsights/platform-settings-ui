@@ -69,14 +69,9 @@ export const Default: Story = {
       await expect(cost).toHaveTextContent('Cost Management');
 
       const rhel = await canvas.findByText(
-        /\/insights\/platform\/rhel-management —/,
+        /\/insights\/platform\/cloud-meter —/,
       );
-      await expect(rhel).toHaveTextContent('RHEL Management');
-
-      const subscriptions = await canvas.findByText(
-        /\/insights\/platform\/subscriptions —/,
-      );
-      await expect(subscriptions).toHaveTextContent('Subscriptions');
+      await expect(rhel).toHaveTextContent('RHEL management');
     });
   },
 };

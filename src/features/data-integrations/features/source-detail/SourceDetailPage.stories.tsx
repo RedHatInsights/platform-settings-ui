@@ -58,9 +58,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Source 101 — an available AWS account with Cost Management and
- * Subscriptions attached. Available sources open the applications section by
- * default.
+ * Source 101 — an available AWS account with Cost Management attached.
+ * Available sources open the applications section by default.
  */
 export const Default: Story = {
   play: async ({ canvasElement, step }) => {
@@ -97,10 +96,9 @@ export const Default: Story = {
       ).not.toBeInTheDocument();
     });
 
-    await step('Connected applications lists both services', async () => {
+    await step('Connected applications lists the service', async () => {
       expect(canvas.getByText('Connected applications')).toBeInTheDocument();
       expect(canvas.getByLabelText('Cost Management')).toBeInTheDocument();
-      expect(canvas.getByLabelText('Subscriptions')).toBeInTheDocument();
     });
 
     await step('Save, Cancel, and Actions are available', async () => {
@@ -348,10 +346,10 @@ export const Unavailable: Story = {
 };
 
 /**
- * Source 105 — an OpenShift cluster where one application is healthy and one
- * is not.
+ * Source 105 — an OpenShift cluster with an unavailable RHEL management
+ * application.
  */
-export const PartiallyAvailable: Story = {
+export const UnavailableOpenShift: Story = {
   parameters: {
     initialRoute: '/settings/data-integrations/105',
   },
@@ -367,10 +365,10 @@ export const PartiallyAvailable: Story = {
         'src',
         '/apps/frontend-assets/technology-icons/openshift.svg',
       );
-      expect(canvas.getByText('Partially available')).toBeInTheDocument();
+      expect(canvas.getByText('Unavailable')).toBeInTheDocument();
     });
 
-    await step('Both applications are listed once expanded', async () => {
+    await step('RHEL management is listed once expanded', async () => {
       await user.click(
         canvas.getByRole('button', { name: 'Connected applications' }),
       );
@@ -379,10 +377,7 @@ export const PartiallyAvailable: Story = {
         name: 'Connected applications',
       });
       expect(
-        within(region).getByLabelText('Cost Management'),
-      ).toBeInTheDocument();
-      expect(
-        within(region).getByLabelText('RHEL Management'),
+        within(region).getByLabelText('RHEL management'),
       ).toBeInTheDocument();
     });
   },

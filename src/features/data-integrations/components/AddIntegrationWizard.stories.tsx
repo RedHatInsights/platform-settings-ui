@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import AddIntegrationWizard from './AddIntegrationWizard';
 import {
+  createFailingApplicationHandlers,
   createFailingSourceTypesHandler,
   createPendingSourceTypesHandler,
   createSourceTypesSubsetHandler,
@@ -13,10 +14,9 @@ import { clearAndType, waitForModal } from '../../../shared/interactionHelpers';
  * The Add Data Integration wizard, built as a data-driven-forms schema — see
  * `wizard/integrationWizardSchema.ts`.
  *
- * Two steps exist so far — choose a provider, then name the integration — so
- * the primary button on the naming step is the wizard's submit button, still
- * labelled "Next". The application and review steps arrive in the follow-up
- * stories and turn it into a real submit.
+ * Three steps: choose a provider, name the integration, and select which
+ * applications will consume data from it. The primary button on the
+ * application step is the wizard's submit button, labelled "Add".
  *
  * The cards are a radio group, which is why every assertion here reaches for
  * them by `role: 'radio'` — doing so also proves each card carries the
@@ -128,6 +128,54 @@ export const Default: Story = {
       await waitFor(() =>
         expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
       );
+    });
+
+    await step(
+      'Next moves to application selection, showing compatible apps',
+      async () => {
+        await user.click(modal.getByRole('button', { name: 'Next' }));
+
+        await modal.findByRole('heading', { name: 'Select applications' });
+        // AWS shows Cost Management only, not RHEL management
+        expect(
+          modal.getByRole('checkbox', { name: 'Cost Management' }),
+        ).toBeInTheDocument();
+        expect(
+          modal.queryByRole('checkbox', { name: /RHEL management/i }),
+        ).not.toBeInTheDocument();
+      },
+    );
+
+    await step(
+      'Next is disabled until an application is selected',
+      async () => {
+        await waitFor(() =>
+          expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
+        );
+
+        await user.click(
+          modal.getByRole('checkbox', { name: 'Cost Management' }),
+        );
+
+        await waitFor(() =>
+          expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+        );
+      },
+    );
+
+    await step('Next moves to review, showing selected choices', async () => {
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+
+      await modal.findByRole('heading', {
+        name: 'Review integration details',
+      });
+      expect(modal.getByText('Amazon Web Services')).toBeInTheDocument();
+      expect(modal.getByText('aws-production')).toBeInTheDocument();
+      expect(modal.getByText('Cost Management')).toBeInTheDocument();
+    });
+
+    await step('Add button is present on the review step', async () => {
+      expect(modal.getByRole('button', { name: 'Add' })).toBeEnabled();
     });
   },
 };
@@ -317,6 +365,49 @@ export const Loading: Story = {
 };
 
 /**
+ * OpenShift shows RHEL management only, not Cost Management.
+ * Verifies the source type compatibility filter works in the other direction.
+ */
+export const OpenShiftApplications: Story = {
+  args: { sourceType: 'openshift' },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await modal.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Integration name' }),
+      'ocp-east',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+
+    await step(
+      'OpenShift shows RHEL management, not Cost Management',
+      async () => {
+        await modal.findByRole('heading', { name: 'Select applications' });
+        expect(
+          modal.getByRole('checkbox', { name: 'RHEL management' }),
+        ).toBeInTheDocument();
+        expect(
+          modal.queryByRole('checkbox', { name: 'Cost Management' }),
+        ).not.toBeInTheDocument();
+      },
+    );
+
+    await step('Selecting the application enables Next', async () => {
+      await user.click(
+        modal.getByRole('checkbox', { name: 'RHEL management' }),
+      );
+
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+      );
+    });
+  },
+};
+
+/**
  * A catalogue that will not load leaves nothing to choose from, so the wizard
  * explains itself and offers only a way out.
  */
@@ -337,5 +428,107 @@ export const LoadFailed: Story = {
       await user.click(modal.getByRole('button', { name: 'Close' }));
       expect(args.onClose).toHaveBeenCalledTimes(1);
     });
+  },
+};
+
+/**
+ * Reaching the application step without selecting anything shows the
+ * validation error when the field is touched then emptied.
+ */
+export const NoApplicationSelected: Story = {
+  args: { sourceType: 'amazon' },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await modal.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Integration name' }),
+      'aws-test',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+
+    await step(
+      'Application step shows with no checkboxes selected',
+      async () => {
+        await modal.findByRole('heading', { name: 'Select applications' });
+
+        const checkboxes = modal.getAllByRole('checkbox');
+        for (const cb of checkboxes) {
+          expect(cb).not.toBeChecked();
+        }
+      },
+    );
+
+    await step('Next is disabled when nothing is selected', async () => {
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
+      );
+    });
+
+    await step(
+      'Selecting and deselecting shows the validation error',
+      async () => {
+        // Select then deselect to trigger touched + empty validation
+        await user.click(
+          modal.getByRole('checkbox', { name: 'Cost Management' }),
+        );
+        await user.click(
+          modal.getByRole('checkbox', { name: 'Cost Management' }),
+        );
+
+        await waitFor(() =>
+          expect(
+            modal.queryByText('Select at least one application to continue.'),
+          ).toBeInTheDocument(),
+        );
+      },
+    );
+  },
+};
+
+/**
+ * Source creation succeeds but application association fails. The wizard
+ * closes and shows a warning notification rather than a success.
+ */
+export const PartialFailure: Story = {
+  args: { sourceType: 'amazon' },
+  parameters: {
+    msw: { handlers: createFailingApplicationHandlers() },
+    // The warning notification rendered by NotificationsProvider uses an h4,
+    // which triggers heading-order because the wizard's modal headings don't
+    // include h1–h3. This is a PatternFly/notifications concern, not ours.
+    a11y: { test: 'error', config: { rules: [{ id: 'heading-order', enabled: false }] } },
+  },
+  play: async ({ args, step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    // Walk through the wizard to the review step
+    await modal.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Integration name' }),
+      'aws-partial',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+
+    await modal.findByRole('heading', { name: 'Select applications' });
+    await user.click(modal.getByRole('checkbox', { name: 'Cost Management' }));
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+
+    await modal.findByRole('heading', {
+      name: 'Review integration details',
+    });
+
+    await step(
+      'Submitting with failing app creation closes the wizard',
+      async () => {
+        await user.click(modal.getByRole('button', { name: 'Add' }));
+
+        await waitFor(() => expect(args.onClose).toHaveBeenCalledTimes(1));
+      },
+    );
   },
 };

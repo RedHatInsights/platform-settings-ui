@@ -9,8 +9,7 @@ import type {
  * magic string. These are the services that attach to a data source.
  */
 export const APPLICATION_TYPE_COST = '1';
-export const APPLICATION_TYPE_SUBSCRIPTIONS = '2';
-export const APPLICATION_TYPE_RHEL = '3';
+export const APPLICATION_TYPE_RHEL = '2';
 
 /**
  * Red Hat services that can attach to a data source. The table's
@@ -23,26 +22,17 @@ export const seedApplicationTypes: ApplicationType[] = [
     name: '/insights/platform/cost-management',
     display_name: 'Cost Management',
     created_at: '2020-01-15T10:00:00Z',
-  },
-  {
-    id: APPLICATION_TYPE_SUBSCRIPTIONS,
-    name: '/insights/platform/subscriptions',
-    display_name: 'Subscriptions',
-    created_at: '2020-02-20T12:30:00Z',
+    supported_source_types: ['amazon', 'google', 'azure'],
   },
   {
     id: APPLICATION_TYPE_RHEL,
-    name: '/insights/platform/rhel-management',
-    display_name: 'RHEL Management',
+    name: '/insights/platform/cloud-meter',
+    display_name: 'RHEL management',
     created_at: '2020-03-10T14:15:00Z',
+    supported_source_types: ['openshift'],
   },
 ];
 
-/**
- * The four providers this island offers. Ids are the stage values, so a story
- * that hardcodes `source_type_id: '1'` reads the same as a real response.
- * `category` splits them exactly as the add-integration dropdown groups them.
- */
 /**
  * The four providers this island offers. Ids are the stage values, so a story
  * that hardcodes `source_type_id: '1'` reads the same as a real response.
@@ -108,11 +98,6 @@ export const seedSources: Source[] = [
         application_type_id: APPLICATION_TYPE_COST,
         availability_status: 'available',
       },
-      {
-        id: '202',
-        application_type_id: APPLICATION_TYPE_SUBSCRIPTIONS,
-        availability_status: 'available',
-      },
     ],
   },
   {
@@ -166,13 +151,8 @@ export const seedSources: Source[] = [
     source_type_id: '1',
     created_at: '2026-02-11T18:02:00Z',
     updated_at: '2026-09-03T09:41:00Z',
-    availability_status: 'partially_available',
+    availability_status: 'unavailable',
     applications: [
-      {
-        id: '206',
-        application_type_id: APPLICATION_TYPE_COST,
-        availability_status: 'available',
-      },
       {
         id: '207',
         application_type_id: APPLICATION_TYPE_RHEL,

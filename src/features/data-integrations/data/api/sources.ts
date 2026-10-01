@@ -1,6 +1,8 @@
 import {
   type ListApplicationTypesReturnType,
   type ListSourceTypesReturnType,
+  createApplication,
+  createSource,
   listApplicationTypes,
   listSourceTypes,
   postGraphQL,
@@ -9,7 +11,10 @@ import {
 import { APIFactory } from '@redhat-cloud-services/javascript-clients-shared/utils';
 import type { AxiosInstance } from 'axios';
 import type {
+  Application,
   ApplicationType,
+  CreateApplicationInput,
+  CreateSourceInput,
   PageSource,
   Source,
   SourceType,
@@ -31,6 +36,8 @@ const SOURCE_TYPES_LIMIT = 100;
 const APPLICATION_TYPES_LIMIT = 100;
 
 const endpoints = {
+  createApplication,
+  createSource,
   listApplicationTypes,
   listSourceTypes,
   postGraphQL,
@@ -259,6 +266,20 @@ export function createSourcesApi(axios: AxiosInstance) {
       const collection: ListApplicationTypesReturnType = response.data;
 
       return (collection.data ?? []) as ApplicationType[];
+    },
+
+    async createSource(input: CreateSourceInput): Promise<Source> {
+      const response = await api.createSource({ source: input });
+
+      return response.data as Source;
+    },
+
+    async createApplication(
+      input: CreateApplicationInput,
+    ): Promise<Application> {
+      const response = await api.createApplication({ application: input });
+
+      return response.data as Application;
     },
   };
 }

@@ -1,10 +1,7 @@
-import type { HttpHandler } from 'msw';
 import { HttpResponse, delay, http } from 'msw';
 import { createResettableCollection } from '../../../../shared/mockCollections';
 import type {
-  Application,
-  CreateApplicationInput,
-  CreateSourceInput,
+  BulkCreatePayload,
   PageApplicationType,
   PageSourceType,
   Source,
@@ -234,9 +231,110 @@ export function createSourceTypesSubsetHandler(
   ];
 }
 
-/** Full happy-path handler set: GraphQL list, REST detail, catalogues, and POST create routes. */
+/**
+ * Builds the source a bulk create would have persisted.
+ *
+ * The API resolves `source_type_name` to the catalogue row, so the handler does
+ * too — a created source carries a real `source_type_id`, which is what lets
+ * the list and detail views render it like any other. `availability_status` is
+ * left unset on purpose: the availability checker runs asynchronously after
+ * creation, so a freshly created source genuinely has no status yet.
+ */
+function buildCreatedSource(payload: BulkCreatePayload): Source {
+  const [requested] = payload.sources;
+  const sourceType = seedSourceTypes.find(
+    (type) => type.name === requested.source_type_name,
+  );
+
+  return {
+    id: `src-${Date.now()}-${nextId++}`,
+    name: requested.name,
+    source_type_id: sourceType?.id ?? '0',
+    created_at: new Date().toISOString(),
+    applications: payload.applications.map(({ application_type_id }) => ({
+      id: `app-${Date.now()}-${nextId++}`,
+      application_type_id,
+    })),
+  };
+}
+
+/** Accepts a bulk create and persists it, so a later list read shows it. */
+export function createBulkCreateHandler(baseUrl = SOURCES_API_BASE) {
+  return [
+    http.post(`${baseUrl}/bulk_create`, async ({ request }) => {
+      const payload = (await request.json()) as BulkCreatePayload;
+      const created = sourcesDb.create(buildCreatedSource(payload));
+
+      return HttpResponse.json({ sources: [created] }, { status: 201 });
+    }),
+  ];
+}
+
+/**
+ * Rejects a bulk create with the error envelope `sources-api-go` uses. The
+ * status is a parameter because 400 (the name is taken, a credential is
+ * malformed) and 500 differ only in the text the UI shows.
+ */
+export function createFailingBulkCreateHandler(
+  status = 500,
+  detail = 'Internal Server Error',
+  baseUrl = SOURCES_API_BASE,
+) {
+  return [
+    http.post(`${baseUrl}/bulk_create`, () =>
+      HttpResponse.json(
+        { errors: [{ detail, status: String(status) }] },
+        { status },
+      ),
+    ),
+  ];
+}
+
+/**
+ * Fails the request before it reaches the API. There is no response body to
+ * read a reason out of, which is the case the result view's generic copy and
+ * `extractSourcesErrorDetail`'s `undefined` return exist for.
+ */
+export function createNetworkErrorBulkCreateHandler(
+  baseUrl = SOURCES_API_BASE,
+) {
+  return [http.post(`${baseUrl}/bulk_create`, () => HttpResponse.error())];
+}
+
+/**
+ * Fails the given number of times, then succeeds. Covers retry: the first
+ * attempt shows the error view, the next one goes through.
+ */
+export function createFlakyBulkCreateHandler(
+  failures = 1,
+  baseUrl = SOURCES_API_BASE,
+) {
+  let attempts = 0;
+
+  return [
+    http.post(`${baseUrl}/bulk_create`, async ({ request }) => {
+      attempts += 1;
+
+      if (attempts <= failures) {
+        return HttpResponse.json(
+          { errors: [{ detail: 'Internal Server Error', status: '500' }] },
+          { status: 500 },
+        );
+      }
+
+      const payload = (await request.json()) as BulkCreatePayload;
+      const created = sourcesDb.create(buildCreatedSource(payload));
+
+      return HttpResponse.json({ sources: [created] }, { status: 201 });
+    }),
+  ];
+}
+
+/** Full happy-path handler set: bulk create, GraphQL list, REST detail, catalogues. */
 export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
   return [
+    ...createBulkCreateHandler(baseUrl),
+
     http.post(`${baseUrl}/graphql`, async ({ request }) => {
       const { variables } = (await request.json()) as SourcesRequestBody;
       const limit = variables?.limit ?? DEFAULT_LIMIT;
@@ -282,68 +380,5 @@ export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
 
       return HttpResponse.json(response);
     }),
-
-    http.post(`${baseUrl}/sources`, async ({ request }) => {
-      const body = (await request.json()) as CreateSourceInput;
-      const source: Source = {
-        id: `src-${Date.now()}-${nextId++}`,
-        name: body.name,
-        source_type_id: body.source_type_id,
-        created_at: new Date().toISOString(),
-        availability_status: 'in_progress',
-        applications: [],
-      };
-      sourcesDb.create(source);
-
-      return HttpResponse.json(source, { status: 201 });
-    }),
-
-    http.post(`${baseUrl}/applications`, async ({ request }) => {
-      const body = (await request.json()) as CreateApplicationInput;
-      const application: Application = {
-        id: `app-${Date.now()}-${nextId++}`,
-        source_id: body.source_id,
-        application_type_id: body.application_type_id,
-        created_at: new Date().toISOString(),
-        availability_status: 'available',
-      };
-
-      // Append the association to the source so subsequent list and detail
-      // reads reflect the successful submission.
-      const source = sourcesDb.findById(body.source_id);
-      if (source) {
-        source.applications = [
-          ...(source.applications ?? []),
-          {
-            id: application.id,
-            application_type_id: application.application_type_id,
-            availability_status: 'available',
-          },
-        ];
-      }
-
-      return HttpResponse.json(application, { status: 201 });
-    }),
-  ];
-}
-
-/**
- * Handlers where source creation succeeds but application creation always
- * fails. Used to test the partial-failure path in the wizard.
- */
-export function createFailingApplicationHandlers(
-  baseUrl = SOURCES_API_BASE,
-): HttpHandler[] {
-  const base = createSourcesHandlers(baseUrl);
-
-  return [
-    // Override the application POST handler with one that always errors.
-    http.post(`${baseUrl}/applications`, () =>
-      HttpResponse.json(
-        { errors: [{ detail: 'Application association failed', status: 500 }] },
-        { status: 500 },
-      ),
-    ),
-    ...base,
   ];
 }

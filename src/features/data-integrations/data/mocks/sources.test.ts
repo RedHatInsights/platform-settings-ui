@@ -57,76 +57,72 @@ beforeEach(() => {
   jsonSpy.mockClear();
 });
 
+/** A bulk create body as the api layer builds it. */
+function bulkBody(name: string, applicationTypeIds: string[] = []) {
+  return {
+    sources: [{ name, source_type_name: 'amazon' }],
+    endpoints: [],
+    authentications: [
+      {
+        authtype: 'access_key_secret_key',
+        username: 'AKIA',
+        password: 'secret',
+        resource_type: 'source',
+        resource_name: name,
+      },
+    ],
+    applications: applicationTypeIds.map((application_type_id) => ({
+      application_type_id,
+      source_name: name,
+    })),
+  };
+}
+
 describe('createSourcesHandlers', () => {
-  it('returns handlers including source and application POST routes', () => {
+  it('returns a bulk create POST route', () => {
     const handlers = createSourcesHandlers();
     const routes = handlers.map(
       (h) =>
         `${(h.info as HandlerInfo).method} ${(h.info as HandlerInfo).path}`,
     );
 
-    expect(routes).toContain('POST /api/sources/v3.1/sources');
-    expect(routes).toContain('POST /api/sources/v3.1/applications');
+    expect(routes).toContain('POST /api/sources/v3.1/bulk_create');
   });
 
-  it('source POST resolver stores the source in sourcesDb and returns 201', async () => {
+  it('bulk create resolver resolves the source type, stores the source and returns 201', async () => {
     const handlers = createSourcesHandlers() as unknown as Handler[];
-    const handler = findHandler(handlers, 'POST', '/sources');
+    const handler = findHandler(handlers, 'POST', '/bulk_create');
 
     const before = sourcesDb.findAll().length;
 
-    await handler.resolver({
-      request: fakeRequest({
-        name: 'resolver-test',
-        source_type_id: '2',
-      }),
-    });
+    await handler.resolver({ request: fakeRequest(bulkBody('resolver-test')) });
 
     expect(sourcesDb.findAll()).toHaveLength(before + 1);
 
     const created = sourcesDb.findAll().find((s) => s.name === 'resolver-test');
-    expect(created).toBeDefined();
     expect(created?.source_type_id).toBe('2');
 
     expect(jsonSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'resolver-test' }),
+      { sources: [expect.objectContaining({ name: 'resolver-test' })] },
       { status: 201 },
     );
   });
 
-  it('application POST resolver appends the association to the source and returns 201', async () => {
+  it('bulk create resolver associates the requested applications with the source', async () => {
     const handlers = createSourcesHandlers() as unknown as Handler[];
-    const sourceHandler = findHandler(handlers, 'POST', '/sources');
-    const appHandler = findHandler(handlers, 'POST', '/applications');
+    const handler = findHandler(handlers, 'POST', '/bulk_create');
 
-    // Create a source first
-    await sourceHandler.resolver({
-      request: fakeRequest({
-        name: 'app-test-source',
-        source_type_id: '1',
-      }),
+    await handler.resolver({
+      request: fakeRequest(bulkBody('app-test-source', ['1', '3'])),
     });
 
-    const source = sourcesDb
+    const created = sourcesDb
       .findAll()
       .find((s) => s.name === 'app-test-source')!;
 
-    // Associate an application
-    await appHandler.resolver({
-      request: fakeRequest({
-        source_id: source.id,
-        application_type_id: '3',
-      }),
-    });
-
-    const updated = sourcesDb.findById(source.id)!;
-    expect(updated.applications).toContainEqual(
+    expect(created.applications).toHaveLength(2);
+    expect(created.applications).toContainEqual(
       expect.objectContaining({ application_type_id: '3' }),
-    );
-
-    expect(jsonSpy).toHaveBeenLastCalledWith(
-      expect.objectContaining({ application_type_id: '3' }),
-      { status: 201 },
     );
   });
 });

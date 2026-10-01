@@ -344,11 +344,13 @@ export const AmazonApplicationSelection: Story = {
 };
 
 /**
- * Editing from review. The jump has to carry the user back to a step that
- * still holds what they typed, and forward again to a review that reflects the
- * change — which is what `jumpToStep` over `prevSteps` buys over a remount.
+ * Correcting a value from review. Back is the only way — the review step
+ * offers no per-row Edit, because an existing integration is edited from the
+ * table's row kebab and nowhere else. Back has to land on a step that still
+ * holds what the user typed, and Next has to return to a review that reflects
+ * the change.
  */
-export const AmazonReviewEdit: Story = {
+export const AmazonReviewBack: Story = {
   args: { sourceType: 'amazon' },
   play: async ({ step }) => {
     const user = userEvent.setup();
@@ -356,9 +358,18 @@ export const AmazonReviewEdit: Story = {
 
     await fillAwsDetails(user);
 
-    await step('Edit returns to credentials, values intact', async () => {
-      await user.click(modal.getByRole('button', { name: 'Edit credentials' }));
+    await step('Review does not offer to edit anything', async () => {
+      expect(modal.queryByRole('button', { name: /^Edit/ })).toBeNull();
+    });
 
+    await step('Back walks to credentials, values intact', async () => {
+      await user.click(modal.getByRole('button', { name: 'Back' }));
+      await modal.findByRole('heading', { name: 'Select applications' });
+      expect(
+        modal.getByRole('checkbox', { name: 'Cost Management' }),
+      ).toBeChecked();
+
+      await user.click(modal.getByRole('button', { name: 'Back' }));
       await modal.findByRole('heading', { name: 'Enter credentials' });
       expect(modal.getByRole('textbox', { name: 'Access key ID' })).toHaveValue(
         ACCESS_KEY_ID,
@@ -373,19 +384,11 @@ export const AmazonReviewEdit: Story = {
       );
       await user.click(modal.getByRole('button', { name: 'Next' }));
 
+      await modal.findByRole('heading', { name: 'Select applications' });
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+
       await modal.findByRole('heading', { name: 'Review details' });
       expect(modal.getByText(/^AKIA•+$/)).toBeInTheDocument();
-    });
-
-    await step('Editing the name works the same way', async () => {
-      await user.click(
-        modal.getByRole('button', { name: 'Edit integration details' }),
-      );
-
-      await modal.findByRole('heading', { name: 'Name integration' });
-      expect(
-        modal.getByRole('textbox', { name: 'Integration name' }),
-      ).toHaveValue('aws-production');
     });
   },
 };

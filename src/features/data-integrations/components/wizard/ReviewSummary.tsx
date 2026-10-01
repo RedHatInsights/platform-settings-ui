@@ -1,22 +1,15 @@
 import React from 'react';
 import { useIntl } from 'react-intl';
 import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
-import WizardContext from '@data-driven-forms/react-form-renderer/wizard-context';
-import { Button } from '@patternfly/react-core/dist/dynamic/components/Button';
 import {
   DescriptionList,
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
 } from '@patternfly/react-core/dist/dynamic/components/DescriptionList';
-import {
-  Stack,
-  StackItem,
-} from '@patternfly/react-core/dist/dynamic/layouts/Stack';
 import messages from '../../messages';
 import { useApplicationTypes } from '../../data/queries/useApplicationTypes';
 import {
-  WizardStepId,
   authTypeLabel,
   buildApplicationOptions,
   providerLabel,
@@ -37,19 +30,18 @@ function maskAccessKeyId(accessKeyId: string): string {
 /**
  * The `review-summary` data-driven-forms component.
  *
- * A custom component rather than plain text for two reasons: plain text cannot
- * subscribe to form state, and the rows need Edit buttons that jump back. The
- * step has no inputs of its own, so reading values once from `getState()` is
- * safe — nothing can change them while this is mounted.
+ * A custom component rather than plain text because plain text cannot
+ * subscribe to form state. The step has no inputs of its own, so reading
+ * values once from `getState()` is safe — nothing can change them while this
+ * is mounted.
  *
- * `jumpToStep` indexes into `prevSteps`, not the schema, and is deliberately
- * called without `valid` — passing `valid: false` truncates the history the
- * user would otherwise walk forward through.
+ * No per-row Edit buttons: during creation the only way back is the wizard's
+ * own Back button, and once the integration exists it is edited from the row
+ * kebab on the table, not from here.
  */
 const ReviewSummary: React.FC = () => {
   const intl = useIntl();
   const { getState } = useFormApi();
-  const { jumpToStep, prevSteps } = React.useContext(WizardContext);
 
   const values = getState().values as IntegrationWizardValues;
   const provider = values.source_type;
@@ -65,88 +57,64 @@ const ReviewSummary: React.FC = () => {
     .filter(({ value }) => values.applications?.includes(value))
     .map(({ label }) => label);
 
-  const editStep = (step: WizardStepId) => () => {
-    jumpToStep(prevSteps.indexOf(step));
-  };
-
   return (
-    <Stack hasGutter>
-      <StackItem>
-        <DescriptionList isHorizontal>
-          <DescriptionListGroup>
-            <DescriptionListTerm>
-              {intl.formatMessage(messages.wizardReviewType)}
-            </DescriptionListTerm>
-            <DescriptionListDescription>
-              {provider ? providerLabel(provider, intl) : ''}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
-          <DescriptionListGroup>
-            <DescriptionListTerm>
-              {intl.formatMessage(messages.wizardReviewName)}
-            </DescriptionListTerm>
-            <DescriptionListDescription>
-              {values.source?.name}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
-          <DescriptionListGroup>
-            <DescriptionListTerm>
-              {intl.formatMessage(messages.wizardReviewApplicationsLabel)}
-            </DescriptionListTerm>
-            <DescriptionListDescription>
-              {selectedApplications.join(', ')}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
-          <DescriptionListGroup>
-            <DescriptionListTerm>
-              {intl.formatMessage(messages.wizardReviewAuthType)}
-            </DescriptionListTerm>
-            <DescriptionListDescription>
-              {values.authentication?.authtype
-                ? authTypeLabel(values.authentication.authtype, intl)
-                : ''}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
-          <DescriptionListGroup>
-            <DescriptionListTerm>
-              {intl.formatMessage(messages.wizardAccessKeyIdLabel)}
-            </DescriptionListTerm>
-            <DescriptionListDescription>
-              {maskAccessKeyId(accessKeyId)}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
-          <DescriptionListGroup>
-            <DescriptionListTerm>
-              {intl.formatMessage(messages.wizardSecretAccessKeyLabel)}
-            </DescriptionListTerm>
-            <DescriptionListDescription>
-              {intl.formatMessage(messages.wizardReviewSecretMasked)}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
-        </DescriptionList>
-      </StackItem>
-      <StackItem>
-        {/*
-          Two Edit buttons, distinctly named: "Edit" twice would give the step
-          two controls with the same accessible name and no way to tell them
-          apart out of context.
-        */}
-        <Button
-          variant="link"
-          isInline
-          onClick={editStep(WizardStepId.NameIntegration)}
-        >
-          {intl.formatMessage(messages.wizardReviewEditDetails)}
-        </Button>{' '}
-        <Button
-          variant="link"
-          isInline
-          onClick={editStep(WizardStepId.AuthCredentials)}
-        >
-          {intl.formatMessage(messages.wizardReviewEditCredentials)}
-        </Button>
-      </StackItem>
-    </Stack>
+    /*
+      `tabIndex` because this is the only step with no inputs, and PatternFly's
+      wizard body is a scrollable region: with nothing focusable inside it, a
+      keyboard user has no way to scroll it (axe `scrollable-region-focusable`).
+    */
+    <DescriptionList isHorizontal tabIndex={0}>
+      <DescriptionListGroup>
+        <DescriptionListTerm>
+          {intl.formatMessage(messages.wizardReviewType)}
+        </DescriptionListTerm>
+        <DescriptionListDescription>
+          {provider ? providerLabel(provider, intl) : ''}
+        </DescriptionListDescription>
+      </DescriptionListGroup>
+      <DescriptionListGroup>
+        <DescriptionListTerm>
+          {intl.formatMessage(messages.wizardReviewName)}
+        </DescriptionListTerm>
+        <DescriptionListDescription>
+          {values.source?.name}
+        </DescriptionListDescription>
+      </DescriptionListGroup>
+      <DescriptionListGroup>
+        <DescriptionListTerm>
+          {intl.formatMessage(messages.wizardReviewApplicationsLabel)}
+        </DescriptionListTerm>
+        <DescriptionListDescription>
+          {selectedApplications.join(', ')}
+        </DescriptionListDescription>
+      </DescriptionListGroup>
+      <DescriptionListGroup>
+        <DescriptionListTerm>
+          {intl.formatMessage(messages.wizardReviewAuthType)}
+        </DescriptionListTerm>
+        <DescriptionListDescription>
+          {values.authentication?.authtype
+            ? authTypeLabel(values.authentication.authtype, intl)
+            : ''}
+        </DescriptionListDescription>
+      </DescriptionListGroup>
+      <DescriptionListGroup>
+        <DescriptionListTerm>
+          {intl.formatMessage(messages.wizardAccessKeyIdLabel)}
+        </DescriptionListTerm>
+        <DescriptionListDescription>
+          {maskAccessKeyId(accessKeyId)}
+        </DescriptionListDescription>
+      </DescriptionListGroup>
+      <DescriptionListGroup>
+        <DescriptionListTerm>
+          {intl.formatMessage(messages.wizardSecretAccessKeyLabel)}
+        </DescriptionListTerm>
+        <DescriptionListDescription>
+          {intl.formatMessage(messages.wizardReviewSecretMasked)}
+        </DescriptionListDescription>
+      </DescriptionListGroup>
+    </DescriptionList>
   );
 };
 

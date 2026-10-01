@@ -320,18 +320,6 @@ export default defineMessages({
     description: 'Review row label for the integration name',
     defaultMessage: 'Integration name',
   },
-  wizardReviewEditDetails: {
-    id: 'dataIntegrations.wizard.review.editDetails',
-    description:
-      'Button on the review step that returns to the naming step to change the integration name',
-    defaultMessage: 'Edit integration details',
-  },
-  wizardReviewEditCredentials: {
-    id: 'dataIntegrations.wizard.review.editCredentials',
-    description:
-      'Button on the review step that returns to the credentials step',
-    defaultMessage: 'Edit credentials',
-  },
   wizardReviewSecretMasked: {
     id: 'dataIntegrations.wizard.review.secretMasked',
     description:

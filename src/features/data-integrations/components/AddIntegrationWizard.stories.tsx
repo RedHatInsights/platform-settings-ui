@@ -537,10 +537,9 @@ export const PartialFailure: Story = {
         const notificationTitle = await modal.findByText(
           /aws-partial was created/,
         );
+        expect(notificationTitle).toBeInTheDocument();
 
-        // Dismiss the notification so its h4 heading (hardcoded by PF Alert)
-        // does not leave an invalid heading order in the DOM for the
-        // post-play a11y check.
+        // Dismiss the notification — verifies the close button works.
         const alertContainer = notificationTitle.closest(
           '.pf-v6-c-alert',
         ) as HTMLElement;

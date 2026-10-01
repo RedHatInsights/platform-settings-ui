@@ -272,6 +272,9 @@ Three things about that are easy to break:
   Next that navigates to a step that does not exist. `auth-type-selection` is reachable only
   by providers with no authentication type, and its option-less required field is what keeps
   that Next disabled. `integrationWizardSchema.test.ts` asserts the mapping is total.
+- **The review step has no Edit buttons.** Back is the only way to change a
+  value during creation; an integration that already exists is edited from the
+  row kebab on the table, and that is the one flow for editing.
 - **The renderer submits only the fields of steps the user visited.** A wizard opened with
   the provider already chosen never visits step one, so `AddIntegrationWizard` merges its
   initial values back in before mapping the payload.

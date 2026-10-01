@@ -121,19 +121,72 @@ export interface Application {
 }
 
 /**
- * Payload for creating an application association via `POST /applications`.
+ * Credential scheme for a provider. Only AWS Access Key is offered today;
+ * each provider the wizard gains contributes its own identifiers.
  */
-export interface CreateApplicationInput {
-  source_id: string;
-  application_type_id: string;
+export type AuthenticationType = 'access_key_secret_key';
+
+/**
+ * One entry in the `authentications` array of a bulk create.
+ *
+ * `username` and `password` are the API's generic credential slots, not literal
+ * user credentials — for AWS they carry the access key id and secret access
+ * key. `resource_type`/`resource_name` are what bind the authentication to a
+ * resource created in the same request, which is why the source's name has to
+ * be repeated here.
+ */
+export interface SourceAuthenticationInput {
+  authtype: AuthenticationType;
+  username?: string;
+  password?: string;
+  resource_type: 'source' | 'endpoint' | 'application';
+  resource_name: string;
 }
 
 /**
- * Payload for creating a source via `POST /sources`.
+ * Body of `POST /bulk_create`.
+ *
+ * The four arrays are created in one transaction, so a rejected authentication
+ * takes the source down with it rather than leaving a credential-less source
+ * behind. `endpoints` is typed `never[]` because no provider offered today
+ * populates it; widen it when one does.
+ *
+ * Applications are bound to the source by `source_name`, the same way
+ * authentications are — nothing in the payload has an id yet.
+ */
+export interface BulkCreatePayload {
+  sources: Array<{ name: string; source_type_name: string }>;
+  endpoints: never[];
+  authentications: SourceAuthenticationInput[];
+  applications: Array<{ application_type_id: string; source_name: string }>;
+}
+
+/**
+ * Response to a bulk create. Only `sources` is read — the created
+ * authentication is not shown anywhere, and the other two arrays are always
+ * empty for the providers offered today.
+ */
+export interface BulkCreateResponse {
+  sources?: Source[];
+}
+
+/**
+ * What the wizard hands the data layer.
+ *
+ * Deliberately not the wire shape: the `resource_type`/`resource_name` binding
+ * and the four-array envelope are the API's business, so the api layer adds
+ * them. Callers supply the provider by `name` because `bulk_create` resolves it
+ * server-side — no catalogue lookup is needed at submit time.
  */
 export interface CreateSourceInput {
   name: string;
-  source_type_id: string;
+  sourceTypeName: string;
+  authentication: Omit<
+    SourceAuthenticationInput,
+    'resource_type' | 'resource_name'
+  >;
+  /** Application types to associate, by id. Empty or absent is allowed. */
+  applicationTypeIds?: string[];
 }
 
 export interface CollectionLinks {

@@ -39,6 +39,17 @@ describe('createSourcesApi', () => {
       });
       expect(result).toEqual(created);
     });
+
+    it('propagates a rejection from the generated client', async () => {
+      const error = new Error('Source creation failed');
+      mockApi.createSource = jest.fn().mockRejectedValue(error);
+
+      const api = createSourcesApi(fakeAxios);
+
+      await expect(
+        api.createSource({ name: 'bad', source_type_id: '2' }),
+      ).rejects.toThrow(error);
+    });
   });
 
   describe('createApplication', () => {
@@ -63,6 +74,20 @@ describe('createSourcesApi', () => {
         application: { source_id: 'src-1', application_type_id: '3' },
       });
       expect(result).toEqual(created);
+    });
+
+    it('propagates a rejection from the generated client', async () => {
+      const error = new Error('Application association failed');
+      mockApi.createApplication = jest.fn().mockRejectedValue(error);
+
+      const api = createSourcesApi(fakeAxios);
+
+      await expect(
+        api.createApplication({
+          source_id: 'src-1',
+          application_type_id: '3',
+        }),
+      ).rejects.toThrow(error);
     });
   });
 });

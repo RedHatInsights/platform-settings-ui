@@ -409,6 +409,7 @@ function reviewStep(
         name: 'review-summary',
         description: intl.formatMessage(messages.wizardReviewStepDescription),
         labels: {
+          review: intl.formatMessage(messages.wizardReviewStepTitle),
           sourceType: intl.formatMessage(messages.wizardReviewSourceTypeLabel),
           name: intl.formatMessage(messages.wizardReviewNameLabel),
           applications: intl.formatMessage(

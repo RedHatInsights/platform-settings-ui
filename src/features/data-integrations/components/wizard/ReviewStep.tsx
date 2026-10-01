@@ -27,6 +27,7 @@ import './ReviewStep.scss';
 export interface ReviewStepProps {
   /** Translated labels for each field shown in the review. */
   labels: {
+    review: string;
     sourceType: string;
     name: string;
     applications: string;
@@ -70,7 +71,12 @@ const ReviewStep: React.FC<UseFieldApiConfig> = (props) => {
     .filter(Boolean);
 
   return (
-    <div className="data-integrations-review-step">
+    <div
+      className="data-integrations-review-step"
+      tabIndex={0}
+      role="region"
+      aria-label={labels.review}
+    >
       <Content component={ContentVariants.p}>{description}</Content>
       <DescriptionList isHorizontal isFluid>
         <DescriptionListGroup>

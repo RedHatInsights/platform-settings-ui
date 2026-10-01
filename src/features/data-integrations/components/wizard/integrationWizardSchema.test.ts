@@ -393,6 +393,7 @@ describe('review step', () => {
     const reviewField = revStep().fields[0];
 
     expect(reviewField.labels).toEqual({
+      review: 'Review integration details',
       sourceType: 'Integration type',
       name: 'Name',
       applications: 'Applications',

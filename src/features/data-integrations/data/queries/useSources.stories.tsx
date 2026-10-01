@@ -71,7 +71,7 @@ export const Default: Story = {
 
     await step('Applications arrive inline with the list', async () => {
       const available = await canvas.findByText(
-        'AWS production account — available — 2 applications',
+        'AWS production account — available — 1 applications',
       );
       await expect(available).toBeInTheDocument();
     });

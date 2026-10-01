@@ -497,13 +497,7 @@ export const PartialFailure: Story = {
   args: { sourceType: 'amazon' },
   parameters: {
     msw: { handlers: createFailingApplicationHandlers() },
-    // The warning notification rendered by NotificationsProvider uses an h4,
-    // which triggers heading-order because the wizard's modal headings don't
-    // include h1–h3. This is a PatternFly/notifications concern, not ours.
-    a11y: {
-      test: 'error',
-      config: { rules: [{ id: 'heading-order', enabled: false }] },
-    },
+    a11y: { test: 'error' },
   },
   play: async ({ args, step }) => {
     const user = userEvent.setup();
@@ -532,6 +526,32 @@ export const PartialFailure: Story = {
         await user.click(modal.getByRole('button', { name: 'Add' }));
 
         await waitFor(() => expect(args.onClose).toHaveBeenCalledTimes(1));
+      },
+    );
+
+    await step(
+      'A warning notification appears and can be dismissed',
+      async () => {
+        // The notification is dispatched through Redux after submission and
+        // renders asynchronously via the notifications portal.
+        const notificationTitle = await modal.findByText(
+          /aws-partial was created/,
+        );
+
+        // Dismiss the notification so its h4 heading (hardcoded by PF Alert)
+        // does not leave an invalid heading order in the DOM for the
+        // post-play a11y check.
+        const alertContainer = notificationTitle.closest(
+          '.pf-v6-c-alert',
+        ) as HTMLElement;
+        await user.click(
+          within(alertContainer).getByRole('button', { name: /close/i }),
+        );
+        await waitFor(() =>
+          expect(
+            modal.queryByText(/aws-partial was created/),
+          ).not.toBeInTheDocument(),
+        );
       },
     );
   },

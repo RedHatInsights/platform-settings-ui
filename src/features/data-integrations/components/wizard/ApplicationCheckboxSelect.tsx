@@ -59,7 +59,9 @@ const ApplicationCheckboxSelect: React.FC<UseFieldApiConfig> = (props) => {
       )
     : options;
 
-  const selectedValues: string[] = input.value ?? [];
+  const selectedValues: string[] = Array.isArray(input.value)
+    ? input.value
+    : [];
 
   // When the source type changes, previously selected applications may no
   // longer be compatible. Prune any stale IDs so the user cannot submit an
@@ -69,13 +71,14 @@ const ApplicationCheckboxSelect: React.FC<UseFieldApiConfig> = (props) => {
     [compatibleOptions],
   );
   React.useEffect(() => {
-    const pruned = (input.value ?? []).filter((id: string) =>
-      compatibleIds.has(id),
-    );
-    if (pruned.length !== (input.value ?? []).length) {
+    if (selectedValues.length === 0) {
+      return;
+    }
+    const pruned = selectedValues.filter((id) => compatibleIds.has(id));
+    if (pruned.length !== selectedValues.length) {
       input.onChange(pruned);
     }
-  }, [compatibleIds, input]);
+  }, [compatibleIds]);
 
   const showError = Boolean(meta.touched && meta.error);
   const errorId = `${input.name}-error`;

@@ -212,10 +212,11 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
            * waiting, so the mutation's own state is what that step renders —
            * which is also why nothing here needs to be awaited.
            *
-           * `prepareValues` only includes fields registered by steps that
-           * actually rendered. When a provider is pre-selected the wizard opens
-           * on step two, so `source_type` never appears in `values` — hence the
-           * initial values underneath.
+           * Merged over the initial values because the renderer narrows what
+           * it submits to the fields of steps the user actually visited. A
+           * wizard opened with the provider already chosen skips step one, so
+           * `source_type` would otherwise be missing from the payload — and
+           * the API would be asked to create a source of no type at all.
            */
           onSubmit={(values) =>
             createSource.mutate(

@@ -15,7 +15,8 @@ Manager. That distinction is the reason for the `data-` prefix on the route.
 
 RHCLOUD-49532 delivered **the shell only**: routing, page header, tabs, and the
 "Add data integration" dropdown. RHCLOUD-49536 added the data layer beneath it. Both tab
-bodies and the creation wizard are still placeholders — **nothing renders this data yet.**
+bodies were placeholders at that point. Both now render, and the wizard creates AWS
+integrations end to end.
 
 | Piece | State | Owner |
 | --- | --- | --- |
@@ -23,7 +24,8 @@ bodies and the creation wizard are still placeholders — **nothing renders this
 | Data layer (`data/api`, `data/queries`, `data/mocks`) | Done | RHCLOUD-49536 |
 | "My data integrations" table | Placeholder | RHCLOUD-50925 |
 | About tab content | Done — hero CTA copy still placeholder | RHCLOUD-49534, copy in RHCLOUD-51526 |
-| Creation wizard | Placeholder | No story yet — needs filing |
+| Creation wizard — AWS end to end | Done | RHCLOUD-51313, RHCLOUD-51314 |
+| Creation wizard — other providers, applications | Not started | RHCLOUD-51315, RHCLOUD-51316 |
 | Non-admin / permission gating | `isDisabled` prop, unwired | RHCLOUD-50927 |
 
 ## Structure
@@ -48,8 +50,14 @@ data-integrations/
 └── components/
     ├── AddDataIntegrationDropdown.tsx
     ├── AddDataIntegrationDropdown.stories.tsx
-    ├── AddIntegrationWizard.tsx       # PLACEHOLDER
-    └── MyDataIntegrationsTab.tsx      # PLACEHOLDER
+    ├── AddIntegrationWizard.tsx       # wizard host: catalogue, mutation, cancel
+    ├── MyDataIntegrationsTab.tsx
+    └── wizard/                        # see "The creation wizard" below
+        ├── integrationWizardSchema.ts # the steps, the routing between them
+        ├── IntegrationsFormRenderer.tsx
+        ├── SourceTypeCardSelect.tsx
+        ├── ReviewSummary.tsx
+        └── SubmissionResult.tsx
 ```
 
 The tree above lists only what the About tab touches; `features/sources-list` and
@@ -111,8 +119,8 @@ Rules it follows, and that anything added here has to keep to:
   `src/shared/mockCollections.ts`, with story assertions reading from the shared seed.
 
 Consumers to expect: `MyDataIntegrationsTab` needs `useSources` (paginated, filterable, with
-`useTableState` per `experience-ui/require-use-table-state`); the creation wizard needs
-`useSourceTypes` plus a create mutation.
+`useTableState` per `experience-ui/require-use-table-state`); the creation wizard uses
+`useSourceTypes` and `useCreateSource`.
 
 ### The list goes over GraphQL; everything else is REST
 
@@ -233,13 +241,57 @@ The dropdown takes `isDisabled` (default `false`) as the seam for permission gat
 wire permissions here — RHCLOUD-50927 owns the non-admin experience and will read
 `isOrgAdmin` / the Kessel access check.
 
-## Placeholders
+## The creation wizard
 
-`AddIntegrationWizard.tsx` is a modal that names the selected provider and nothing else. The
-real wizard is a rebuild of `sources-ui/src/components/addSourceWizard/` (~40 files,
-data-driven-forms, per-provider schemas). **Keep the `{ isOpen, sourceType, onClose }`
-contract stable** — that is the whole point of the placeholder, and it means the dropdown
-needs no rework when the wizard arrives.
+`AddIntegrationWizard.tsx` is a host, not the wizard. The wizard itself is a
+data-driven-forms schema built by `wizard/integrationWizardSchema.ts`, following
+`sources-ui/src/components/addSourceWizard/`: every step is a schema entry and every value
+lives in final-form, so nothing here keeps a copy of what the user typed. The host only
+owns what is neither a step nor a field — the cancel confirmation, the create mutation, and
+the catalogue the schema is built from.
+
+Steps, and what routes between them:
+
+```text
+source-type-selection  → name-integration
+name-integration       → { amazon: auth-credentials,          # one auth type, so skipped
+                           openshift|google|azure: auth-type-selection }
+auth-type-selection    → { access_key_secret_key: auth-credentials }
+auth-credentials       → review
+review                 → submission-result
+submission-result        isProgressAfterSubmissionStep
+```
+
+Three things about that are easy to break:
+
+- **A step is skipped by being left out of the `nextStep` chain.** `condition` is
+  field-level; a step whose fields are all hidden still renders as an empty step and still
+  appears in the nav.
+- **Every value of a `stepMapper`'s `when` field must be a key.** `selectNext` returns
+  `undefined` for an unmapped value while `nextStep` stays truthy, so the footer offers a
+  Next that navigates to a step that does not exist. `auth-type-selection` is reachable only
+  by providers with no authentication type, and its option-less required field is what keeps
+  that Next disabled. `integrationWizardSchema.test.ts` asserts the mapping is total.
+- **The renderer submits only the fields of steps the user visited.** A wizard opened with
+  the provider already chosen never visits step one, so `AddIntegrationWizard` merges its
+  initial values back in before mapping the payload.
+
+The result step is a wizard step rather than a swapped modal body. Swapping would unmount
+the renderer and take final-form's state with it, so "edit details" after a failed create
+would have nothing to go back to.
+
+`useCreateSource` is the island's first mutation and sets the convention: **mutations here
+do not call `notify()`.** The wizard's result step shows both the success and the failure,
+and a toast behind a modal says the same thing twice. A mutation with no UI of its own
+should notify.
+
+RHCLOUD-51315 adds the other three providers' authentication, which means filling in
+`AUTH_TYPES_BY_PROVIDER` and giving `auth-type-selection` real options. OpenShift also needs
+an endpoint step; the hook for it is `auth-credentials`'s `nextStep`, which becomes a
+resolver at that point. AWS has no endpoint configuration at all — `amazon.endpoint` is
+empty in `sources-ui` too.
+
+## Placeholders
 
 Detail, edit, and remove flows (`sourcesDetail`, `sourcesDetailRename`,
 `sourcesDetailRemove`, `sourcesDetailAddApp`, `sourcesDetailRemoveApp`,

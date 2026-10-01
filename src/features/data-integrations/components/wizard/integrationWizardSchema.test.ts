@@ -2,10 +2,14 @@ import type { IntlShape, MessageDescriptor } from 'react-intl';
 import componentTypes from '@data-driven-forms/react-form-renderer/component-types';
 import validatorTypes from '@data-driven-forms/react-form-renderer/validator-types';
 import {
+  ACCESS_KEY_AUTH_TYPE,
   APPLICATIONS_FIELD,
   APPLICATION_SELECT_COMPONENT,
+  AUTH_PASSWORD_FIELD,
+  AUTH_TYPE_FIELD,
+  AUTH_USERNAME_FIELD,
   CARD_SELECT_COMPONENT,
-  REVIEW_STEP_COMPONENT,
+  REVIEW_SUMMARY_COMPONENT,
   SOURCE_NAME_FIELD,
   SOURCE_TYPE_FIELD,
   WizardStepId,
@@ -14,6 +18,7 @@ import {
   createIntegrationWizardSchema,
   createWizardInitialValues,
   resolveSelectedType,
+  toCreateSourceInput,
   validateArrayNotEmpty,
 } from './integrationWizardSchema';
 import type {
@@ -82,13 +87,14 @@ const firstStep = (types: SourceType[] = sourceTypes) =>
 const nameStep = (types: SourceType[] = sourceTypes) =>
   wizardField(types).fields[1];
 
-/** Pulls the application selection step out of the schema. */
-const appStep = (types: SourceType[] = sourceTypes) =>
-  wizardField(types).fields[2];
+const authTypeStep = () => wizardField().fields[2];
+const credentialsStep = () => wizardField().fields[3];
+const appStep = () => wizardField().fields[4];
+const reviewStep = () => wizardField().fields[5];
+const resultStep = () => wizardField().fields[6];
 
-/** Pulls the review step out of the schema. */
-const revStep = (types: SourceType[] = sourceTypes) =>
-  wizardField(types).fields[3];
+const stepNames = (): string[] =>
+  wizardField().fields.map((step: { name: string }) => step.name);
 
 describe('buildSourceTypeOptions', () => {
   it('lists the offered providers in dropdown order', () => {
@@ -177,23 +183,110 @@ describe('createIntegrationWizardSchema', () => {
     });
   });
 
-  it('implements all four steps in order', () => {
-    expect(
-      wizardField().fields.map((step: { name: string }) => step.name),
-    ).toEqual([
+  it('declares the steps in order', () => {
+    expect(stepNames()).toEqual([
       WizardStepId.SourceTypeSelection,
       WizardStepId.NameIntegration,
+      WizardStepId.AuthTypeSelection,
+      WizardStepId.AuthCredentials,
       WizardStepId.ApplicationSelection,
       WizardStepId.Review,
+      WizardStepId.SubmissionResult,
     ]);
   });
 
-  it('chains steps: source type -> naming -> app selection -> review', () => {
+  it('chains steps: source type -> naming -> credentials -> apps -> review', () => {
     expect(firstStep().nextStep).toBe(WizardStepId.NameIntegration);
-    expect(nameStep().nextStep).toBe(WizardStepId.ApplicationSelection);
+    expect(credentialsStep().nextStep).toBe(WizardStepId.ApplicationSelection);
     expect(appStep().nextStep).toBe(WizardStepId.Review);
-    // Review is the last step, making its primary button submit.
-    expect(revStep().nextStep).toBeUndefined();
+  });
+
+  /**
+   * The crash this guards against: `selectNext` returns `undefined` for a
+   * value the mapper has no key for, but `nextStep` itself is still truthy, so
+   * the footer still offers Next and navigates to a step that does not exist.
+   * Asserting it over the whole schema catches it for providers added later
+   * too, which is the only reason this is worth a test of its own.
+   */
+  it('routes every step to one that exists', () => {
+    const names = stepNames();
+
+    for (const step of wizardField().fields) {
+      const { nextStep } = step;
+
+      if (typeof nextStep === 'string') {
+        expect(names).toContain(nextStep);
+      } else if (nextStep) {
+        for (const target of Object.values(nextStep.stepMapper)) {
+          expect(names).toContain(target);
+        }
+      }
+    }
+  });
+
+  it('routes every provider somewhere after naming', () => {
+    const { when, stepMapper } = nameStep().nextStep;
+
+    expect(when).toBe(SOURCE_TYPE_FIELD);
+    expect(Object.keys(stepMapper).sort()).toEqual(
+      sourceTypes.map(({ name }) => name).sort(),
+    );
+  });
+
+  it('skips the authentication step for AWS, which has only one', () => {
+    // One option is not a choice, so AWS goes straight to its credentials.
+    expect(nameStep().nextStep.stepMapper.amazon).toBe(
+      WizardStepId.AuthCredentials,
+    );
+    expect(nameStep().nextStep.stepMapper.google).toBe(
+      WizardStepId.AuthTypeSelection,
+    );
+  });
+
+  it('holds unsupported providers on the authentication step', () => {
+    // No options plus a required validator is what keeps the primary button
+    // disabled, which is what makes the unmapped `nextStep` above unreachable.
+    const authField = authTypeStep().fields[1];
+
+    expect(authField.name).toBe(AUTH_TYPE_FIELD);
+    expect(authField.options).toEqual([]);
+    expect(authField.validate).toEqual([
+      {
+        type: validatorTypes.REQUIRED,
+        message: 'Select an authentication type to continue.',
+      },
+    ]);
+  });
+
+  it('asks for an access key and nothing else', () => {
+    const [, authType, accessKeyId, secret] = credentialsStep().fields;
+
+    expect(authType.name).toBe(AUTH_TYPE_FIELD);
+    expect(authType.hideField).toBe(true);
+    expect(authType.initialValue).toBe(ACCESS_KEY_AUTH_TYPE);
+    expect(authType.initializeOnMount).toBe(true);
+
+    expect(accessKeyId.name).toBe(AUTH_USERNAME_FIELD);
+    expect(secret.name).toBe(AUTH_PASSWORD_FIELD);
+    expect(secret.type).toBe('password');
+
+    // REQUIRED only: a format check that rejects a key AWS accepts is worse
+    // than letting the API answer. sources-ui has none either.
+    for (const field of [accessKeyId, secret]) {
+      expect(field.validate).toHaveLength(1);
+      expect(field.validate[0].type).toBe(validatorTypes.REQUIRED);
+    }
+
+    // No endpoint or SSL configuration: `amazon.endpoint` is empty in
+    // sources-ui, so AWS has nothing to configure there.
+    expect(stepNames()).not.toContain(WizardStepId.EndpointConfiguration);
+  });
+
+  it('submits from review, into the result step', () => {
+    expect(reviewStep().nextStep).toBe(WizardStepId.SubmissionResult);
+    // This flag is what turns review's primary button into the submit button.
+    expect(resultStep().isProgressAfterSubmissionStep).toBe(true);
+    expect(resultStep().nextStep).toBeUndefined();
   });
 
   it('starts on naming when the provider is already chosen', () => {
@@ -256,6 +349,41 @@ describe('createIntegrationWizardSchema', () => {
 
   it('offers a card per provider in the catalogue', () => {
     expect(firstStep().fields[1].options).toHaveLength(sourceTypes.length);
+  });
+});
+
+describe('toCreateSourceInput', () => {
+  it('flattens the form values onto the create payload', () => {
+    expect(
+      toCreateSourceInput({
+        source_type: 'amazon',
+        source: { name: 'My AWS integration' },
+        authentication: {
+          authtype: ACCESS_KEY_AUTH_TYPE,
+          username: 'AKIAIOSFODNN7EXAMPLE',
+          password: 'secret',
+        },
+        applications: ['1'],
+      }),
+    ).toEqual({
+      name: 'My AWS integration',
+      sourceTypeName: 'amazon',
+      authentication: {
+        authtype: ACCESS_KEY_AUTH_TYPE,
+        username: 'AKIAIOSFODNN7EXAMPLE',
+        password: 'secret',
+      },
+      applicationTypeIds: ['1'],
+    });
+  });
+
+  it('sends no applications when none were selected', () => {
+    expect(
+      toCreateSourceInput({
+        source_type: 'amazon',
+        source: { name: 'My AWS integration' },
+      }).applicationTypeIds,
+    ).toEqual([]);
   });
 });
 
@@ -376,36 +504,11 @@ describe('validateArrayNotEmpty', () => {
 });
 
 describe('review step', () => {
-  it('renders as a review-step component', () => {
-    const reviewField = revStep().fields[0];
+  it('renders the review summary component', () => {
+    const [description, summary] = reviewStep().fields;
 
-    expect(reviewField.component).toBe(REVIEW_STEP_COMPONENT);
-    expect(reviewField.name).toBe('review-summary');
-  });
-
-  it('passes a description for the review summary', () => {
-    const reviewField = revStep().fields[0];
-
-    expect(reviewField.description).toMatch(/Review the information below/);
-  });
-
-  it('passes translated labels for the summary', () => {
-    const reviewField = revStep().fields[0];
-
-    expect(reviewField.labels).toEqual({
-      review: 'Review integration details',
-      sourceType: 'Integration type',
-      name: 'Name',
-      applications: 'Applications',
-    });
-  });
-
-  it('passes source type and application options for name resolution', () => {
-    const reviewField = revStep().fields[0];
-
-    expect(reviewField.sourceTypeOptions).toHaveLength(sourceTypes.length);
-    expect(reviewField.applicationOptions).toHaveLength(
-      applicationTypes.length,
-    );
+    expect(description.label).toMatch(/Review the details below/);
+    expect(summary.component).toBe(REVIEW_SUMMARY_COMPONENT);
+    expect(summary.name).toBe('review-summary');
   });
 });

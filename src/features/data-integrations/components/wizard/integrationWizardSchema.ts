@@ -113,6 +113,7 @@ function buildSourceTypeValues(sourceTypes: SourceType[]): SourceTypeName[] {
   return OFFERED_PROVIDERS.filter((provider) => availableNames.has(provider));
 }
 
+/** Builds the card options for the source type step from the API catalogue. */
 export function buildSourceTypeOptions(
   sourceTypes: SourceType[],
   intl: IntlShape,
@@ -341,6 +342,7 @@ export function buildApplicationOptions(
  */
 const ARRAY_NOT_EMPTY_VALIDATOR = 'array-not-empty';
 
+/** Builds a validator config that `data-driven-forms` resolves via the validator mapper. */
 export function arrayNotEmptyValidator(message: string): {
   type: typeof ARRAY_NOT_EMPTY_VALIDATOR;
   message: string;

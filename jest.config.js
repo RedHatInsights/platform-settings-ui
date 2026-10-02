@@ -3,7 +3,7 @@
  * a `messages.ts` — which is every feature module — reaches it. Jest has to
  * transpile it and the @formatjs packages it pulls in.
  */
-const esmDependencies = ['uuid', 'react-intl', '@formatjs', 'intl-messageformat'];
+const esmDependencies = ['uuid', 'react-intl', '@formatjs', 'intl-messageformat', 'rettime', 'msw'];
 
 const transformIgnorePatterns = [
   `node_modules/(?!(${esmDependencies.join('|')})/)`,
@@ -24,7 +24,7 @@ module.exports = {
     // Babel options live here rather than in a root babel.config.js: the app is
     // built by `fec build` (swc), and a root Babel config would be picked up by
     // other tooling that has no business transpiling to CommonJS.
-    '\\.[jm]sx?$': [
+    '\\.(jsx?|mjs)$': [
       'babel-jest',
       {
         babelrc: false,

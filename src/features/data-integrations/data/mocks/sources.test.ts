@@ -1,0 +1,102 @@
+/**
+ * MSW 2.x requires Fetch API globals (`Request`, `Response`) that are not
+ * available in jsdom, so the module is mocked. The mock preserves enough
+ * structure for `createSourcesHandlers` to return handler-shaped objects whose
+ * routes we can assert, while the `sourcesDb` tests exercise the real
+ * in-memory collection without touching MSW at all.
+ */
+jest.mock('msw', () => ({
+  HttpResponse: { json: jest.fn() },
+  delay: jest.fn(),
+  http: new Proxy(
+    {},
+    {
+      get: (_target, method: string) => (path: string, resolver: unknown) => ({
+        info: { method: method.toUpperCase(), path },
+        resolver,
+      }),
+    },
+  ),
+}));
+
+import { createSourcesHandlers, sourcesDb } from './sources';
+
+beforeEach(() => {
+  sourcesDb.reset();
+});
+
+describe('createSourcesHandlers', () => {
+  it('returns handlers including source and application POST routes', () => {
+    const handlers = createSourcesHandlers();
+    const routes = handlers.map(
+      (h) =>
+        `${(h.info as { method: string }).method} ${(h.info as { path: string }).path}`,
+    );
+
+    expect(routes).toContain('POST /api/sources/v3.1/sources');
+    expect(routes).toContain('POST /api/sources/v3.1/applications');
+  });
+});
+
+describe('sourcesDb', () => {
+  it('stores a new source and makes it retrievable by id', () => {
+    const before = sourcesDb.findAll().length;
+    const source = {
+      id: 'src-test',
+      name: 'test-source',
+      source_type_id: '2',
+      created_at: new Date().toISOString(),
+      availability_status: 'in_progress' as const,
+      applications: [],
+    };
+
+    sourcesDb.create(source);
+
+    expect(sourcesDb.findAll()).toHaveLength(before + 1);
+    expect(sourcesDb.findById('src-test')).toMatchObject({
+      name: 'test-source',
+      source_type_id: '2',
+      availability_status: 'in_progress',
+    });
+  });
+
+  it('appending an application association to a source is reflected in findById', () => {
+    const sourceId = sourcesDb.findAll()[0].id;
+    const source = sourcesDb.findById(sourceId)!;
+    const appsBefore = source.applications?.length ?? 0;
+
+    source.applications = [
+      ...(source.applications ?? []),
+      {
+        id: 'app-test',
+        application_type_id: '1',
+        availability_status: 'available',
+      },
+    ];
+
+    const updated = sourcesDb.findById(sourceId);
+    expect(updated?.applications).toHaveLength(appsBefore + 1);
+    expect(updated?.applications).toContainEqual(
+      expect.objectContaining({
+        id: 'app-test',
+        application_type_id: '1',
+      }),
+    );
+  });
+
+  it('resets to seed data between tests', () => {
+    sourcesDb.create({
+      id: 'src-ephemeral',
+      name: 'ephemeral',
+      source_type_id: '1',
+      created_at: new Date().toISOString(),
+      applications: [],
+    });
+    const withExtra = sourcesDb.findAll().length;
+
+    sourcesDb.reset();
+
+    expect(sourcesDb.findAll().length).toBeLessThan(withExtra);
+    expect(sourcesDb.findById('src-ephemeral')).toBeUndefined();
+  });
+});

@@ -16,6 +16,7 @@ const SOURCES_API_BASE = '/api/sources/v3.1';
 /** The API's own defaults, so an unparameterised query behaves the same here. */
 const DEFAULT_LIMIT = 100;
 
+/** In-memory source collection backing the MSW handlers. Reset between stories. */
 export const sourcesDb = createResettableCollection(seedSources);
 
 /**
@@ -104,6 +105,7 @@ function graphQLData(sources: Source[], count: number) {
   return HttpResponse.json({ data: { sources, meta: { count } } });
 }
 
+/** Returns handlers that serve an empty source list with the full catalogues. */
 export function createEmptySourcesHandler(baseUrl = SOURCES_API_BASE) {
   return [
     http.post(`${baseUrl}/graphql`, () => graphQLData([], 0)),
@@ -229,6 +231,7 @@ export function createSourceTypesSubsetHandler(
   ];
 }
 
+/** Full happy-path handler set: GraphQL list, REST detail, catalogues, and POST create routes. */
 export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
   return [
     http.post(`${baseUrl}/graphql`, async ({ request }) => {

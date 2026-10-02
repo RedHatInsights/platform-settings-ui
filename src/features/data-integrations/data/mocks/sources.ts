@@ -16,6 +16,9 @@ const SOURCES_API_BASE = '/api/sources/v3.1';
 /** The API's own defaults, so an unparameterised query behaves the same here. */
 const DEFAULT_LIMIT = 100;
 
+/** Monotonic counter so IDs stay unique even when POSTs fire in the same ms. */
+let nextId = 0;
+
 /** In-memory source collection backing the MSW handlers. Reset between stories. */
 export const sourcesDb = createResettableCollection(seedSources);
 
@@ -283,7 +286,7 @@ export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
     http.post(`${baseUrl}/sources`, async ({ request }) => {
       const body = (await request.json()) as CreateSourceInput;
       const source: Source = {
-        id: `src-${Date.now()}`,
+        id: `src-${Date.now()}-${nextId++}`,
         name: body.name,
         source_type_id: body.source_type_id,
         created_at: new Date().toISOString(),
@@ -298,7 +301,7 @@ export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
     http.post(`${baseUrl}/applications`, async ({ request }) => {
       const body = (await request.json()) as CreateApplicationInput;
       const application: Application = {
-        id: `app-${Date.now()}`,
+        id: `app-${Date.now()}-${nextId++}`,
         source_id: body.source_id,
         application_type_id: body.application_type_id,
         created_at: new Date().toISOString(),

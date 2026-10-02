@@ -152,30 +152,32 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
           source_type_id: matchedSourceType.id,
         });
 
-        try {
-          await Promise.all(
-            applicationIds.map((appTypeId) =>
-              api.createApplication({
-                source_id: source.id,
-                application_type_id: appTypeId,
-              }),
-            ),
-          );
-
-          notify(
-            'success',
-            intl.formatMessage(messages.wizardTitle),
-            intl.formatMessage(messages.wizardSuccessBody, {
-              name: sourceName,
+        const results = await Promise.allSettled(
+          applicationIds.map((appTypeId) =>
+            api.createApplication({
+              source_id: source.id,
+              application_type_id: appTypeId,
             }),
-          );
-        } catch {
+          ),
+        );
+
+        const hasRejection = results.some((r) => r.status === 'rejected');
+
+        if (hasRejection) {
           notify(
             'warning',
             intl.formatMessage(messages.wizardPartialFailureTitle, {
               name: sourceName,
             }),
             intl.formatMessage(messages.wizardPartialFailureBody),
+          );
+        } else {
+          notify(
+            'success',
+            intl.formatMessage(messages.wizardTitle),
+            intl.formatMessage(messages.wizardSuccessBody, {
+              name: sourceName,
+            }),
           );
         }
 

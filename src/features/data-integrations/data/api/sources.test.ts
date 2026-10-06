@@ -11,83 +11,91 @@ jest.mock('@redhat-cloud-services/javascript-clients-shared/utils', () => ({
   APIFactory: () => mockApi,
 }));
 
-const fakeAxios = {} as AxiosInstance;
-
 describe('createSourcesApi', () => {
   beforeEach(() => {
     jest.resetAllMocks();
   });
 
   describe('createSource', () => {
-    it('sends the input wrapped in a source key and returns the response data', async () => {
-      const created = {
-        id: 'src-1',
-        name: 'my-source',
-        source_type_id: '2',
-        created_at: '2026-01-01T00:00:00Z',
-      };
-      mockApi.createSource = jest.fn().mockResolvedValue({ data: created });
+    const input = {
+      name: 'my-source',
+      sourceTypeName: 'amazon',
+      authentication: {
+        authtype: 'access_key_secret_key' as const,
+        username: 'AKIA',
+        password: 'secret',
+      },
+      applicationTypeIds: ['3', '4'],
+    };
 
-      const api = createSourcesApi(fakeAxios);
-      const result = await api.createSource({
-        name: 'my-source',
-        source_type_id: '2',
-      });
-
-      expect(mockApi.createSource).toHaveBeenCalledWith({
-        source: { name: 'my-source', source_type_id: '2' },
-      });
-      expect(result).toEqual(created);
-    });
-
-    it('propagates a rejection from the generated client', async () => {
-      const error = new Error('Source creation failed');
-      mockApi.createSource = jest.fn().mockRejectedValue(error);
-
-      const api = createSourcesApi(fakeAxios);
-
-      await expect(
-        api.createSource({ name: 'bad', source_type_id: '2' }),
-      ).rejects.toThrow(error);
-    });
-  });
-
-  describe('createApplication', () => {
-    it('sends the input wrapped in an application key and returns the response data', async () => {
-      const created = {
-        id: 'app-1',
-        source_id: 'src-1',
-        application_type_id: '3',
-        created_at: '2026-01-01T00:00:00Z',
-      };
-      mockApi.createApplication = jest
+    it('posts one bulk create binding the authentication and applications to the source', async () => {
+      const created = { id: 'src-1', name: 'my-source', source_type_id: '2' };
+      const post = jest
         .fn()
-        .mockResolvedValue({ data: created });
+        .mockResolvedValue({ data: { sources: [created] } });
 
-      const api = createSourcesApi(fakeAxios);
-      const result = await api.createApplication({
-        source_id: 'src-1',
-        application_type_id: '3',
-      });
+      const api = createSourcesApi({ post } as unknown as AxiosInstance);
+      const result = await api.createSource(input);
 
-      expect(mockApi.createApplication).toHaveBeenCalledWith({
-        application: { source_id: 'src-1', application_type_id: '3' },
+      expect(post).toHaveBeenCalledWith('/api/sources/v3.1/bulk_create', {
+        sources: [{ name: 'my-source', source_type_name: 'amazon' }],
+        endpoints: [],
+        authentications: [
+          {
+            authtype: 'access_key_secret_key',
+            username: 'AKIA',
+            password: 'secret',
+            resource_type: 'source',
+            resource_name: 'my-source',
+          },
+        ],
+        applications: [
+          { application_type_id: '3', source_name: 'my-source' },
+          { application_type_id: '4', source_name: 'my-source' },
+        ],
       });
       expect(result).toEqual(created);
     });
 
-    it('propagates a rejection from the generated client', async () => {
-      const error = new Error('Application association failed');
-      mockApi.createApplication = jest.fn().mockRejectedValue(error);
+    it('sends an empty applications array when none were selected', async () => {
+      const post = jest
+        .fn()
+        .mockResolvedValue({ data: { sources: [{ id: 'src-1' }] } });
 
-      const api = createSourcesApi(fakeAxios);
+      const api = createSourcesApi({ post } as unknown as AxiosInstance);
+      await api.createSource({ ...input, applicationTypeIds: undefined });
 
-      await expect(
-        api.createApplication({
-          source_id: 'src-1',
-          application_type_id: '3',
-        }),
-      ).rejects.toThrow(error);
+      expect(post.mock.calls[0][1].applications).toEqual([]);
+    });
+
+    it('throws when the response carries no source', async () => {
+      const post = jest.fn().mockResolvedValue({ data: { sources: [] } });
+
+      const api = createSourcesApi({ post } as unknown as AxiosInstance);
+
+      await expect(api.createSource(input)).rejects.toThrow(
+        'Sources bulk create returned no source',
+      );
+    });
+
+    it('sends no authentication when the user chose manual configuration', async () => {
+      const post = jest
+        .fn()
+        .mockResolvedValue({ data: { sources: [{ id: 'src-1' }] } });
+
+      const api = createSourcesApi({ post } as unknown as AxiosInstance);
+      await api.createSource({ ...input, authentication: undefined });
+
+      expect(post.mock.calls[0][1].authentications).toEqual([]);
+    });
+
+    it('propagates a rejection from axios', async () => {
+      const error = new Error('Source creation failed');
+      const post = jest.fn().mockRejectedValue(error);
+
+      const api = createSourcesApi({ post } as unknown as AxiosInstance);
+
+      await expect(api.createSource(input)).rejects.toThrow(error);
     });
   });
 });

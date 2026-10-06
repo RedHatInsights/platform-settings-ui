@@ -2,17 +2,17 @@ import React from 'react';
 import FormRenderer from '@data-driven-forms/react-form-renderer/form-renderer';
 import type { FormRendererProps } from '@data-driven-forms/react-form-renderer/form-renderer';
 import type { ComponentMapper } from '@data-driven-forms/react-form-renderer/common-types';
-import type { ValidatorMapper } from '@data-driven-forms/react-form-renderer/validator-mapper';
 import FormTemplate from '@data-driven-forms/pf4-component-mapper/form-template';
 import pf4ComponentMapper from '@data-driven-forms/pf4-component-mapper/component-mapper';
-import ApplicationCheckboxSelect from './ApplicationCheckboxSelect';
-import ReviewStep from './ReviewStep';
+import ApplicationSwitchGroup from './ApplicationSwitchGroup';
 import SourceTypeCardSelect from './SourceTypeCardSelect';
+import ReviewSummary from './ReviewSummary';
+import SubmissionResult from './SubmissionResult';
 import {
   APPLICATION_SELECT_COMPONENT,
   CARD_SELECT_COMPONENT,
-  REVIEW_STEP_COMPONENT,
-  validateArrayNotEmpty,
+  REVIEW_SUMMARY_COMPONENT,
+  SUBMISSION_RESULT_COMPONENT,
 } from './integrationWizardSchema';
 
 /**
@@ -23,8 +23,9 @@ import {
  */
 export const mapperExtension = {
   [CARD_SELECT_COMPONENT]: SourceTypeCardSelect,
-  [APPLICATION_SELECT_COMPONENT]: ApplicationCheckboxSelect,
-  [REVIEW_STEP_COMPONENT]: ReviewStep,
+  [APPLICATION_SELECT_COMPONENT]: ApplicationSwitchGroup,
+  [REVIEW_SUMMARY_COMPONENT]: ReviewSummary,
+  [SUBMISSION_RESULT_COMPONENT]: SubmissionResult,
 };
 
 /**
@@ -50,20 +51,6 @@ const WizardFormTemplate: typeof FormTemplate = (props) => (
  * on global PatternFly imports does not fire on it. Our own files still use
  * dynamic sub-paths.
  */
-/**
- * Custom validators for fields that the built-in set does not cover.
- *
- * `array-not-empty` checks that an array field has at least one element —
- * the built-in REQUIRED validator passes for `[]` because it only checks
- * for truthiness.
- */
-const validatorMapperExtension: ValidatorMapper = {
-  'array-not-empty':
-    ({ message }: { message?: string } = {}) =>
-    (value: unknown) =>
-      validateArrayNotEmpty(value, undefined, { message }),
-};
-
 export type IntegrationsFormRendererProps = Omit<
   FormRendererProps,
   'componentMapper' | 'FormTemplate'
@@ -83,7 +70,6 @@ const IntegrationsFormRenderer: React.FC<IntegrationsFormRendererProps> = ({
       ...mapperExtension,
       ...componentMapper,
     }}
-    validatorMapper={validatorMapperExtension}
     {...props}
   />
 );

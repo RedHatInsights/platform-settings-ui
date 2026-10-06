@@ -1,6 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@patternfly/react-core/dist/dynamic/components/Button';
 import {
   Modal,
@@ -13,19 +12,17 @@ import { Spinner } from '@patternfly/react-core/dist/dynamic/components/Spinner'
 import { Bullseye } from '@patternfly/react-core/dist/dynamic/layouts/Bullseye';
 import IntegrationsFormRenderer from './wizard/IntegrationsFormRenderer';
 import {
-  APPLICATIONS_FIELD,
-  SOURCE_NAME_FIELD,
-  SOURCE_TYPE_FIELD,
   buildSourceTypeOptions,
   createIntegrationWizardSchema,
   createWizardInitialValues,
   resolveSelectedType,
+  toCreateSourceInput,
 } from './wizard/integrationWizardSchema';
-import { createSourcesApi } from '../data/api/sources';
+import type { IntegrationWizardValues } from './wizard/integrationWizardSchema';
+import { WizardSubmissionContext } from './wizard/SubmissionResult';
 import { useApplicationTypes } from '../data/queries/useApplicationTypes';
-import { sourcesKeys } from '../data/queries/useSources';
 import { useSourceTypes } from '../data/queries/useSourceTypes';
-import { useAppServices } from '../../../shared/ServiceContext';
+import { useCreateSource } from '../data/queries/useCreateSource';
 import messages from '../messages';
 import type { SourceTypeName } from '../types';
 
@@ -57,8 +54,6 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
   onClose,
 }) => {
   const intl = useIntl();
-  const { axios, notify } = useAppServices();
-  const queryClient = useQueryClient();
   const {
     data: sourceTypes,
     isLoading: isLoadingSourceTypes,
@@ -80,6 +75,17 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
    * reducer outside its renderer for the same reason.
    */
   const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
+
+  const createSource = useCreateSource();
+
+  /**
+   * Bumped by "Add another integration" to remount the renderer.
+   *
+   * Remounting is the only way back to a blank wizard: final-form keeps the
+   * values and the wizard keeps its step history, and `initialState` would put
+   * a reset form back on whichever step it names rather than step one.
+   */
+  const [formKey, setFormKey] = useState(0);
 
   /**
    * A catalogue that offers none of the providers we support is as unusable as
@@ -115,92 +121,27 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
     [sourceTypes, sourceType],
   );
 
-  /**
-   * Multi-step submission: create the source, then associate each selected
-   * application. On success the sources list cache is invalidated so the table
-   * picks up the new entry.
-   */
-  const handleSubmit = useCallback(
-    async (values: Record<string, unknown>) => {
-      const api = createSourcesApi(axios);
-
-      // The wizard's `prepareValues` only includes fields that were registered
-      // (rendered) during visited steps. When the wizard starts on step two
-      // because a provider was pre-selected, step one is never rendered and the
-      // source_type field is missing from `values`. Fall back to `initialValues`
-      // so the pre-selection is honoured.
-      const sourceTypeName = (values[SOURCE_TYPE_FIELD] ??
-        initialValues[SOURCE_TYPE_FIELD]) as string | undefined;
-      const sourceName = values[SOURCE_NAME_FIELD] as string;
-      const applicationIds = (values[APPLICATIONS_FIELD] ?? []) as string[];
-
-      const matchedSourceType = sourceTypes?.find(
-        (st) => st.name === sourceTypeName,
-      );
-      if (!matchedSourceType) {
-        notify(
-          'danger',
-          intl.formatMessage(messages.wizardCreateFailureTitle),
-          intl.formatMessage(messages.wizardCreateFailureBody),
-        );
-        return;
-      }
-
-      try {
-        const source = await api.createSource({
-          name: sourceName,
-          source_type_id: matchedSourceType.id,
-        });
-
-        const results = await Promise.allSettled(
-          applicationIds.map((appTypeId) =>
-            api.createApplication({
-              source_id: source.id,
-              application_type_id: appTypeId,
-            }),
-          ),
-        );
-
-        const hasRejection = results.some((r) => r.status === 'rejected');
-
-        if (hasRejection) {
-          notify(
-            'warning',
-            intl.formatMessage(messages.wizardPartialFailureTitle, {
-              name: sourceName,
-            }),
-            intl.formatMessage(messages.wizardPartialFailureBody),
-          );
-        } else {
-          notify(
-            'success',
-            intl.formatMessage(messages.wizardTitle),
-            intl.formatMessage(messages.wizardSuccessBody, {
-              name: sourceName,
-            }),
-          );
-        }
-
-        queryClient.invalidateQueries({ queryKey: sourcesKeys.lists() });
-        onClose();
-      } catch {
-        notify(
-          'danger',
-          intl.formatMessage(messages.wizardCreateFailureTitle),
-          intl.formatMessage(messages.wizardCreateFailureBody),
-        );
-      }
-    },
-    [axios, initialValues, sourceTypes, queryClient, intl, notify, onClose],
-  );
-
   if (!isOpen) {
     return null;
   }
 
+  /**
+   * Leaves the wizard and wipes it.
+   *
+   * `isOpen: false` renders null without unmounting, so without the reset and
+   * the remount the next open would come back on the step the last one ended
+   * on, still showing its result.
+   */
   const exit = () => {
     setIsConfirmingCancel(false);
+    createSource.reset();
+    setFormKey((key) => key + 1);
     onClose();
+  };
+
+  const restart = () => {
+    createSource.reset();
+    setFormKey((key) => key + 1);
   };
 
   const isUnavailable = isError || (!isLoading && !schema);
@@ -250,12 +191,43 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
 
   return (
     <>
-      <IntegrationsFormRenderer
-        schema={schema}
-        initialValues={initialValues}
-        onCancel={() => setIsConfirmingCancel(true)}
-        onSubmit={handleSubmit}
-      />
+      <WizardSubmissionContext.Provider
+        value={{
+          isPending: createSource.isPending,
+          isError: createSource.isError,
+          error: createSource.error,
+          createdSource: createSource.data,
+          onAddAnother: restart,
+          onClose: exit,
+        }}
+      >
+        <IntegrationsFormRenderer
+          key={formKey}
+          schema={schema}
+          initialValues={initialValues}
+          onCancel={() => setIsConfirmingCancel(true)}
+          /**
+           * Fires from the review step's Add button, and again from Retry on
+           * the result step. The renderer advances to the result step without
+           * waiting, so the mutation's own state is what that step renders —
+           * which is also why nothing here needs to be awaited.
+           *
+           * Merged over the initial values because the renderer narrows what
+           * it submits to the fields of steps the user actually visited. A
+           * wizard opened with the provider already chosen skips step one, so
+           * `source_type` would otherwise be missing from the payload — and
+           * the API would be asked to create a source of no type at all.
+           */
+          onSubmit={(values) =>
+            createSource.mutate(
+              toCreateSourceInput({
+                ...initialValues,
+                ...values,
+              } as IntegrationWizardValues),
+            )
+          }
+        />
+      </WizardSubmissionContext.Provider>
       {isConfirmingCancel && (
         <Modal
           isOpen

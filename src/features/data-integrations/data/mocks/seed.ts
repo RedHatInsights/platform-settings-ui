@@ -55,6 +55,14 @@ export const seedSourceTypes: SourceType[] = [
     product_name: 'Amazon Web Services',
     vendor: 'Amazon',
     category: 'Cloud',
+    // `is_superkey` is what makes AWS the one provider offered the
+    // "Select configuration" step; `arn` is its manual alternative.
+    schema: {
+      authentication: [
+        { type: 'access_key_secret_key', is_superkey: true },
+        { type: 'arn' },
+      ],
+    },
   },
   {
     id: '3',

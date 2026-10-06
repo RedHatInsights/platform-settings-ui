@@ -1,8 +1,6 @@
 import {
   type ListApplicationTypesReturnType,
   type ListSourceTypesReturnType,
-  createApplication,
-  createSource,
   listApplicationTypes,
   listSourceTypes,
   postGraphQL,
@@ -11,9 +9,9 @@ import {
 import { APIFactory } from '@redhat-cloud-services/javascript-clients-shared/utils';
 import type { AxiosInstance } from 'axios';
 import type {
-  Application,
   ApplicationType,
-  CreateApplicationInput,
+  BulkCreatePayload,
+  BulkCreateResponse,
   CreateSourceInput,
   PageSource,
   Source,
@@ -36,8 +34,6 @@ const SOURCE_TYPES_LIMIT = 100;
 const APPLICATION_TYPES_LIMIT = 100;
 
 const endpoints = {
-  createApplication,
-  createSource,
   listApplicationTypes,
   listSourceTypes,
   postGraphQL,
@@ -252,6 +248,61 @@ export function createSourcesApi(axios: AxiosInstance) {
       return sources[0];
     },
 
+    /**
+     * Creates a source, its authentication and its applications in one
+     * transaction.
+     *
+     * Goes over raw axios rather than `api`: the generated client ships
+     * `CreateSource`, `CreateAuthentication` and friends but no `BulkCreate`,
+     * and doing it as two calls can leave a credential-less source behind when
+     * the second fails — which is why sources-ui posts `/bulk_create` too.
+     *
+     * The provider goes in as `source_type_name`; the API resolves it, so the
+     * caller does not need the catalogue loaded to submit.
+     */
+    async createSource(input: CreateSourceInput): Promise<Source> {
+      const payload: BulkCreatePayload = {
+        sources: [
+          {
+            name: input.name,
+            source_type_name: input.sourceTypeName,
+            app_creation_workflow: input.appCreationWorkflow,
+          },
+        ],
+        endpoints: [],
+        authentications: input.authentication
+          ? [
+              {
+                ...input.authentication,
+                // No endpoint or application is created alongside, so the
+                // authentication hangs off the source itself.
+                resource_type: 'source',
+                resource_name: input.name,
+              },
+            ]
+          : [],
+        applications: (input.applicationTypeIds ?? []).map(
+          (application_type_id) => ({
+            application_type_id,
+            source_name: input.name,
+          }),
+        ),
+      };
+
+      const response = await axios.post<BulkCreateResponse>(
+        `${SOURCES_API_BASE}/bulk_create`,
+        payload,
+      );
+
+      const created = response.data?.sources?.[0];
+
+      if (!created) {
+        throw new Error('Sources bulk create returned no source');
+      }
+
+      return created;
+    },
+
     async getSourceTypes(): Promise<SourceType[]> {
       const response = await api.listSourceTypes({ limit: SOURCE_TYPES_LIMIT });
       const collection: ListSourceTypesReturnType = response.data;
@@ -266,22 +317,6 @@ export function createSourcesApi(axios: AxiosInstance) {
       const collection: ListApplicationTypesReturnType = response.data;
 
       return (collection.data ?? []) as ApplicationType[];
-    },
-
-    /** Creates a new source via `POST /sources`. */
-    async createSource(input: CreateSourceInput): Promise<Source> {
-      const response = await api.createSource({ source: input });
-
-      return response.data as Source;
-    },
-
-    /** Associates an application type with a source via `POST /applications`. */
-    async createApplication(
-      input: CreateApplicationInput,
-    ): Promise<Application> {
-      const response = await api.createApplication({ application: input });
-
-      return response.data as Application;
     },
   };
 }

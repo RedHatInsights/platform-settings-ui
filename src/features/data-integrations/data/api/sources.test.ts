@@ -78,6 +78,17 @@ describe('createSourcesApi', () => {
       );
     });
 
+    it('sends no authentication when the user chose manual configuration', async () => {
+      const post = jest
+        .fn()
+        .mockResolvedValue({ data: { sources: [{ id: 'src-1' }] } });
+
+      const api = createSourcesApi({ post } as unknown as AxiosInstance);
+      await api.createSource({ ...input, authentication: undefined });
+
+      expect(post.mock.calls[0][1].authentications).toEqual([]);
+    });
+
     it('propagates a rejection from axios', async () => {
       const error = new Error('Source creation failed');
       const post = jest.fn().mockRejectedValue(error);

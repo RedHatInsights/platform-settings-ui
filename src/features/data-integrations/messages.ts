@@ -330,33 +330,6 @@ export default defineMessages({
     defaultMessage: 'Configuration mode',
   },
 
-  // Manual configuration credentials
-  wizardArnStepDescription: {
-    id: 'dataIntegrations.wizard.arn.stepDescription',
-    description: 'Introductory text above the AWS role ARN field',
-    defaultMessage:
-      'Enter the ARN of the role you created for Red Hat to assume in your AWS account.',
-  },
-  wizardArnLabel: {
-    id: 'dataIntegrations.wizard.arn.label',
-    description: 'Label for the AWS role ARN field',
-    defaultMessage: 'ARN',
-  },
-  wizardArnRequired: {
-    id: 'dataIntegrations.wizard.arn.required',
-    description: 'Validation message when the ARN is empty',
-    defaultMessage: 'Enter the ARN of the role to assume.',
-  },
-  wizardArnPattern: {
-    id: 'dataIntegrations.wizard.arn.pattern',
-    description: 'Validation message when the ARN has the wrong prefix',
-    defaultMessage: 'ARN must start with arn:aws:',
-  },
-  wizardArnLength: {
-    id: 'dataIntegrations.wizard.arn.length',
-    description: 'Validation message when the ARN is too short',
-    defaultMessage: 'ARN should have at least 10 characters',
-  },
   wizardAccessKeyIdLabel: {
     id: 'dataIntegrations.wizard.credentials.accessKeyId',
     description: 'Label for the AWS access key ID field',

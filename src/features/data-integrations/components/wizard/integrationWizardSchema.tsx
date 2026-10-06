@@ -58,12 +58,10 @@ export const AUTH_USERNAME_FIELD = 'authentication.username';
 export const AUTH_PASSWORD_FIELD = 'authentication.password';
 
 /**
- * AWS's two credentials. `access_key_secret_key` is the superkey one Red Hat
- * manages on the user's behalf; `arn` is the role the manual path assumes.
- * Both land in the API's generic `username`/`password` slots.
+ * The only authentication type offered today — AWS's superkey credential, the
+ * one account authorization has Red Hat manage.
  */
 export const ACCESS_KEY_AUTH_TYPE = 'access_key_secret_key';
-export const ARN_AUTH_TYPE = 'arn';
 
 /** Field name and values for the configuration mode, both from `sources-ui`. */
 export const APP_CREATION_WORKFLOW_FIELD = 'source.app_creation_workflow';
@@ -110,7 +108,6 @@ const AUTH_TYPE_LABELS: Record<
   (typeof messages)[keyof typeof messages]
 > = {
   [ACCESS_KEY_AUTH_TYPE]: messages.wizardAuthTypeAccessKey,
-  [ARN_AUTH_TYPE]: messages.wizardArnLabel,
 };
 
 /** Translated label for a configuration mode, for the review summary. */
@@ -423,9 +420,8 @@ function stepAfterNaming(sourceTypes: SourceType[]) {
  * mode is selected; picking manual configuration unregisters them rather than
  * leaving a required access key blocking Next invisibly.
  *
- * Account authorization carries the superkey credential straight to the
- * applications step. Manual configuration still needs a role to assume, which
- * is the credentials step.
+ * Both modes go on to the applications step. Manual configuration collects no
+ * credential — that is what the user opted out of.
  */
 function configurationStep(intl: IntlShape) {
   return {
@@ -433,9 +429,12 @@ function configurationStep(intl: IntlShape) {
     title: intl.formatMessage(messages.wizardConfigurationStepTitle),
     nextStep: {
       when: APP_CREATION_WORKFLOW_FIELD,
+      // Neither mode asks for anything else here: account authorization has
+      // just collected its credential, and manual configuration is the user
+      // saying they will set the integration up themselves.
       stepMapper: {
         [ACCOUNT_AUTHORIZATION]: WizardStepId.ApplicationSelection,
-        [MANUAL_CONFIGURATION]: WizardStepId.AuthCredentials,
+        [MANUAL_CONFIGURATION]: WizardStepId.ApplicationSelection,
       },
     },
     fields: [
@@ -702,16 +701,13 @@ function authTypeSelectionStep(intl: IntlShape) {
 }
 
 /**
- * The credentials step — the manual configuration path.
+ * The generic credentials step.
  *
- * Account authorization collects its credential inside the configuration step,
- * so the only thing that reaches this one is a user who declined it. That
- * means AWS's role ARN: `sources-ui` pairs `manual_configuration` with the
- * `arn` authentication type, never with the access key.
- *
- * The ARN validators come from `sources-ui`'s `arnField` — required, the
- * `arn:aws:` prefix, and a minimum length. Unlike the access key, the format
- * is fixed and checkable, so checking it here beats a round trip.
+ * Nothing routes here today: AWS collects its credential inside the
+ * configuration step, and the three providers without an authentication type
+ * stop before this one. It is the target {@link stepAfterNaming} falls back to
+ * for a provider with exactly one authentication type and no superkey — the
+ * shape RHCLOUD-51317's providers arrive in.
  *
  * `authtype` is not something the user picks, so it is written into the form
  * on mount instead of being asked for. `initializeOnMount` makes that survive
@@ -726,35 +722,38 @@ function authCredentialsStep(intl: IntlShape) {
       {
         component: componentTypes.PLAIN_TEXT,
         name: 'credentials-step-description',
-        label: intl.formatMessage(messages.wizardArnStepDescription),
+        label: intl.formatMessage(messages.wizardCredentialsStepDescription),
       },
       {
         component: componentTypes.TEXT_FIELD,
         name: AUTH_TYPE_FIELD,
         hideField: true,
-        initialValue: ARN_AUTH_TYPE,
+        initialValue: ACCESS_KEY_AUTH_TYPE,
         initializeOnMount: true,
       },
       {
         component: componentTypes.TEXT_FIELD,
         name: AUTH_USERNAME_FIELD,
-        label: intl.formatMessage(messages.wizardArnLabel),
-        placeholder: 'arn:aws:iam:123456789:role/CostManagement',
+        label: intl.formatMessage(messages.wizardAccessKeyIdLabel),
+        placeholder: 'AKIAIOSFODNN7EXAMPLE',
         isRequired: true,
         validate: [
           {
             type: validatorTypes.REQUIRED,
-            message: intl.formatMessage(messages.wizardArnRequired),
+            message: intl.formatMessage(messages.wizardAccessKeyIdRequired),
           },
+        ],
+      },
+      {
+        component: componentTypes.TEXT_FIELD,
+        name: AUTH_PASSWORD_FIELD,
+        label: intl.formatMessage(messages.wizardSecretAccessKeyLabel),
+        type: 'password',
+        isRequired: true,
+        validate: [
           {
-            type: validatorTypes.PATTERN,
-            pattern: /^arn:aws:.*/,
-            message: intl.formatMessage(messages.wizardArnPattern),
-          },
-          {
-            type: validatorTypes.MIN_LENGTH,
-            threshold: 10,
-            message: intl.formatMessage(messages.wizardArnLength),
+            type: validatorTypes.REQUIRED,
+            message: intl.formatMessage(messages.wizardSecretAccessKeyRequired),
           },
         ],
       },
@@ -839,11 +838,19 @@ export function toCreateSourceInput(
     name: values.source?.name ?? '',
     sourceTypeName: values[SOURCE_TYPE_FIELD] ?? '',
     appCreationWorkflow: values.source?.app_creation_workflow,
-    authentication: {
-      authtype: values.authentication?.authtype ?? ACCESS_KEY_AUTH_TYPE,
-      username: values.authentication?.username,
-      password: values.authentication?.password,
-    },
+    /*
+     * Absent for manual configuration — the user declined to hand over
+     * credentials, so there is nothing to authenticate with. Sending the
+     * `authtype` with empty slots would create a credential that cannot work
+     * rather than no credential at all.
+     */
+    authentication: values.authentication?.username
+      ? {
+          authtype: values.authentication.authtype ?? ACCESS_KEY_AUTH_TYPE,
+          username: values.authentication.username,
+          password: values.authentication.password,
+        }
+      : undefined,
     applicationTypeIds: values[APPLICATIONS_FIELD] ?? [],
   };
 }

@@ -10,7 +10,6 @@ import {
 import messages from '../../messages';
 import { useApplicationTypes } from '../../data/queries/useApplicationTypes';
 import {
-  ARN_AUTH_TYPE,
   authTypeLabel,
   buildApplicationOptions,
   configurationModeLabel,
@@ -48,14 +47,13 @@ const ReviewSummary: React.FC = () => {
   const values = getState().values as IntegrationWizardValues;
   const provider = values.source_type;
   const workflow = values.source?.app_creation_workflow;
-  const credential = values.authentication?.username ?? '';
 
   /*
-   * The two configuration modes carry different credentials, so the review
-   * shows different rows: an ARN is an identifier the user pasted and can
-   * check, while an access key is a secret worth masking.
+   * Only account authorization hands over a credential, so the rows that
+   * describe one are absent for manual configuration rather than empty — a
+   * blank "Access key ID" reads like something went missing.
    */
-  const isManual = values.authentication?.authtype === ARN_AUTH_TYPE;
+  const accessKeyId = values.authentication?.username;
 
   /*
    * Already fetched and cached by the wizard host, so this resolves from cache
@@ -108,31 +106,24 @@ const ReviewSummary: React.FC = () => {
           {selectedApplications.join(', ')}
         </DescriptionListDescription>
       </DescriptionListGroup>
-      <DescriptionListGroup>
-        <DescriptionListTerm>
-          {intl.formatMessage(messages.wizardReviewAuthType)}
-        </DescriptionListTerm>
-        <DescriptionListDescription>
-          {values.authentication?.authtype
-            ? authTypeLabel(values.authentication.authtype, intl)
-            : ''}
-        </DescriptionListDescription>
-      </DescriptionListGroup>
-      {isManual ? (
-        <DescriptionListGroup>
-          <DescriptionListTerm>
-            {intl.formatMessage(messages.wizardArnLabel)}
-          </DescriptionListTerm>
-          <DescriptionListDescription>{credential}</DescriptionListDescription>
-        </DescriptionListGroup>
-      ) : (
+      {accessKeyId && (
         <>
+          <DescriptionListGroup>
+            <DescriptionListTerm>
+              {intl.formatMessage(messages.wizardReviewAuthType)}
+            </DescriptionListTerm>
+            <DescriptionListDescription>
+              {values.authentication?.authtype
+                ? authTypeLabel(values.authentication.authtype, intl)
+                : ''}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
           <DescriptionListGroup>
             <DescriptionListTerm>
               {intl.formatMessage(messages.wizardAccessKeyIdLabel)}
             </DescriptionListTerm>
             <DescriptionListDescription>
-              {maskAccessKeyId(credential)}
+              {maskAccessKeyId(accessKeyId)}
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>

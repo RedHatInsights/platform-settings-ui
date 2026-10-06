@@ -20,7 +20,7 @@ const SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY';
 
 /**
  * Walks an AWS wizard that opened pre-selected from naming through to review,
- * taking account authorization and picking Cost Management on the way.
+ * taking account authorization and leaving its applications on.
  *
  * Shared because five stories below only differ in what happens once they get
  * there, and the walk itself is already asserted end to end by
@@ -63,8 +63,9 @@ async function fillAwsDetails(
   );
   await user.click(modal.getByRole('button', { name: 'Next' }));
 
+  // Account authorization turns everything on for the user, so there is
+  // nothing to click here.
   await modal.findByRole('heading', { name: 'Select applications' });
-  await user.click(modal.getByRole('checkbox', { name: 'Cost Management' }));
   await waitFor(() =>
     expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
   );
@@ -235,7 +236,10 @@ export const AmazonHappyPath: Story = {
     await step('Review shows the answers, and hides the secret', async () => {
       expect(modal.getByText('Amazon Web Services')).toBeInTheDocument();
       expect(modal.getByText('aws-production')).toBeInTheDocument();
-      expect(modal.getByText('Cost Management')).toBeInTheDocument();
+      // Both applications, because account authorization turned them on.
+      expect(
+        modal.getByText('Cost Management, RHEL management'),
+      ).toBeInTheDocument();
       expect(modal.getByText('Account authorization')).toBeInTheDocument();
       expect(modal.getByText('Access key')).toBeInTheDocument();
 
@@ -272,9 +276,9 @@ export const AmazonHappyPath: Story = {
 };
 
 /**
- * The application step offers only what the chosen provider supports, and
- * refuses to advance until one is ticked — an integration that feeds nothing
- * is not something the wizard should be able to create.
+ * The application step after account authorization: everything the provider
+ * supports, already on, with the RHEL management bundle spelling out what it
+ * includes. Nothing is required — these can be turned on after creation.
  */
 export const AmazonApplicationSelection: Story = {
   args: { sourceType: 'amazon' },
@@ -309,41 +313,43 @@ export const AmazonApplicationSelection: Story = {
     );
     await user.click(modal.getByRole('button', { name: 'Next' }));
 
-    await step('Only applications AWS supports are listed', async () => {
+    await step('Account authorization turns everything on', async () => {
       await modal.findByRole('heading', { name: 'Select applications' });
 
-      expect(
-        modal.getByRole('checkbox', { name: 'Cost Management' }),
-      ).toBeInTheDocument();
-      // RHEL management is OpenShift-only.
-      expect(
-        modal.queryByRole('checkbox', { name: /RHEL management/i }),
-      ).not.toBeInTheDocument();
+      // Red Hat is managing the credentials, so it can set the whole
+      // subscription up; the user turns off what they do not want.
+      for (const toggle of modal.getAllByRole('switch')) {
+        expect(toggle).toBeChecked();
+      }
     });
 
-    await step('Next waits for at least one application', async () => {
-      await waitFor(() =>
-        expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
-      );
+    await step('AWS is offered both of its applications', async () => {
+      expect(
+        modal.getByRole('switch', { name: 'Cost Management' }),
+      ).toBeInTheDocument();
+      expect(
+        modal.getByRole('switch', { name: /RHEL management/ }),
+      ).toBeInTheDocument();
+    });
 
-      await user.click(
-        modal.getByRole('checkbox', { name: 'Cost Management' }),
-      );
+    await step('The bundle lists what it includes', async () => {
+      expect(modal.getByText('Bundle')).toBeInTheDocument();
+      expect(modal.getByText('Red Hat gold images')).toBeInTheDocument();
+      expect(
+        modal.getByText('High precision subscription watch data'),
+      ).toBeInTheDocument();
+      expect(modal.getByText('Autoregistration')).toBeInTheDocument();
+    });
 
+    await step('Turning everything off is allowed', async () => {
+      for (const toggle of modal.getAllByRole('switch')) {
+        await user.click(toggle);
+      }
+
+      // Nothing is required: applications can be connected after creation,
+      // which is what the step's own description promises.
       await waitFor(() =>
         expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
-      );
-    });
-
-    await step('Clearing the selection explains why', async () => {
-      await user.click(
-        modal.getByRole('checkbox', { name: 'Cost Management' }),
-      );
-
-      await waitFor(() =>
-        expect(
-          modal.queryByText('Select at least one application to continue.'),
-        ).toBeInTheDocument(),
       );
     });
   },
@@ -373,9 +379,6 @@ export const AmazonReviewBack: Story = {
       async () => {
         await user.click(modal.getByRole('button', { name: 'Back' }));
         await modal.findByRole('heading', { name: 'Select applications' });
-        expect(
-          modal.getByRole('checkbox', { name: 'Cost Management' }),
-        ).toBeChecked();
 
         await user.click(modal.getByRole('button', { name: 'Back' }));
         await modal.findByRole('heading', { name: 'Select configuration' });
@@ -401,6 +404,26 @@ export const AmazonReviewBack: Story = {
 
       await modal.findByRole('heading', { name: 'Review details' });
       expect(modal.getByText(/^AKIA•+$/)).toBeInTheDocument();
+    });
+
+    await step('Switching to manual turns the applications off', async () => {
+      // They were defaulted on by account authorization. Without the
+      // configuration mode in `crossroads` they would stay on, and the user
+      // would create the integration they just opted out of.
+      await user.click(modal.getByRole('button', { name: 'Back' }));
+      await modal.findByRole('heading', { name: 'Select applications' });
+      await user.click(modal.getByRole('button', { name: 'Back' }));
+
+      await modal.findByRole('heading', { name: 'Select configuration' });
+      await user.click(
+        modal.getByRole('radio', { name: 'Manual configuration' }),
+      );
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+
+      await modal.findByRole('heading', { name: 'Select applications' });
+      for (const toggle of modal.getAllByRole('switch')) {
+        expect(toggle).not.toBeChecked();
+      }
     });
   },
 };
@@ -454,10 +477,16 @@ export const AmazonManualConfiguration: Story = {
       expect(
         modal.queryByRole('heading', { name: 'Enter credentials' }),
       ).not.toBeInTheDocument();
+    });
 
-      await user.click(
-        modal.getByRole('checkbox', { name: 'Cost Management' }),
-      );
+    await step('Nothing is turned on for the user', async () => {
+      // The counterpart to account authorization: Red Hat has no credentials
+      // to set anything up with, so the user opts in to each one.
+      for (const toggle of modal.getAllByRole('switch')) {
+        expect(toggle).not.toBeChecked();
+      }
+
+      await user.click(modal.getByRole('switch', { name: 'Cost Management' }));
       await user.click(modal.getByRole('button', { name: 'Next' }));
     });
 

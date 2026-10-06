@@ -208,20 +208,74 @@ export default defineMessages({
   },
   wizardApplicationStepDescription: {
     id: 'dataIntegrations.wizard.application.stepDescription',
-    description: 'Introductory text above the application checkboxes',
+    description: 'Introductory text above the application switches',
     defaultMessage:
-      'Select the applications that will use data from this integration.',
+      'Configuring your cloud integrations provides additional capabilities included with your subscription. You can turn these features on or off at any time after integration creation.',
   },
   wizardApplicationLabel: {
     id: 'dataIntegrations.wizard.application.label',
     description:
-      'Label for the application checkbox group, read as the group name',
-    defaultMessage: 'Applications',
+      'Label for the application switch group, read as the group name',
+    defaultMessage: 'Available applications',
   },
-  wizardApplicationRequired: {
-    id: 'dataIntegrations.wizard.application.required',
-    description: 'Validation message when no application checkbox is selected',
-    defaultMessage: 'Select at least one application to continue.',
+  wizardBundle: {
+    id: 'dataIntegrations.wizard.application.bundle',
+    description:
+      'Chip marking an application that bundles several capabilities',
+    defaultMessage: 'Bundle',
+  },
+  costManagementDescription: {
+    id: 'dataIntegrations.application.costManagement.description',
+    description: 'What the Cost Management application does',
+    defaultMessage:
+      'Analyze, forecast, and optimize your Red Hat OpenShift cluster costs in hybrid cloud environments.',
+  },
+
+  // What the RHEL management bundle includes
+  rhelBundleGoldImagesTitle: {
+    id: 'dataIntegrations.rhelBundle.goldImages.title',
+    description: 'Title of the gold images capability',
+    defaultMessage: 'Red Hat gold images',
+  },
+  rhelBundleGoldImagesAws: {
+    id: 'dataIntegrations.rhelBundle.goldImages.aws',
+    description: 'What gold images gives an AWS integration',
+    defaultMessage:
+      'Unlock cloud images in AWS and bring your own subscription instead of paying hourly.',
+  },
+  rhelBundleGoldImagesAzure: {
+    id: 'dataIntegrations.rhelBundle.goldImages.azure',
+    description: 'What gold images gives an Azure integration',
+    defaultMessage:
+      'Unlock cloud images in Microsoft Azure and bring your own subscription instead of paying hourly.',
+  },
+  rhelBundleGoldImagesGoogle: {
+    id: 'dataIntegrations.rhelBundle.goldImages.google',
+    description: 'What gold images gives a Google Cloud integration',
+    defaultMessage:
+      'Unlock cloud images in Google Cloud and bring your own subscription instead of paying hourly.',
+  },
+  rhelBundleSubWatchTitle: {
+    id: 'dataIntegrations.rhelBundle.subWatch.title',
+    description: 'Title of the subscription watch capability',
+    defaultMessage: 'High precision subscription watch data',
+  },
+  rhelBundleSubWatchDescription: {
+    id: 'dataIntegrations.rhelBundle.subWatch.description',
+    description: 'What high precision subscription watch data gives',
+    defaultMessage:
+      'View precise public cloud usage data in subscription watch.',
+  },
+  rhelBundleAutoregistrationTitle: {
+    id: 'dataIntegrations.rhelBundle.autoregistration.title',
+    description: 'Title of the autoregistration capability',
+    defaultMessage: 'Autoregistration',
+  },
+  rhelBundleAutoregistrationDescription: {
+    id: 'dataIntegrations.rhelBundle.autoregistration.description',
+    description: 'What autoregistration gives',
+    defaultMessage:
+      'Cloud instances automatically connect to console.redhat.com when provisioned.',
   },
 
   // Authentication type step

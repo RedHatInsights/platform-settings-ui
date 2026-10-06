@@ -14,7 +14,7 @@ import type {
   CreateSourceInput,
   SourceType,
 } from '../../data/types/sources.types';
-import type { ApplicationOption } from './ApplicationCheckboxSelect';
+import type { ApplicationOption } from './ApplicationSwitchGroup';
 
 /**
  * Every step the Add Data Integration wizard will eventually have.
@@ -129,8 +129,8 @@ export function authTypeLabel(authType: string, intl: IntlShape): string {
   return message ? intl.formatMessage(message) : authType;
 }
 
-/** Custom component key for the application checkbox select. */
-export const APPLICATION_SELECT_COMPONENT = 'application-checkbox-select';
+/** Custom component key for the application switch group. */
+export const APPLICATION_SELECT_COMPONENT = 'application-switch-group';
 
 /** Field name for the selected application type ids. */
 export const APPLICATIONS_FIELD = 'applications';
@@ -166,8 +166,16 @@ const OFFERED_PROVIDERS: SourceTypeName[] = [
  * stable API `name`.
  */
 const OFFERED_APPLICATIONS: Record<string, SourceTypeName[]> = {
-  '/insights/platform/cost-management': ['amazon', 'google', 'azure'],
-  '/insights/platform/cloud-meter': ['openshift'],
+  '/insights/platform/cost-management': [
+    'openshift',
+    'amazon',
+    'google',
+    'azure',
+  ],
+  // RHEL management is about RHEL instances running in someone else's cloud,
+  // so it is offered to the three cloud providers and not to OpenShift. Both
+  // lists are sources-ui's `supported_source_types` fixtures.
+  '/insights/platform/cloud-meter': ['amazon', 'google', 'azure'],
 };
 
 const PROVIDER_LABELS = {
@@ -590,41 +598,19 @@ export function buildApplicationOptions(
     .map((appType) => ({
       value: appType.id,
       label: appType.display_name,
+      name: appType.name,
       supportedSourceTypes: OFFERED_APPLICATIONS[appType.name],
     }));
 }
 
 /**
- * Custom validator that checks that an array field has at least one entry.
- * The built-in REQUIRED validator only checks for truthy — an empty array
- * `[]` passes it.
+ * The application selection step.
+ *
+ * Nothing is required: an integration with no applications is a valid thing
+ * to create, and the step says as much — these can be turned on and off after
+ * creation. Which ones start on is the switch group's business, because it
+ * depends on the configuration mode.
  */
-const ARRAY_NOT_EMPTY_VALIDATOR = 'array-not-empty';
-
-/** Builds a validator config that `data-driven-forms` resolves via the validator mapper. */
-export function arrayNotEmptyValidator(message: string): {
-  type: typeof ARRAY_NOT_EMPTY_VALIDATOR;
-  message: string;
-} {
-  return { type: ARRAY_NOT_EMPTY_VALIDATOR, message };
-}
-
-/**
- * Validator function registered with data-driven-forms. Returns the error
- * message when the value is not an array with at least one element.
- */
-export const validateArrayNotEmpty: (
-  value: unknown,
-  allValues?: Record<string, unknown>,
-  meta?: { message?: string },
-) => string | undefined = (value, _allValues, meta) => {
-  if (Array.isArray(value) && value.length > 0) {
-    return undefined;
-  }
-  return meta?.message ?? 'Select at least one item.';
-};
-
-/** The application selection step, filtered to apps compatible with the chosen provider. */
 function applicationSelectionStep(
   applicationTypes: ApplicationType[],
   intl: IntlShape,
@@ -643,13 +629,7 @@ function applicationSelectionStep(
         component: APPLICATION_SELECT_COMPONENT,
         name: APPLICATIONS_FIELD,
         label: intl.formatMessage(messages.wizardApplicationLabel),
-        isRequired: true,
         options: buildApplicationOptions(applicationTypes),
-        validate: [
-          arrayNotEmptyValidator(
-            intl.formatMessage(messages.wizardApplicationRequired),
-          ),
-        ],
       },
     ],
   };

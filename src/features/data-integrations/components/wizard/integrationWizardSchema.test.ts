@@ -22,7 +22,6 @@ import {
   createWizardInitialValues,
   resolveSelectedType,
   toCreateSourceInput,
-  validateArrayNotEmpty,
 } from './integrationWizardSchema';
 import type {
   ApplicationType,
@@ -530,36 +529,48 @@ describe('createWizardInitialValues', () => {
 });
 
 describe('application selection step', () => {
-  it('renders as a required application-checkbox-select', () => {
-    const checkboxField = appStep().fields[1];
+  it('renders as an application switch group, required of nothing', () => {
+    const switchField = appStep().fields[1];
 
-    expect(checkboxField.component).toBe(APPLICATION_SELECT_COMPONENT);
-    expect(checkboxField.name).toBe(APPLICATIONS_FIELD);
-    expect(checkboxField.isRequired).toBe(true);
+    expect(switchField.component).toBe(APPLICATION_SELECT_COMPONENT);
+    expect(switchField.name).toBe(APPLICATIONS_FIELD);
+    // An integration with no applications is a valid thing to create, and
+    // the step says they can be turned on later.
+    expect(switchField.isRequired).toBeUndefined();
+    expect(switchField.validate).toBeUndefined();
   });
 
   it('provides an option per application type', () => {
-    const checkboxField = appStep().fields[1];
+    const switchField = appStep().fields[1];
 
-    expect(checkboxField.options).toHaveLength(applicationTypes.length);
-    expect(checkboxField.options[0]).toEqual({
+    expect(switchField.options).toHaveLength(applicationTypes.length);
+    expect(switchField.options[0]).toEqual({
       value: '1',
       label: 'Cost Management',
-      supportedSourceTypes: ['amazon', 'google', 'azure'],
+      name: '/insights/platform/cost-management',
+      supportedSourceTypes: ['openshift', 'amazon', 'google', 'azure'],
     });
   });
 });
 
 describe('buildApplicationOptions', () => {
-  it('maps application types to checkbox options', () => {
+  it('maps application types to switch options', () => {
     const options = buildApplicationOptions(applicationTypes);
 
     expect(options).toHaveLength(2);
     expect(options[0]).toEqual({
       value: '1',
       label: 'Cost Management',
-      supportedSourceTypes: ['amazon', 'google', 'azure'],
+      name: '/insights/platform/cost-management',
+      supportedSourceTypes: ['openshift', 'amazon', 'google', 'azure'],
     });
+  });
+
+  it('offers RHEL management to the clouds, not to OpenShift', () => {
+    const [, rhel] = buildApplicationOptions(applicationTypes);
+
+    // It is about RHEL instances running in someone else's cloud.
+    expect(rhel.supportedSourceTypes).toEqual(['amazon', 'google', 'azure']);
   });
 
   it('filters out application types not in the offered allowlist', () => {
@@ -577,30 +588,6 @@ describe('buildApplicationOptions', () => {
 
     expect(options).toHaveLength(2);
     expect(options.find((o) => o.label === 'Image Builder')).toBeUndefined();
-  });
-});
-
-describe('validateArrayNotEmpty', () => {
-  it('passes for a non-empty array', () => {
-    expect(
-      validateArrayNotEmpty(['a'], {}, { message: 'Required' }),
-    ).toBeUndefined();
-  });
-
-  it('fails for an empty array', () => {
-    expect(validateArrayNotEmpty([], {}, { message: 'Required' })).toBe(
-      'Required',
-    );
-  });
-
-  it('fails for undefined', () => {
-    expect(validateArrayNotEmpty(undefined, {}, { message: 'Required' })).toBe(
-      'Required',
-    );
-  });
-
-  it('uses a default message when none is provided', () => {
-    expect(validateArrayNotEmpty([], {}, {})).toBe('Select at least one item.');
   });
 });
 

@@ -10,8 +10,10 @@ import {
 import messages from '../../messages';
 import { useApplicationTypes } from '../../data/queries/useApplicationTypes';
 import {
+  ARN_AUTH_TYPE,
   authTypeLabel,
   buildApplicationOptions,
+  configurationModeLabel,
   providerLabel,
 } from './integrationWizardSchema';
 import type { IntegrationWizardValues } from './integrationWizardSchema';
@@ -45,7 +47,15 @@ const ReviewSummary: React.FC = () => {
 
   const values = getState().values as IntegrationWizardValues;
   const provider = values.source_type;
-  const accessKeyId = values.authentication?.username ?? '';
+  const workflow = values.source?.app_creation_workflow;
+  const credential = values.authentication?.username ?? '';
+
+  /*
+   * The two configuration modes carry different credentials, so the review
+   * shows different rows: an ARN is an identifier the user pasted and can
+   * check, while an access key is a secret worth masking.
+   */
+  const isManual = values.authentication?.authtype === ARN_AUTH_TYPE;
 
   /*
    * Already fetched and cached by the wizard host, so this resolves from cache
@@ -80,6 +90,16 @@ const ReviewSummary: React.FC = () => {
           {values.source?.name}
         </DescriptionListDescription>
       </DescriptionListGroup>
+      {workflow && (
+        <DescriptionListGroup>
+          <DescriptionListTerm>
+            {intl.formatMessage(messages.wizardConfigurationModeReviewLabel)}
+          </DescriptionListTerm>
+          <DescriptionListDescription>
+            {configurationModeLabel(workflow, intl)}
+          </DescriptionListDescription>
+        </DescriptionListGroup>
+      )}
       <DescriptionListGroup>
         <DescriptionListTerm>
           {intl.formatMessage(messages.wizardReviewApplicationsLabel)}
@@ -98,22 +118,33 @@ const ReviewSummary: React.FC = () => {
             : ''}
         </DescriptionListDescription>
       </DescriptionListGroup>
-      <DescriptionListGroup>
-        <DescriptionListTerm>
-          {intl.formatMessage(messages.wizardAccessKeyIdLabel)}
-        </DescriptionListTerm>
-        <DescriptionListDescription>
-          {maskAccessKeyId(accessKeyId)}
-        </DescriptionListDescription>
-      </DescriptionListGroup>
-      <DescriptionListGroup>
-        <DescriptionListTerm>
-          {intl.formatMessage(messages.wizardSecretAccessKeyLabel)}
-        </DescriptionListTerm>
-        <DescriptionListDescription>
-          {intl.formatMessage(messages.wizardReviewSecretMasked)}
-        </DescriptionListDescription>
-      </DescriptionListGroup>
+      {isManual ? (
+        <DescriptionListGroup>
+          <DescriptionListTerm>
+            {intl.formatMessage(messages.wizardArnLabel)}
+          </DescriptionListTerm>
+          <DescriptionListDescription>{credential}</DescriptionListDescription>
+        </DescriptionListGroup>
+      ) : (
+        <>
+          <DescriptionListGroup>
+            <DescriptionListTerm>
+              {intl.formatMessage(messages.wizardAccessKeyIdLabel)}
+            </DescriptionListTerm>
+            <DescriptionListDescription>
+              {maskAccessKeyId(credential)}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+          <DescriptionListGroup>
+            <DescriptionListTerm>
+              {intl.formatMessage(messages.wizardSecretAccessKeyLabel)}
+            </DescriptionListTerm>
+            <DescriptionListDescription>
+              {intl.formatMessage(messages.wizardReviewSecretMasked)}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+        </>
+      )}
     </DescriptionList>
   );
 };

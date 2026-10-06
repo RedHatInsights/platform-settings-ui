@@ -1,11 +1,14 @@
+import React from 'react';
 import componentTypes from '@data-driven-forms/react-form-renderer/component-types';
 import validatorTypes from '@data-driven-forms/react-form-renderer/validator-types';
 import type { LegacySchemaType } from '@data-driven-forms/react-form-renderer/common-types';
 import type { IntlShape } from 'react-intl';
+import { Label } from '@patternfly/react-core/dist/dynamic/components/Label';
 import messages from '../../messages';
 import { getSourceTypeIcon } from '../../constants/sourceTypeIcons';
 import type { SourceTypeName } from '../../types';
 import type {
+  AppCreationWorkflow,
   ApplicationType,
   AuthenticationType,
   CreateSourceInput,
@@ -24,6 +27,7 @@ import type { ApplicationOption } from './ApplicationCheckboxSelect';
 export enum WizardStepId {
   SourceTypeSelection = 'source-type-selection',
   NameIntegration = 'name-integration',
+  Configuration = 'configuration',
   AuthTypeSelection = 'auth-type-selection',
   AuthCredentials = 'auth-credentials',
   EndpointConfiguration = 'endpoint-configuration',
@@ -53,8 +57,32 @@ export const AUTH_TYPE_FIELD = 'authentication.authtype';
 export const AUTH_USERNAME_FIELD = 'authentication.username';
 export const AUTH_PASSWORD_FIELD = 'authentication.password';
 
-/** The only authentication type offered today. */
+/**
+ * AWS's two credentials. `access_key_secret_key` is the superkey one Red Hat
+ * manages on the user's behalf; `arn` is the role the manual path assumes.
+ * Both land in the API's generic `username`/`password` slots.
+ */
 export const ACCESS_KEY_AUTH_TYPE = 'access_key_secret_key';
+export const ARN_AUTH_TYPE = 'arn';
+
+/** Field name and values for the configuration mode, both from `sources-ui`. */
+export const APP_CREATION_WORKFLOW_FIELD = 'source.app_creation_workflow';
+export const ACCOUNT_AUTHORIZATION = 'account_authorization';
+export const MANUAL_CONFIGURATION = 'manual_configuration';
+
+/**
+ * Whether a provider offers to have Red Hat manage its credentials.
+ *
+ * Read off the catalogue rather than a provider list here: `is_superkey` is
+ * backend data, so a provider that gains the capability gets the step without
+ * a frontend change — and one that loses it stops offering a mode the API
+ * would reject. `sources-ui` gates the same step the same way.
+ */
+export function hasSuperKeyAuth(sourceType?: SourceType): boolean {
+  return Boolean(
+    sourceType?.schema?.authentication?.some(({ is_superkey }) => is_superkey),
+  );
+}
 
 /** Custom component keys registered in `IntegrationsFormRenderer`'s mapper. */
 export const CARD_SELECT_COMPONENT = 'card-select';
@@ -82,7 +110,20 @@ const AUTH_TYPE_LABELS: Record<
   (typeof messages)[keyof typeof messages]
 > = {
   [ACCESS_KEY_AUTH_TYPE]: messages.wizardAuthTypeAccessKey,
+  [ARN_AUTH_TYPE]: messages.wizardArnLabel,
 };
+
+/** Translated label for a configuration mode, for the review summary. */
+export function configurationModeLabel(
+  workflow: AppCreationWorkflow,
+  intl: IntlShape,
+): string {
+  return intl.formatMessage(
+    workflow === ACCOUNT_AUTHORIZATION
+      ? messages.wizardAccountAuthorization
+      : messages.wizardManualConfiguration,
+  );
+}
 
 /** Translated label for an authentication type, for the cards and the review. */
 export function authTypeLabel(authType: string, intl: IntlShape): string {
@@ -281,7 +322,7 @@ export function createIntegrationWizardSchema({
          * now so the auth and application steps reset correctly the moment
          * stories 2-4 add them, instead of shipping stale answers.
          */
-        crossroads: [SOURCE_TYPE_FIELD],
+        crossroads: [SOURCE_TYPE_FIELD, APP_CREATION_WORKFLOW_FIELD],
         initialState: startingType
           ? {
               activeStep: WizardStepId.NameIntegration,
@@ -296,6 +337,7 @@ export function createIntegrationWizardSchema({
         fields: [
           sourceTypeStep(sourceTypes, intl),
           nameIntegrationStep(sourceTypes, intl),
+          configurationStep(intl),
           authTypeSelectionStep(intl),
           authCredentialsStep(intl),
           applicationSelectionStep(applicationTypes, intl),
@@ -340,10 +382,12 @@ function sourceTypeStep(sourceTypes: SourceType[], intl: IntlShape) {
 /**
  * Where naming leads, per provider.
  *
- * A provider with exactly one authentication type skips the selection step —
- * asking someone to pick from a list of one is a click that answers nothing.
- * Providers with none still go there, where the required validator holds them;
- * see {@link authTypeSelectionStep}.
+ * A provider Red Hat can manage credentials for is asked how it wants to be
+ * configured; that step then collects the credential itself. Everything else
+ * keeps the older routing: exactly one authentication type skips the selection
+ * step, because asking someone to pick from a list of one is a click that
+ * answers nothing, and none at all lands on it and is held by the required
+ * validator — see {@link authTypeSelectionStep}.
  *
  * Every provider that can reach this resolver must be a key. `selectNext`
  * returns `undefined` for an unmapped value while `nextStep` itself stays
@@ -352,8 +396,14 @@ function sourceTypeStep(sourceTypes: SourceType[], intl: IntlShape) {
  */
 function stepAfterNaming(sourceTypes: SourceType[]) {
   const stepMapper: Record<string, string> = {};
+  const byName = new Map(sourceTypes.map((type) => [type.name, type]));
 
   for (const provider of buildSourceTypeValues(sourceTypes)) {
+    if (hasSuperKeyAuth(byName.get(provider))) {
+      stepMapper[provider] = WizardStepId.Configuration;
+      continue;
+    }
+
     stepMapper[provider] =
       AUTH_TYPES_BY_PROVIDER[provider].length === 1
         ? WizardStepId.AuthCredentials
@@ -361,6 +411,129 @@ function stepAfterNaming(sourceTypes: SourceType[]) {
   }
 
   return { when: SOURCE_TYPE_FIELD, stepMapper };
+}
+
+/**
+ * The "Select configuration" step.
+ *
+ * Two radios sharing one field name rather than one radio with two options,
+ * because the account-authorization half owns the credential fields that sit
+ * between them — exactly how `sources-ui` builds it. Those fields are a
+ * `condition`-gated sub-form, so they register (and validate) only while that
+ * mode is selected; picking manual configuration unregisters them rather than
+ * leaving a required access key blocking Next invisibly.
+ *
+ * Account authorization carries the superkey credential straight to the
+ * applications step. Manual configuration still needs a role to assume, which
+ * is the credentials step.
+ */
+function configurationStep(intl: IntlShape) {
+  return {
+    name: WizardStepId.Configuration,
+    title: intl.formatMessage(messages.wizardConfigurationStepTitle),
+    nextStep: {
+      when: APP_CREATION_WORKFLOW_FIELD,
+      stepMapper: {
+        [ACCOUNT_AUTHORIZATION]: WizardStepId.ApplicationSelection,
+        [MANUAL_CONFIGURATION]: WizardStepId.AuthCredentials,
+      },
+    },
+    fields: [
+      {
+        component: componentTypes.PLAIN_TEXT,
+        name: 'configuration-step-description',
+        label: intl.formatMessage(messages.wizardConfigurationStepDescription),
+      },
+      {
+        component: componentTypes.RADIO,
+        name: APP_CREATION_WORKFLOW_FIELD,
+        label: intl.formatMessage(messages.wizardConfigurationModeLabel),
+        isRequired: true,
+        options: [
+          {
+            value: ACCOUNT_AUTHORIZATION,
+            label: (
+              <>
+                {intl.formatMessage(messages.wizardAccountAuthorization)}{' '}
+                <Label color="purple">
+                  {intl.formatMessage(messages.wizardRecommended)}
+                </Label>
+              </>
+            ),
+            description: intl.formatMessage(
+              messages.wizardAccountAuthorizationDescription,
+            ),
+          },
+        ],
+        validate: [
+          {
+            type: validatorTypes.REQUIRED,
+            message: intl.formatMessage(
+              messages.wizardConfigurationModeRequired,
+            ),
+          },
+        ],
+      },
+      {
+        component: componentTypes.SUB_FORM,
+        name: 'account-authorization-credentials',
+        condition: {
+          when: APP_CREATION_WORKFLOW_FIELD,
+          is: ACCOUNT_AUTHORIZATION,
+        },
+        fields: [
+          {
+            component: componentTypes.TEXT_FIELD,
+            name: AUTH_TYPE_FIELD,
+            hideField: true,
+            initialValue: ACCESS_KEY_AUTH_TYPE,
+            initializeOnMount: true,
+          },
+          {
+            component: componentTypes.TEXT_FIELD,
+            name: AUTH_USERNAME_FIELD,
+            label: intl.formatMessage(messages.wizardAccessKeyIdLabel),
+            placeholder: 'AKIAIOSFODNN7EXAMPLE',
+            isRequired: true,
+            validate: [
+              {
+                type: validatorTypes.REQUIRED,
+                message: intl.formatMessage(messages.wizardAccessKeyIdRequired),
+              },
+            ],
+          },
+          {
+            component: componentTypes.TEXT_FIELD,
+            name: AUTH_PASSWORD_FIELD,
+            label: intl.formatMessage(messages.wizardSecretAccessKeyLabel),
+            type: 'password',
+            isRequired: true,
+            validate: [
+              {
+                type: validatorTypes.REQUIRED,
+                message: intl.formatMessage(
+                  messages.wizardSecretAccessKeyRequired,
+                ),
+              },
+            ],
+          },
+        ],
+      },
+      {
+        component: componentTypes.RADIO,
+        name: APP_CREATION_WORKFLOW_FIELD,
+        options: [
+          {
+            value: MANUAL_CONFIGURATION,
+            label: intl.formatMessage(messages.wizardManualConfiguration),
+            description: intl.formatMessage(
+              messages.wizardManualConfigurationDescription,
+            ),
+          },
+        ],
+      },
+    ],
+  };
 }
 
 /**
@@ -529,16 +702,20 @@ function authTypeSelectionStep(intl: IntlShape) {
 }
 
 /**
- * The credentials step, AWS only for now.
+ * The credentials step — the manual configuration path.
  *
- * `username` and `password` are the API's generic credential slots; AWS puts
- * the access key id and secret in them. Both are REQUIRED and nothing more —
- * sources-ui has no access-key format check either, and a regex that rejects a
- * key AWS accepts is worse than letting the API say no.
+ * Account authorization collects its credential inside the configuration step,
+ * so the only thing that reaches this one is a user who declined it. That
+ * means AWS's role ARN: `sources-ui` pairs `manual_configuration` with the
+ * `arn` authentication type, never with the access key.
  *
- * `authtype` is not something the user picks for AWS, so it is written into
- * the form on mount instead of being asked for. `initializeOnMount` makes that
- * survive a Back-and-forward, which plain `initialValue` would not.
+ * The ARN validators come from `sources-ui`'s `arnField` — required, the
+ * `arn:aws:` prefix, and a minimum length. Unlike the access key, the format
+ * is fixed and checkable, so checking it here beats a round trip.
+ *
+ * `authtype` is not something the user picks, so it is written into the form
+ * on mount instead of being asked for. `initializeOnMount` makes that survive
+ * a Back-and-forward, which plain `initialValue` would not.
  */
 function authCredentialsStep(intl: IntlShape) {
   return {
@@ -549,38 +726,35 @@ function authCredentialsStep(intl: IntlShape) {
       {
         component: componentTypes.PLAIN_TEXT,
         name: 'credentials-step-description',
-        label: intl.formatMessage(messages.wizardCredentialsStepDescription),
+        label: intl.formatMessage(messages.wizardArnStepDescription),
       },
       {
         component: componentTypes.TEXT_FIELD,
         name: AUTH_TYPE_FIELD,
         hideField: true,
-        initialValue: ACCESS_KEY_AUTH_TYPE,
+        initialValue: ARN_AUTH_TYPE,
         initializeOnMount: true,
       },
       {
         component: componentTypes.TEXT_FIELD,
         name: AUTH_USERNAME_FIELD,
-        label: intl.formatMessage(messages.wizardAccessKeyIdLabel),
-        placeholder: 'AKIAIOSFODNN7EXAMPLE',
+        label: intl.formatMessage(messages.wizardArnLabel),
+        placeholder: 'arn:aws:iam:123456789:role/CostManagement',
         isRequired: true,
         validate: [
           {
             type: validatorTypes.REQUIRED,
-            message: intl.formatMessage(messages.wizardAccessKeyIdRequired),
+            message: intl.formatMessage(messages.wizardArnRequired),
           },
-        ],
-      },
-      {
-        component: componentTypes.TEXT_FIELD,
-        name: AUTH_PASSWORD_FIELD,
-        label: intl.formatMessage(messages.wizardSecretAccessKeyLabel),
-        type: 'password',
-        isRequired: true,
-        validate: [
           {
-            type: validatorTypes.REQUIRED,
-            message: intl.formatMessage(messages.wizardSecretAccessKeyRequired),
+            type: validatorTypes.PATTERN,
+            pattern: /^arn:aws:.*/,
+            message: intl.formatMessage(messages.wizardArnPattern),
+          },
+          {
+            type: validatorTypes.MIN_LENGTH,
+            threshold: 10,
+            message: intl.formatMessage(messages.wizardArnLength),
           },
         ],
       },
@@ -641,7 +815,7 @@ function submissionResultStep(intl: IntlShape) {
 /** The form's value shape, as final-form nests the dotted field names. */
 export interface IntegrationWizardValues {
   [SOURCE_TYPE_FIELD]?: SourceTypeName;
-  source?: { name?: string };
+  source?: { name?: string; app_creation_workflow?: AppCreationWorkflow };
   authentication?: {
     authtype?: AuthenticationType;
     username?: string;
@@ -664,6 +838,7 @@ export function toCreateSourceInput(
   return {
     name: values.source?.name ?? '',
     sourceTypeName: values[SOURCE_TYPE_FIELD] ?? '',
+    appCreationWorkflow: values.source?.app_creation_workflow,
     authentication: {
       authtype: values.authentication?.authtype ?? ACCESS_KEY_AUTH_TYPE,
       username: values.authentication?.username,

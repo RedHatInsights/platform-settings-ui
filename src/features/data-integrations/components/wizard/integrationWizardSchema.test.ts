@@ -3,12 +3,16 @@ import componentTypes from '@data-driven-forms/react-form-renderer/component-typ
 import validatorTypes from '@data-driven-forms/react-form-renderer/validator-types';
 import {
   ACCESS_KEY_AUTH_TYPE,
+  ACCOUNT_AUTHORIZATION,
   APPLICATIONS_FIELD,
   APPLICATION_SELECT_COMPONENT,
+  APP_CREATION_WORKFLOW_FIELD,
+  ARN_AUTH_TYPE,
   AUTH_PASSWORD_FIELD,
   AUTH_TYPE_FIELD,
   AUTH_USERNAME_FIELD,
   CARD_SELECT_COMPONENT,
+  MANUAL_CONFIGURATION,
   REVIEW_SUMMARY_COMPONENT,
   SOURCE_NAME_FIELD,
   SOURCE_TYPE_FIELD,
@@ -47,7 +51,17 @@ const intl = {
 
 const sourceTypes: SourceType[] = [
   { id: '1', name: 'openshift', product_name: 'OpenShift Container Platform' },
-  { id: '2', name: 'amazon', product_name: 'Amazon Web Services' },
+  {
+    id: '2',
+    name: 'amazon',
+    product_name: 'Amazon Web Services',
+    schema: {
+      authentication: [
+        { type: 'access_key_secret_key', is_superkey: true },
+        { type: 'arn' },
+      ],
+    },
+  },
   { id: '3', name: 'google', product_name: 'Google Cloud Platform' },
   { id: '4', name: 'azure', product_name: 'Microsoft Azure' },
 ];
@@ -87,11 +101,12 @@ const firstStep = (types: SourceType[] = sourceTypes) =>
 const nameStep = (types: SourceType[] = sourceTypes) =>
   wizardField(types).fields[1];
 
-const authTypeStep = () => wizardField().fields[2];
-const credentialsStep = () => wizardField().fields[3];
-const appStep = () => wizardField().fields[4];
-const reviewStep = () => wizardField().fields[5];
-const resultStep = () => wizardField().fields[6];
+const configurationStep = () => wizardField().fields[2];
+const authTypeStep = () => wizardField().fields[3];
+const credentialsStep = () => wizardField().fields[4];
+const appStep = () => wizardField().fields[5];
+const reviewStep = () => wizardField().fields[6];
+const resultStep = () => wizardField().fields[7];
 
 const stepNames = (): string[] =>
   wizardField().fields.map((step: { name: string }) => step.name);
@@ -165,7 +180,10 @@ describe('createIntegrationWizardSchema', () => {
       intl,
     }).fields;
 
-    expect(wizard.crossroads).toEqual([SOURCE_TYPE_FIELD]);
+    expect(wizard.crossroads).toEqual([
+      SOURCE_TYPE_FIELD,
+      APP_CREATION_WORKFLOW_FIELD,
+    ]);
   });
 
   it('translates every button label', () => {
@@ -187,6 +205,7 @@ describe('createIntegrationWizardSchema', () => {
     expect(stepNames()).toEqual([
       WizardStepId.SourceTypeSelection,
       WizardStepId.NameIntegration,
+      WizardStepId.Configuration,
       WizardStepId.AuthTypeSelection,
       WizardStepId.AuthCredentials,
       WizardStepId.ApplicationSelection,
@@ -195,7 +214,7 @@ describe('createIntegrationWizardSchema', () => {
     ]);
   });
 
-  it('chains steps: source type -> naming -> credentials -> apps -> review', () => {
+  it('chains steps: source type -> naming -> configuration -> apps -> review', () => {
     expect(firstStep().nextStep).toBe(WizardStepId.NameIntegration);
     expect(credentialsStep().nextStep).toBe(WizardStepId.ApplicationSelection);
     expect(appStep().nextStep).toBe(WizardStepId.Review);
@@ -233,13 +252,26 @@ describe('createIntegrationWizardSchema', () => {
     );
   });
 
-  it('skips the authentication step for AWS, which has only one', () => {
-    // One option is not a choice, so AWS goes straight to its credentials.
+  it('offers the configuration choice only where Red Hat can manage credentials', () => {
+    // AWS marks `access_key_secret_key` as its superkey; nothing else in the
+    // catalogue does, so nothing else is asked the question.
     expect(nameStep().nextStep.stepMapper.amazon).toBe(
-      WizardStepId.AuthCredentials,
+      WizardStepId.Configuration,
     );
     expect(nameStep().nextStep.stepMapper.google).toBe(
       WizardStepId.AuthTypeSelection,
+    );
+  });
+
+  it('falls back to the old routing when the catalogue has no superkey', () => {
+    // The gate is backend data, not a provider list: AWS without the flag is
+    // routed like any other single-auth-type provider.
+    const withoutSuperKey = sourceTypes.map((type) =>
+      type.name === 'amazon' ? { ...type, schema: undefined } : type,
+    );
+
+    expect(nameStep(withoutSuperKey).nextStep.stepMapper.amazon).toBe(
+      WizardStepId.AuthCredentials,
     );
   });
 
@@ -258,8 +290,29 @@ describe('createIntegrationWizardSchema', () => {
     ]);
   });
 
-  it('asks for an access key and nothing else', () => {
-    const [, authType, accessKeyId, secret] = credentialsStep().fields;
+  it('offers both configuration modes, account authorization first', () => {
+    const [, accountAuth, , manual] = configurationStep().fields;
+
+    // Two radios sharing one field name, which is what lets the
+    // account-authorization half own the credential sub-form between them.
+    expect(accountAuth.name).toBe(APP_CREATION_WORKFLOW_FIELD);
+    expect(manual.name).toBe(APP_CREATION_WORKFLOW_FIELD);
+    expect(accountAuth.options[0].value).toBe(ACCOUNT_AUTHORIZATION);
+    expect(manual.options[0].value).toBe(MANUAL_CONFIGURATION);
+    expect(accountAuth.isRequired).toBe(true);
+  });
+
+  it('collects the access key inside the configuration step', () => {
+    const subForm = configurationStep().fields[2];
+
+    // Gated on the mode, so declining account authorization unregisters the
+    // fields rather than leaving a required access key blocking Next.
+    expect(subForm.condition).toEqual({
+      when: APP_CREATION_WORKFLOW_FIELD,
+      is: ACCOUNT_AUTHORIZATION,
+    });
+
+    const [authType, accessKeyId, secret] = subForm.fields;
 
     expect(authType.name).toBe(AUTH_TYPE_FIELD);
     expect(authType.hideField).toBe(true);
@@ -276,6 +329,38 @@ describe('createIntegrationWizardSchema', () => {
       expect(field.validate).toHaveLength(1);
       expect(field.validate[0].type).toBe(validatorTypes.REQUIRED);
     }
+  });
+
+  it('routes each configuration mode to its own next step', () => {
+    const { when, stepMapper } = configurationStep().nextStep;
+
+    expect(when).toBe(APP_CREATION_WORKFLOW_FIELD);
+    // Account authorization already has its credential, so it skips ahead.
+    expect(stepMapper[ACCOUNT_AUTHORIZATION]).toBe(
+      WizardStepId.ApplicationSelection,
+    );
+    expect(stepMapper[MANUAL_CONFIGURATION]).toBe(WizardStepId.AuthCredentials);
+  });
+
+  it('asks the manual path for a role ARN, not an access key', () => {
+    const [, authType, arn] = credentialsStep().fields;
+
+    expect(authType.initialValue).toBe(ARN_AUTH_TYPE);
+    expect(arn.name).toBe(AUTH_USERNAME_FIELD);
+    // No password field: assuming a role needs no secret.
+    expect(
+      credentialsStep().fields.some(
+        (field: { name: string }) => field.name === AUTH_PASSWORD_FIELD,
+      ),
+    ).toBe(false);
+
+    // Unlike an access key, the ARN format is fixed, so it is worth checking
+    // here rather than on a round trip. Validators are sources-ui's.
+    expect(arn.validate.map(({ type }: { type: string }) => type)).toEqual([
+      validatorTypes.REQUIRED,
+      validatorTypes.PATTERN,
+      validatorTypes.MIN_LENGTH,
+    ]);
 
     // No endpoint or SSL configuration: `amazon.endpoint` is empty in
     // sources-ui, so AWS has nothing to configure there.
@@ -357,7 +442,10 @@ describe('toCreateSourceInput', () => {
     expect(
       toCreateSourceInput({
         source_type: 'amazon',
-        source: { name: 'My AWS integration' },
+        source: {
+          name: 'My AWS integration',
+          app_creation_workflow: ACCOUNT_AUTHORIZATION,
+        },
         authentication: {
           authtype: ACCESS_KEY_AUTH_TYPE,
           username: 'AKIAIOSFODNN7EXAMPLE',
@@ -368,6 +456,7 @@ describe('toCreateSourceInput', () => {
     ).toEqual({
       name: 'My AWS integration',
       sourceTypeName: 'amazon',
+      appCreationWorkflow: ACCOUNT_AUTHORIZATION,
       authentication: {
         authtype: ACCESS_KEY_AUTH_TYPE,
         username: 'AKIAIOSFODNN7EXAMPLE',

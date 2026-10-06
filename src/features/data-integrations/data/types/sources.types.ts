@@ -63,6 +63,19 @@ export interface Source {
   applications?: SourceApplication[];
 }
 
+/**
+ * One authentication scheme a provider offers, from `/source_types`.
+ *
+ * `is_superkey` marks the credential Red Hat can manage on the user's behalf —
+ * it is what decides whether the wizard offers the "Select configuration"
+ * choice at all, rather than a hardcoded provider list. For AWS it sits on
+ * `access_key_secret_key`; the manual alternative is `arn`.
+ */
+export interface SourceTypeAuthentication {
+  type: string;
+  is_superkey?: boolean;
+}
+
 export interface SourceType {
   id: string;
   /**
@@ -76,6 +89,7 @@ export interface SourceType {
   icon_url?: string;
   /** `Cloud` or `Red Hat` — the grouping the add-integration dropdown uses. */
   category?: string;
+  schema?: { authentication?: SourceTypeAuthentication[] };
 }
 
 /**
@@ -124,7 +138,19 @@ export interface Application {
  * Credential scheme for a provider. Only AWS Access Key is offered today;
  * each provider the wizard gains contributes its own identifiers.
  */
-export type AuthenticationType = 'access_key_secret_key';
+export type AuthenticationType = 'access_key_secret_key' | 'arn';
+
+/**
+ * Which half of the "Select configuration" choice the user took.
+ *
+ * `account_authorization` has Red Hat provision and manage the integration
+ * from the superkey credential; `manual_configuration` is the pre-existing
+ * behaviour where the user supplies a role to assume. The API is told either
+ * way — a source created with neither is in no defined workflow.
+ */
+export type AppCreationWorkflow =
+  | 'account_authorization'
+  | 'manual_configuration';
 
 /**
  * One entry in the `authentications` array of a bulk create.
@@ -155,7 +181,11 @@ export interface SourceAuthenticationInput {
  * authentications are — nothing in the payload has an id yet.
  */
 export interface BulkCreatePayload {
-  sources: Array<{ name: string; source_type_name: string }>;
+  sources: Array<{
+    name: string;
+    source_type_name: string;
+    app_creation_workflow?: AppCreationWorkflow;
+  }>;
   endpoints: never[];
   authentications: SourceAuthenticationInput[];
   applications: Array<{ application_type_id: string; source_name: string }>;
@@ -181,6 +211,8 @@ export interface BulkCreateResponse {
 export interface CreateSourceInput {
   name: string;
   sourceTypeName: string;
+  /** Absent for a provider that never offered the configuration choice. */
+  appCreationWorkflow?: AppCreationWorkflow;
   authentication: Omit<
     SourceAuthenticationInput,
     'resource_type' | 'resource_name'

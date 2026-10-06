@@ -195,6 +195,35 @@ export default defineMessages({
     defaultMessage: 'Enter a name for your integration.',
   },
 
+  // Application selection step
+  wizardApplicationStepTitle: {
+    id: 'dataIntegrations.wizard.application.stepTitle',
+    description: 'Title of the application selection wizard step',
+    defaultMessage: 'Select applications',
+  },
+  wizardApplicationStepDescription: {
+    id: 'dataIntegrations.wizard.application.stepDescription',
+    description: 'Introductory text above the application checkboxes',
+    defaultMessage:
+      'Select the applications that will use data from this integration.',
+  },
+  wizardApplicationLabel: {
+    id: 'dataIntegrations.wizard.application.label',
+    description:
+      'Label for the application checkbox group, read as the group name',
+    defaultMessage: 'Applications',
+  },
+  wizardApplicationRequired: {
+    id: 'dataIntegrations.wizard.application.required',
+    description: 'Validation message when no application checkbox is selected',
+    defaultMessage: 'Select at least one application to continue.',
+  },
+  wizardSubmit: {
+    id: 'dataIntegrations.wizard.submit',
+    description: 'Wizard submit button on the final step',
+    defaultMessage: 'Add',
+  },
+
   // Wizard loading and error states
   wizardLoading: {
     id: 'dataIntegrations.wizard.loading',
@@ -216,6 +245,65 @@ export default defineMessages({
     id: 'dataIntegrations.wizard.error.close',
     description: 'Button that dismisses the wizard from its error state',
     defaultMessage: 'Close',
+  },
+
+  // Review step
+  wizardReviewStepTitle: {
+    id: 'dataIntegrations.wizard.review.stepTitle',
+    description: 'Title of the review wizard step',
+    defaultMessage: 'Review integration details',
+  },
+  wizardReviewStepDescription: {
+    id: 'dataIntegrations.wizard.review.stepDescription',
+    description: 'Introductory text above the review summary',
+    defaultMessage:
+      'Review the information below and click Add to add your integration. To edit details in previous steps, click Back.',
+  },
+  wizardReviewSourceTypeLabel: {
+    id: 'dataIntegrations.wizard.review.sourceType',
+    description: 'Label for the integration type field in the review step',
+    defaultMessage: 'Integration type',
+  },
+  wizardReviewNameLabel: {
+    id: 'dataIntegrations.wizard.review.name',
+    description: 'Label for the integration name field in the review step',
+    defaultMessage: 'Name',
+  },
+  wizardReviewApplicationsLabel: {
+    id: 'dataIntegrations.wizard.review.applications',
+    description: 'Label for the applications field in the review step',
+    defaultMessage: 'Applications',
+  },
+
+  // Submission notifications
+  wizardSuccessBody: {
+    id: 'dataIntegrations.wizard.success.body',
+    description: 'Toast body when integration creation succeeds',
+    defaultMessage: '{name} was successfully created.',
+  },
+  wizardPartialFailureTitle: {
+    id: 'dataIntegrations.wizard.partialFailure.title',
+    description:
+      'Toast title when integration was created but app association failed',
+    defaultMessage:
+      '{name} was created, but one or more application associations failed.',
+  },
+  wizardPartialFailureBody: {
+    id: 'dataIntegrations.wizard.partialFailure.body',
+    description:
+      'Toast body when integration was created but app association failed',
+    defaultMessage:
+      'You can add applications manually from the integration detail page.',
+  },
+  wizardCreateFailureTitle: {
+    id: 'dataIntegrations.wizard.createFailure.title',
+    description: 'Toast title when integration creation fails entirely',
+    defaultMessage: 'Failed to create integration',
+  },
+  wizardCreateFailureBody: {
+    id: 'dataIntegrations.wizard.createFailure.body',
+    description: 'Toast body when integration creation fails entirely',
+    defaultMessage: 'Try again or close the wizard.',
   },
 
   // Cancel confirmation

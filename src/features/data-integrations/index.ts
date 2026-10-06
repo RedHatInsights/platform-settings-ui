@@ -11,7 +11,10 @@ export {
 } from './data/queries/useApplicationTypes';
 export { SourceNotFoundError } from './data/errors';
 export type {
+  Application,
   ApplicationType,
+  CreateApplicationInput,
+  CreateSourceInput,
   PageSource,
   PageSourceType,
   Source,

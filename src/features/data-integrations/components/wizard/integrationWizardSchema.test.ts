@@ -2,16 +2,24 @@ import type { IntlShape, MessageDescriptor } from 'react-intl';
 import componentTypes from '@data-driven-forms/react-form-renderer/component-types';
 import validatorTypes from '@data-driven-forms/react-form-renderer/validator-types';
 import {
+  APPLICATIONS_FIELD,
+  APPLICATION_SELECT_COMPONENT,
   CARD_SELECT_COMPONENT,
+  REVIEW_STEP_COMPONENT,
   SOURCE_NAME_FIELD,
   SOURCE_TYPE_FIELD,
   WizardStepId,
+  buildApplicationOptions,
   buildSourceTypeOptions,
   createIntegrationWizardSchema,
   createWizardInitialValues,
   resolveSelectedType,
+  validateArrayNotEmpty,
 } from './integrationWizardSchema';
-import type { SourceType } from '../../data/types/sources.types';
+import type {
+  ApplicationType,
+  SourceType,
+} from '../../data/types/sources.types';
 import type { SourceTypeName } from '../../types';
 
 /**
@@ -39,13 +47,32 @@ const sourceTypes: SourceType[] = [
   { id: '4', name: 'azure', product_name: 'Microsoft Azure' },
 ];
 
+const applicationTypes: ApplicationType[] = [
+  {
+    id: '1',
+    name: '/insights/platform/cost-management',
+    display_name: 'Cost Management',
+    supported_source_types: ['amazon', 'google', 'azure'],
+  },
+  {
+    id: '2',
+    name: '/insights/platform/cloud-meter',
+    display_name: 'RHEL management',
+    supported_source_types: ['openshift'],
+  },
+];
+
 /** Pulls the wizard field out of the schema. */
 const wizardField = (
   types: SourceType[] = sourceTypes,
   selectedType?: SourceTypeName,
 ) =>
-  createIntegrationWizardSchema({ sourceTypes: types, intl, selectedType })
-    .fields[0];
+  createIntegrationWizardSchema({
+    sourceTypes: types,
+    applicationTypes,
+    intl,
+    selectedType,
+  }).fields[0];
 
 /** Pulls the source type step out of the schema. */
 const firstStep = (types: SourceType[] = sourceTypes) =>
@@ -54,6 +81,14 @@ const firstStep = (types: SourceType[] = sourceTypes) =>
 /** Pulls the naming step out of the schema. */
 const nameStep = (types: SourceType[] = sourceTypes) =>
   wizardField(types).fields[1];
+
+/** Pulls the application selection step out of the schema. */
+const appStep = (types: SourceType[] = sourceTypes) =>
+  wizardField(types).fields[2];
+
+/** Pulls the review step out of the schema. */
+const revStep = (types: SourceType[] = sourceTypes) =>
+  wizardField(types).fields[3];
 
 describe('buildSourceTypeOptions', () => {
   it('lists the offered providers in dropdown order', () => {
@@ -93,7 +128,11 @@ describe('buildSourceTypeOptions', () => {
 
 describe('createIntegrationWizardSchema', () => {
   it('declares a single wizard field rendered in a modal', () => {
-    const { fields } = createIntegrationWizardSchema({ sourceTypes, intl });
+    const { fields } = createIntegrationWizardSchema({
+      sourceTypes,
+      applicationTypes,
+      intl,
+    });
 
     expect(fields).toHaveLength(1);
     expect(fields[0].component).toBe(componentTypes.WIZARD);
@@ -103,6 +142,7 @@ describe('createIntegrationWizardSchema', () => {
   it('points both dialog nodes at the heading the mapper renders', () => {
     const [wizard] = createIntegrationWizardSchema({
       sourceTypes,
+      applicationTypes,
       intl,
     }).fields;
 
@@ -115,6 +155,7 @@ describe('createIntegrationWizardSchema', () => {
   it('invalidates downstream steps when the provider changes', () => {
     const [wizard] = createIntegrationWizardSchema({
       sourceTypes,
+      applicationTypes,
       intl,
     }).fields;
 
@@ -124,27 +165,35 @@ describe('createIntegrationWizardSchema', () => {
   it('translates every button label', () => {
     const [wizard] = createIntegrationWizardSchema({
       sourceTypes,
+      applicationTypes,
       intl,
     }).fields;
 
     expect(wizard.buttonLabels).toEqual({
-      submit: 'Next',
+      submit: 'Add',
       next: 'Next',
       back: 'Back',
       cancel: 'Cancel',
     });
   });
 
-  it('implements the source type and naming steps, in that order', () => {
+  it('implements all four steps in order', () => {
     expect(
       wizardField().fields.map((step: { name: string }) => step.name),
-    ).toEqual([WizardStepId.SourceTypeSelection, WizardStepId.NameIntegration]);
+    ).toEqual([
+      WizardStepId.SourceTypeSelection,
+      WizardStepId.NameIntegration,
+      WizardStepId.ApplicationSelection,
+      WizardStepId.Review,
+    ]);
   });
 
-  it('sends the source type step on to naming', () => {
+  it('chains steps: source type -> naming -> app selection -> review', () => {
     expect(firstStep().nextStep).toBe(WizardStepId.NameIntegration);
-    // Naming is the last step, which is what makes its primary button submit.
-    expect(nameStep().nextStep).toBeUndefined();
+    expect(nameStep().nextStep).toBe(WizardStepId.ApplicationSelection);
+    expect(appStep().nextStep).toBe(WizardStepId.Review);
+    // Review is the last step, making its primary button submit.
+    expect(revStep().nextStep).toBeUndefined();
   });
 
   it('starts on naming when the provider is already chosen', () => {
@@ -248,5 +297,115 @@ describe('createWizardInitialValues', () => {
   it('selects nothing when no provider was given', () => {
     expect(createWizardInitialValues(null)).toEqual({});
     expect(createWizardInitialValues()).toEqual({});
+  });
+});
+
+describe('application selection step', () => {
+  it('renders as a required application-checkbox-select', () => {
+    const checkboxField = appStep().fields[1];
+
+    expect(checkboxField.component).toBe(APPLICATION_SELECT_COMPONENT);
+    expect(checkboxField.name).toBe(APPLICATIONS_FIELD);
+    expect(checkboxField.isRequired).toBe(true);
+  });
+
+  it('provides an option per application type', () => {
+    const checkboxField = appStep().fields[1];
+
+    expect(checkboxField.options).toHaveLength(applicationTypes.length);
+    expect(checkboxField.options[0]).toEqual({
+      value: '1',
+      label: 'Cost Management',
+      supportedSourceTypes: ['amazon', 'google', 'azure'],
+    });
+  });
+});
+
+describe('buildApplicationOptions', () => {
+  it('maps application types to checkbox options', () => {
+    const options = buildApplicationOptions(applicationTypes);
+
+    expect(options).toHaveLength(2);
+    expect(options[0]).toEqual({
+      value: '1',
+      label: 'Cost Management',
+      supportedSourceTypes: ['amazon', 'google', 'azure'],
+    });
+  });
+
+  it('filters out application types not in the offered allowlist', () => {
+    const withImageBuilder: ApplicationType[] = [
+      ...applicationTypes,
+      {
+        id: '99',
+        name: '/insights/platform/image-builder',
+        display_name: 'Image Builder',
+        supported_source_types: ['amazon'],
+      },
+    ];
+
+    const options = buildApplicationOptions(withImageBuilder);
+
+    expect(options).toHaveLength(2);
+    expect(options.find((o) => o.label === 'Image Builder')).toBeUndefined();
+  });
+});
+
+describe('validateArrayNotEmpty', () => {
+  it('passes for a non-empty array', () => {
+    expect(
+      validateArrayNotEmpty(['a'], {}, { message: 'Required' }),
+    ).toBeUndefined();
+  });
+
+  it('fails for an empty array', () => {
+    expect(validateArrayNotEmpty([], {}, { message: 'Required' })).toBe(
+      'Required',
+    );
+  });
+
+  it('fails for undefined', () => {
+    expect(validateArrayNotEmpty(undefined, {}, { message: 'Required' })).toBe(
+      'Required',
+    );
+  });
+
+  it('uses a default message when none is provided', () => {
+    expect(validateArrayNotEmpty([], {}, {})).toBe('Select at least one item.');
+  });
+});
+
+describe('review step', () => {
+  it('renders as a review-step component', () => {
+    const reviewField = revStep().fields[0];
+
+    expect(reviewField.component).toBe(REVIEW_STEP_COMPONENT);
+    expect(reviewField.name).toBe('review-summary');
+  });
+
+  it('passes a description for the review summary', () => {
+    const reviewField = revStep().fields[0];
+
+    expect(reviewField.description).toMatch(/Review the information below/);
+  });
+
+  it('passes translated labels for the summary', () => {
+    const reviewField = revStep().fields[0];
+
+    expect(reviewField.labels).toEqual({
+      review: 'Review integration details',
+      sourceType: 'Integration type',
+      name: 'Name',
+      applications: 'Applications',
+    });
+  });
+
+  it('passes source type and application options for name resolution', () => {
+    const reviewField = revStep().fields[0];
+
+    expect(reviewField.sourceTypeOptions).toHaveLength(sourceTypes.length);
+    expect(reviewField.applicationOptions).toHaveLength(
+      applicationTypes.length,
+    );
   });
 });

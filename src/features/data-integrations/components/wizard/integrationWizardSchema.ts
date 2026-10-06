@@ -5,7 +5,11 @@ import type { IntlShape } from 'react-intl';
 import messages from '../../messages';
 import { getSourceTypeIcon } from '../../constants/sourceTypeIcons';
 import type { SourceTypeName } from '../../types';
-import type { SourceType } from '../../data/types/sources.types';
+import type {
+  ApplicationType,
+  SourceType,
+} from '../../data/types/sources.types';
+import type { ApplicationOption } from './ApplicationCheckboxSelect';
 
 /**
  * Every step the Add Data Integration wizard will eventually have.
@@ -31,11 +35,20 @@ export enum WizardStepId {
  */
 export const SOURCE_TYPE_FIELD = 'source_type';
 
-/** Field name for the integration's display name, likewise from `sources-ui`. */
-export const SOURCE_NAME_FIELD = 'source.name';
+/** Field name for the integration's display name. */
+export const SOURCE_NAME_FIELD = 'source_name';
 
 /** Custom component key registered in `IntegrationsFormRenderer`'s mapper. */
 export const CARD_SELECT_COMPONENT = 'card-select';
+
+/** Custom component key for the application checkbox select. */
+export const APPLICATION_SELECT_COMPONENT = 'application-checkbox-select';
+
+/** Custom component key for the review step summary. */
+export const REVIEW_STEP_COMPONENT = 'review-step';
+
+/** Field name for the selected application type ids. */
+export const APPLICATIONS_FIELD = 'applications';
 
 /**
  * Id of the wizard's heading, and the name of the wizard field.
@@ -59,6 +72,18 @@ const OFFERED_PROVIDERS: SourceTypeName[] = [
   'google',
   'azure',
 ];
+
+/**
+ * The application types this island offers and the providers each one applies
+ * to. The Sources API catalogue is broader — Image Builder, Remediations,
+ * etc. — and its `supported_source_types` is absent from the real API
+ * response, so we maintain our own allowlist keyed by the application's
+ * stable API `name`.
+ */
+const OFFERED_APPLICATIONS: Record<string, SourceTypeName[]> = {
+  '/insights/platform/cost-management': ['amazon', 'google', 'azure'],
+  '/insights/platform/cloud-meter': ['openshift'],
+};
 
 const PROVIDER_LABELS = {
   openshift: messages.openshiftLabel,
@@ -88,6 +113,7 @@ function buildSourceTypeValues(sourceTypes: SourceType[]): SourceTypeName[] {
   return OFFERED_PROVIDERS.filter((provider) => availableNames.has(provider));
 }
 
+/** Builds the card options for the source type step from the API catalogue. */
 export function buildSourceTypeOptions(
   sourceTypes: SourceType[],
   intl: IntlShape,
@@ -102,6 +128,8 @@ export function buildSourceTypeOptions(
 export interface IntegrationWizardSchemaOptions {
   /** The provider catalogue, as returned by `useSourceTypes()`. */
   sourceTypes: SourceType[];
+  /** The application catalogue, as returned by `useApplicationTypes()`. */
+  applicationTypes: ApplicationType[];
   intl: IntlShape;
   /**
    * Provider the wizard was opened with, if any. Its only effect on the schema
@@ -161,6 +189,7 @@ export function createWizardInitialValues(
  */
 export function createIntegrationWizardSchema({
   sourceTypes,
+  applicationTypes,
   intl,
   selectedType,
 }: IntegrationWizardSchemaOptions): LegacySchemaType {
@@ -184,11 +213,7 @@ export function createIntegrationWizardSchema({
         // that inner node the same accessible name as the modal around it.
         'aria-labelledby': WIZARD_TITLE_ID,
         buttonLabels: {
-          // Labelled "Next" rather than "Add": naming is the last step that
-          // exists today, so data-driven-forms renders the submit button as
-          // its primary action. The application and review steps turn this
-          // into a genuine submit, at which point it reverts to "Add".
-          submit: intl.formatMessage(messages.wizardNext),
+          submit: intl.formatMessage(messages.wizardSubmit),
           next: intl.formatMessage(messages.wizardNext),
           back: intl.formatMessage(messages.wizardBack),
           cancel: intl.formatMessage(messages.wizardCancel),
@@ -213,6 +238,8 @@ export function createIntegrationWizardSchema({
         fields: [
           sourceTypeStep(sourceTypes, intl),
           nameIntegrationStep(sourceTypes, intl),
+          applicationSelectionStep(applicationTypes, intl),
+          reviewStep(sourceTypes, applicationTypes, intl),
         ],
       },
     ],
@@ -263,8 +290,7 @@ function nameIntegrationStep(sourceTypes: SourceType[], intl: IntlShape) {
   return {
     name: WizardStepId.NameIntegration,
     title: intl.formatMessage(messages.wizardNameStepTitle),
-    // No `nextStep`: naming is the last step until the application and review
-    // steps land, which is what makes the primary button the submit button.
+    nextStep: WizardStepId.ApplicationSelection,
     fields: [
       ...buildSourceTypeOptions(sourceTypes, intl).map(({ value, label }) => ({
         component: componentTypes.PLAIN_TEXT,
@@ -286,6 +312,116 @@ function nameIntegrationStep(sourceTypes: SourceType[], intl: IntlShape) {
             message: intl.formatMessage(messages.wizardNameRequired),
           },
         ],
+      },
+    ],
+  };
+}
+
+/**
+ * Narrows the API catalogue to the offered applications and attaches the
+ * provider compatibility list from {@link OFFERED_APPLICATIONS} rather than
+ * the API's own `supported_source_types`, which may include providers this
+ * wizard does not onboard.
+ */
+export function buildApplicationOptions(
+  applicationTypes: ApplicationType[],
+): ApplicationOption[] {
+  return applicationTypes
+    .filter((appType) => appType.name in OFFERED_APPLICATIONS)
+    .map((appType) => ({
+      value: appType.id,
+      label: appType.display_name,
+      supportedSourceTypes: OFFERED_APPLICATIONS[appType.name],
+    }));
+}
+
+/**
+ * Custom validator that checks that an array field has at least one entry.
+ * The built-in REQUIRED validator only checks for truthy — an empty array
+ * `[]` passes it.
+ */
+const ARRAY_NOT_EMPTY_VALIDATOR = 'array-not-empty';
+
+/** Builds a validator config that `data-driven-forms` resolves via the validator mapper. */
+export function arrayNotEmptyValidator(message: string): {
+  type: typeof ARRAY_NOT_EMPTY_VALIDATOR;
+  message: string;
+} {
+  return { type: ARRAY_NOT_EMPTY_VALIDATOR, message };
+}
+
+/**
+ * Validator function registered with data-driven-forms. Returns the error
+ * message when the value is not an array with at least one element.
+ */
+export const validateArrayNotEmpty: (
+  value: unknown,
+  allValues?: Record<string, unknown>,
+  meta?: { message?: string },
+) => string | undefined = (value, _allValues, meta) => {
+  if (Array.isArray(value) && value.length > 0) {
+    return undefined;
+  }
+  return meta?.message ?? 'Select at least one item.';
+};
+
+/** The application selection step, filtered to apps compatible with the chosen provider. */
+function applicationSelectionStep(
+  applicationTypes: ApplicationType[],
+  intl: IntlShape,
+) {
+  return {
+    name: WizardStepId.ApplicationSelection,
+    title: intl.formatMessage(messages.wizardApplicationStepTitle),
+    nextStep: WizardStepId.Review,
+    fields: [
+      {
+        component: componentTypes.PLAIN_TEXT,
+        name: 'application-step-description',
+        label: intl.formatMessage(messages.wizardApplicationStepDescription),
+      },
+      {
+        component: APPLICATION_SELECT_COMPONENT,
+        name: APPLICATIONS_FIELD,
+        label: intl.formatMessage(messages.wizardApplicationLabel),
+        isRequired: true,
+        options: buildApplicationOptions(applicationTypes),
+        validate: [
+          arrayNotEmptyValidator(
+            intl.formatMessage(messages.wizardApplicationRequired),
+          ),
+        ],
+      },
+    ],
+  };
+}
+
+/** The review step, showing a read-only summary of all choices before submission. */
+function reviewStep(
+  sourceTypes: SourceType[],
+  applicationTypes: ApplicationType[],
+  intl: IntlShape,
+) {
+  return {
+    name: WizardStepId.Review,
+    title: intl.formatMessage(messages.wizardReviewStepTitle),
+    // No `nextStep`: review is the last step, making the primary button the
+    // submit button (labelled "Add").
+    fields: [
+      {
+        component: REVIEW_STEP_COMPONENT,
+        name: 'review-summary',
+        description: intl.formatMessage(messages.wizardReviewStepDescription),
+        labels: {
+          review: intl.formatMessage(messages.wizardReviewStepTitle),
+          sourceType: intl.formatMessage(messages.wizardReviewSourceTypeLabel),
+          name: intl.formatMessage(messages.wizardReviewNameLabel),
+          applications: intl.formatMessage(
+            messages.wizardReviewApplicationsLabel,
+          ),
+        },
+        sourceTypeOptions: buildSourceTypeOptions(sourceTypes, intl),
+        applicationOptions: buildApplicationOptions(applicationTypes),
       },
     ],
   };

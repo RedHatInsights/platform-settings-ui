@@ -1,6 +1,10 @@
+import type { HttpHandler } from 'msw';
 import { HttpResponse, delay, http } from 'msw';
 import { createResettableCollection } from '../../../../shared/mockCollections';
 import type {
+  Application,
+  CreateApplicationInput,
+  CreateSourceInput,
   PageApplicationType,
   PageSourceType,
   Source,
@@ -12,6 +16,10 @@ const SOURCES_API_BASE = '/api/sources/v3.1';
 /** The API's own defaults, so an unparameterised query behaves the same here. */
 const DEFAULT_LIMIT = 100;
 
+/** Monotonic counter so IDs stay unique even when POSTs fire in the same ms. */
+let nextId = 0;
+
+/** In-memory source collection backing the MSW handlers. Reset between stories. */
 export const sourcesDb = createResettableCollection(seedSources);
 
 /**
@@ -100,6 +108,7 @@ function graphQLData(sources: Source[], count: number) {
   return HttpResponse.json({ data: { sources, meta: { count } } });
 }
 
+/** Returns handlers that serve an empty source list with the full catalogues. */
 export function createEmptySourcesHandler(baseUrl = SOURCES_API_BASE) {
   return [
     http.post(`${baseUrl}/graphql`, () => graphQLData([], 0)),
@@ -162,6 +171,14 @@ export function createPendingSourceTypesHandler(baseUrl = SOURCES_API_BASE) {
 
       return HttpResponse.json({} as PageSourceType);
     }),
+    http.get(`${baseUrl}/application_types`, () => {
+      const response: PageApplicationType = {
+        data: seedApplicationTypes,
+        links: {},
+        meta: { count: seedApplicationTypes.length },
+      };
+      return HttpResponse.json(response);
+    }),
   ];
 }
 
@@ -175,6 +192,14 @@ export function createFailingSourceTypesHandler(baseUrl = SOURCES_API_BASE) {
       `${baseUrl}/source_types`,
       () => new HttpResponse(null, { status: 500 }),
     ),
+    http.get(`${baseUrl}/application_types`, () => {
+      const response: PageApplicationType = {
+        data: seedApplicationTypes,
+        links: {},
+        meta: { count: seedApplicationTypes.length },
+      };
+      return HttpResponse.json(response);
+    }),
   ];
 }
 
@@ -198,9 +223,18 @@ export function createSourceTypesSubsetHandler(
       };
       return HttpResponse.json(response);
     }),
+    http.get(`${baseUrl}/application_types`, () => {
+      const response: PageApplicationType = {
+        data: seedApplicationTypes,
+        links: {},
+        meta: { count: seedApplicationTypes.length },
+      };
+      return HttpResponse.json(response);
+    }),
   ];
 }
 
+/** Full happy-path handler set: GraphQL list, REST detail, catalogues, and POST create routes. */
 export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
   return [
     http.post(`${baseUrl}/graphql`, async ({ request }) => {
@@ -248,5 +282,68 @@ export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
 
       return HttpResponse.json(response);
     }),
+
+    http.post(`${baseUrl}/sources`, async ({ request }) => {
+      const body = (await request.json()) as CreateSourceInput;
+      const source: Source = {
+        id: `src-${Date.now()}-${nextId++}`,
+        name: body.name,
+        source_type_id: body.source_type_id,
+        created_at: new Date().toISOString(),
+        availability_status: 'in_progress',
+        applications: [],
+      };
+      sourcesDb.create(source);
+
+      return HttpResponse.json(source, { status: 201 });
+    }),
+
+    http.post(`${baseUrl}/applications`, async ({ request }) => {
+      const body = (await request.json()) as CreateApplicationInput;
+      const application: Application = {
+        id: `app-${Date.now()}-${nextId++}`,
+        source_id: body.source_id,
+        application_type_id: body.application_type_id,
+        created_at: new Date().toISOString(),
+        availability_status: 'available',
+      };
+
+      // Append the association to the source so subsequent list and detail
+      // reads reflect the successful submission.
+      const source = sourcesDb.findById(body.source_id);
+      if (source) {
+        source.applications = [
+          ...(source.applications ?? []),
+          {
+            id: application.id,
+            application_type_id: application.application_type_id,
+            availability_status: 'available',
+          },
+        ];
+      }
+
+      return HttpResponse.json(application, { status: 201 });
+    }),
+  ];
+}
+
+/**
+ * Handlers where source creation succeeds but application creation always
+ * fails. Used to test the partial-failure path in the wizard.
+ */
+export function createFailingApplicationHandlers(
+  baseUrl = SOURCES_API_BASE,
+): HttpHandler[] {
+  const base = createSourcesHandlers(baseUrl);
+
+  return [
+    // Override the application POST handler with one that always errors.
+    http.post(`${baseUrl}/applications`, () =>
+      HttpResponse.json(
+        { errors: [{ detail: 'Application association failed', status: 500 }] },
+        { status: 500 },
+      ),
+    ),
+    ...base,
   ];
 }

@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@patternfly/react-core/dist/dynamic/components/Button';
 import {
   Modal,
@@ -12,12 +13,19 @@ import { Spinner } from '@patternfly/react-core/dist/dynamic/components/Spinner'
 import { Bullseye } from '@patternfly/react-core/dist/dynamic/layouts/Bullseye';
 import IntegrationsFormRenderer from './wizard/IntegrationsFormRenderer';
 import {
+  APPLICATIONS_FIELD,
+  SOURCE_NAME_FIELD,
+  SOURCE_TYPE_FIELD,
   buildSourceTypeOptions,
   createIntegrationWizardSchema,
   createWizardInitialValues,
   resolveSelectedType,
 } from './wizard/integrationWizardSchema';
+import { createSourcesApi } from '../data/api/sources';
+import { useApplicationTypes } from '../data/queries/useApplicationTypes';
+import { sourcesKeys } from '../data/queries/useSources';
 import { useSourceTypes } from '../data/queries/useSourceTypes';
+import { useAppServices } from '../../../shared/ServiceContext';
 import messages from '../messages';
 import type { SourceTypeName } from '../types';
 
@@ -49,7 +57,21 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
   onClose,
 }) => {
   const intl = useIntl();
-  const { data: sourceTypes, isLoading, isError } = useSourceTypes();
+  const { axios, notify } = useAppServices();
+  const queryClient = useQueryClient();
+  const {
+    data: sourceTypes,
+    isLoading: isLoadingSourceTypes,
+    isError: isSourceTypesError,
+  } = useSourceTypes();
+  const {
+    data: applicationTypes,
+    isLoading: isLoadingAppTypes,
+    isError: isAppTypesError,
+  } = useApplicationTypes();
+
+  const isLoading = isLoadingSourceTypes || isLoadingAppTypes;
+  const isError = isSourceTypesError || isAppTypesError;
 
   /**
    * Whether the "are you sure?" confirmation is up. This is the one piece of
@@ -74,14 +96,15 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
 
   const schema = useMemo(
     () =>
-      sourceTypes && hasProviders
+      sourceTypes && applicationTypes && hasProviders
         ? createIntegrationWizardSchema({
             sourceTypes,
+            applicationTypes,
             intl,
             selectedType: sourceType,
           })
         : undefined,
-    [sourceTypes, hasProviders, intl, sourceType],
+    [sourceTypes, applicationTypes, hasProviders, intl, sourceType],
   );
 
   const initialValues = useMemo(
@@ -90,6 +113,85 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
         sourceTypes ? resolveSelectedType(sourceTypes, sourceType) : undefined,
       ),
     [sourceTypes, sourceType],
+  );
+
+  /**
+   * Multi-step submission: create the source, then associate each selected
+   * application. On success the sources list cache is invalidated so the table
+   * picks up the new entry.
+   */
+  const handleSubmit = useCallback(
+    async (values: Record<string, unknown>) => {
+      const api = createSourcesApi(axios);
+
+      // The wizard's `prepareValues` only includes fields that were registered
+      // (rendered) during visited steps. When the wizard starts on step two
+      // because a provider was pre-selected, step one is never rendered and the
+      // source_type field is missing from `values`. Fall back to `initialValues`
+      // so the pre-selection is honoured.
+      const sourceTypeName = (values[SOURCE_TYPE_FIELD] ??
+        initialValues[SOURCE_TYPE_FIELD]) as string | undefined;
+      const sourceName = values[SOURCE_NAME_FIELD] as string;
+      const applicationIds = (values[APPLICATIONS_FIELD] ?? []) as string[];
+
+      const matchedSourceType = sourceTypes?.find(
+        (st) => st.name === sourceTypeName,
+      );
+      if (!matchedSourceType) {
+        notify(
+          'danger',
+          intl.formatMessage(messages.wizardCreateFailureTitle),
+          intl.formatMessage(messages.wizardCreateFailureBody),
+        );
+        return;
+      }
+
+      try {
+        const source = await api.createSource({
+          name: sourceName,
+          source_type_id: matchedSourceType.id,
+        });
+
+        const results = await Promise.allSettled(
+          applicationIds.map((appTypeId) =>
+            api.createApplication({
+              source_id: source.id,
+              application_type_id: appTypeId,
+            }),
+          ),
+        );
+
+        const hasRejection = results.some((r) => r.status === 'rejected');
+
+        if (hasRejection) {
+          notify(
+            'warning',
+            intl.formatMessage(messages.wizardPartialFailureTitle, {
+              name: sourceName,
+            }),
+            intl.formatMessage(messages.wizardPartialFailureBody),
+          );
+        } else {
+          notify(
+            'success',
+            intl.formatMessage(messages.wizardTitle),
+            intl.formatMessage(messages.wizardSuccessBody, {
+              name: sourceName,
+            }),
+          );
+        }
+
+        queryClient.invalidateQueries({ queryKey: sourcesKeys.lists() });
+        onClose();
+      } catch {
+        notify(
+          'danger',
+          intl.formatMessage(messages.wizardCreateFailureTitle),
+          intl.formatMessage(messages.wizardCreateFailureBody),
+        );
+      }
+    },
+    [axios, initialValues, sourceTypes, queryClient, intl, notify, onClose],
   );
 
   if (!isOpen) {
@@ -152,13 +254,7 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
         schema={schema}
         initialValues={initialValues}
         onCancel={() => setIsConfirmingCancel(true)}
-        /**
-         * The source type step is currently the last step, so this fires from
-         * the primary button. There is nothing to create until the auth and
-         * application steps land, so it is deliberately inert — the follow-up
-         * stories replace it with the create call.
-         */
-        onSubmit={() => undefined}
+        onSubmit={handleSubmit}
       />
       {isConfirmingCancel && (
         <Modal

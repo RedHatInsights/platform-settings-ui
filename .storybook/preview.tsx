@@ -37,7 +37,16 @@ const ServiceProviderWithNotifications: React.FC<{
       ...baseMockServices,
       addNotification,
       notify: (variant, title, description) =>
-        addNotification({ variant, title, description }),
+        addNotification({
+          variant,
+          title,
+          description,
+          // In production, Chrome's shell provides h1–h5 headings above
+          // the notification portal. Storybook stories have no shell, so
+          // the Alert's default h4 breaks heading-order. Using h6 keeps
+          // the notification below any wizard/modal heading in the tree.
+          component: 'h6',
+        } as Parameters<typeof addNotification>[0]),
       ...overrides,
     }),
     [addNotification, overrides],

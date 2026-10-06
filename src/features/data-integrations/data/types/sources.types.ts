@@ -138,7 +138,7 @@ export interface Application {
  * Credential scheme for a provider. Only AWS Access Key is offered today;
  * each provider the wizard gains contributes its own identifiers.
  */
-export type AuthenticationType = 'access_key_secret_key' | 'arn';
+export type AuthenticationType = 'access_key_secret_key';
 
 /**
  * Which half of the "Select configuration" choice the user took.
@@ -213,7 +213,8 @@ export interface CreateSourceInput {
   sourceTypeName: string;
   /** Absent for a provider that never offered the configuration choice. */
   appCreationWorkflow?: AppCreationWorkflow;
-  authentication: Omit<
+  /** Absent when the user chose manual configuration. */
+  authentication?: Omit<
     SourceAuthenticationInput,
     'resource_type' | 'resource_name'
   >;

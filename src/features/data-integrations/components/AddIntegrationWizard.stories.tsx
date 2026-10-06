@@ -17,7 +17,6 @@ import { clearAndType, waitForModal } from '../../../shared/interactionHelpers';
 
 const ACCESS_KEY_ID = 'AKIAIOSFODNN7EXAMPLE';
 const SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY';
-const ARN = 'arn:aws:iam:123456789:role/CostManagement';
 
 /**
  * Walks an AWS wizard that opened pre-selected from naming through to review,
@@ -407,10 +406,9 @@ export const AmazonReviewBack: Story = {
 };
 
 /**
- * The manual half of the configuration choice. It asks for a role to assume
- * instead of an access key — `sources-ui` pairs `manual_configuration` with
- * the `arn` authentication type, never with the superkey credential — and the
- * review shows the ARN in full, because it is an identifier, not a secret.
+ * The manual half of the configuration choice. It hands over no credential —
+ * that is what the user is declining — so the wizard goes straight on to
+ * applications, and the review has no credential rows to show.
  */
 export const AmazonManualConfiguration: Story = {
   args: { sourceType: 'amazon' },
@@ -439,52 +437,46 @@ export const AmazonManualConfiguration: Story = {
       await user.click(
         modal.getByRole('radio', { name: 'Manual configuration' }),
       );
+      // Unregistered, not just hidden: a required access key left behind
+      // would hold Next disabled with nothing on screen to explain it.
       expect(
         modal.queryByRole('textbox', { name: 'Access key ID' }),
       ).not.toBeInTheDocument();
-    });
-
-    await step('It asks for a role ARN, and checks the format', async () => {
       await waitFor(() =>
         expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
       );
-      await user.click(modal.getByRole('button', { name: 'Next' }));
-
-      await modal.findByRole('heading', { name: 'Enter credentials' });
-      await clearAndType(
-        user,
-        () => modal.getByRole('textbox', { name: 'ARN' }),
-        'not-an-arn',
-      );
-
-      // A filled field is not a valid one: the prefix check is what keeps
-      // Next disabled here, where the access key has nothing but REQUIRED.
-      await waitFor(() =>
-        expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
-      );
     });
 
-    await step('A valid ARN carries through to review', async () => {
-      await clearAndType(
-        user,
-        () => modal.getByRole('textbox', { name: 'ARN' }),
-        ARN,
-      );
-      await waitFor(() =>
-        expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
-      );
+    await step('It goes straight on to applications', async () => {
       await user.click(modal.getByRole('button', { name: 'Next' }));
 
       await modal.findByRole('heading', { name: 'Select applications' });
+      expect(
+        modal.queryByRole('heading', { name: 'Enter credentials' }),
+      ).not.toBeInTheDocument();
+
       await user.click(
         modal.getByRole('checkbox', { name: 'Cost Management' }),
       );
       await user.click(modal.getByRole('button', { name: 'Next' }));
+    });
 
+    await step('Review names the mode and shows no credentials', async () => {
       await modal.findByRole('heading', { name: 'Review details' });
+
       expect(modal.getByText('Manual configuration')).toBeInTheDocument();
-      // Shown in full: an ARN names a role, it is not a credential to hide.
-      expect(modal.getByText(ARN)).toBeInTheDocument();
+      expect(modal.getByText('Cost Management')).toBeInTheDocument();
+      expect(modal.queryByText('Access key ID')).not.toBeInTheDocument();
+      expect(modal.queryByText('Secret access key')).not.toBeInTheDocument();
+    });
+
+    await step('It still creates the integration', async () => {
+      await user.click(modal.getByRole('button', { name: 'Add' }));
+
+      await modal.findByRole('heading', { name: 'Integration added' });
+      expect(
+        sourcesDb.findAll().find(({ name }) => name === 'aws-manual'),
+      ).toBeDefined();
     });
   },
 };

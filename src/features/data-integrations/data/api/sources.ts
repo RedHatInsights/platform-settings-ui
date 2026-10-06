@@ -270,15 +270,17 @@ export function createSourcesApi(axios: AxiosInstance) {
           },
         ],
         endpoints: [],
-        authentications: [
-          {
-            ...input.authentication,
-            // No endpoint or application is created alongside, so the
-            // authentication hangs off the source itself.
-            resource_type: 'source',
-            resource_name: input.name,
-          },
-        ],
+        authentications: input.authentication
+          ? [
+              {
+                ...input.authentication,
+                // No endpoint or application is created alongside, so the
+                // authentication hangs off the source itself.
+                resource_type: 'source',
+                resource_name: input.name,
+              },
+            ]
+          : [],
         applications: (input.applicationTypeIds ?? []).map(
           (application_type_id) => ({
             application_type_id,

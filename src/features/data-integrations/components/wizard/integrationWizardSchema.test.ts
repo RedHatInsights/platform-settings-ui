@@ -7,7 +7,6 @@ import {
   APPLICATIONS_FIELD,
   APPLICATION_SELECT_COMPONENT,
   APP_CREATION_WORKFLOW_FIELD,
-  ARN_AUTH_TYPE,
   AUTH_PASSWORD_FIELD,
   AUTH_TYPE_FIELD,
   AUTH_USERNAME_FIELD,
@@ -331,40 +330,53 @@ describe('createIntegrationWizardSchema', () => {
     }
   });
 
-  it('routes each configuration mode to its own next step', () => {
+  it('sends both configuration modes on to the applications step', () => {
     const { when, stepMapper } = configurationStep().nextStep;
 
     expect(when).toBe(APP_CREATION_WORKFLOW_FIELD);
-    // Account authorization already has its credential, so it skips ahead.
+    // Account authorization has just collected its credential inline, and
+    // manual configuration is the user declining to give one at all, so
+    // neither has anything left to be asked here.
     expect(stepMapper[ACCOUNT_AUTHORIZATION]).toBe(
       WizardStepId.ApplicationSelection,
     );
-    expect(stepMapper[MANUAL_CONFIGURATION]).toBe(WizardStepId.AuthCredentials);
+    expect(stepMapper[MANUAL_CONFIGURATION]).toBe(
+      WizardStepId.ApplicationSelection,
+    );
   });
 
-  it('asks the manual path for a role ARN, not an access key', () => {
-    const [, authType, arn] = credentialsStep().fields;
+  it('leaves the generic credentials step unreachable, but intact', () => {
+    // Nothing routes here while AWS is the only provider with credentials,
+    // and it collects them in the configuration step. It stays as the target
+    // `stepAfterNaming` falls back to.
+    const [, authType, accessKeyId, secret] = credentialsStep().fields;
 
-    expect(authType.initialValue).toBe(ARN_AUTH_TYPE);
-    expect(arn.name).toBe(AUTH_USERNAME_FIELD);
-    // No password field: assuming a role needs no secret.
-    expect(
-      credentialsStep().fields.some(
-        (field: { name: string }) => field.name === AUTH_PASSWORD_FIELD,
-      ),
-    ).toBe(false);
-
-    // Unlike an access key, the ARN format is fixed, so it is worth checking
-    // here rather than on a round trip. Validators are sources-ui's.
-    expect(arn.validate.map(({ type }: { type: string }) => type)).toEqual([
-      validatorTypes.REQUIRED,
-      validatorTypes.PATTERN,
-      validatorTypes.MIN_LENGTH,
-    ]);
+    expect(authType.initialValue).toBe(ACCESS_KEY_AUTH_TYPE);
+    expect(accessKeyId.name).toBe(AUTH_USERNAME_FIELD);
+    expect(secret.name).toBe(AUTH_PASSWORD_FIELD);
+    expect(secret.type).toBe('password');
 
     // No endpoint or SSL configuration: `amazon.endpoint` is empty in
     // sources-ui, so AWS has nothing to configure there.
     expect(stepNames()).not.toContain(WizardStepId.EndpointConfiguration);
+  });
+
+  it('sends no credential when the user chose manual configuration', () => {
+    expect(
+      toCreateSourceInput({
+        source_type: 'amazon',
+        source: {
+          name: 'aws-manual',
+          app_creation_workflow: MANUAL_CONFIGURATION,
+        },
+      }),
+    ).toEqual({
+      name: 'aws-manual',
+      sourceTypeName: 'amazon',
+      appCreationWorkflow: MANUAL_CONFIGURATION,
+      authentication: undefined,
+      applicationTypeIds: [],
+    });
   });
 
   it('submits from review, into the result step', () => {

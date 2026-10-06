@@ -272,6 +272,91 @@ export default defineMessages({
     defaultMessage:
       'Create an access key in your AWS user account and enter the details below.',
   },
+
+  // Select configuration step
+  wizardConfigurationStepTitle: {
+    id: 'dataIntegrations.wizard.configuration.stepTitle',
+    description: 'Title of the configuration mode wizard step',
+    defaultMessage: 'Select configuration',
+  },
+  wizardConfigurationStepDescription: {
+    id: 'dataIntegrations.wizard.configuration.stepDescription',
+    description: 'Introductory text above the configuration mode options',
+    defaultMessage:
+      'Configure your integration manually or let us manage all necessary credentials by selecting account authorization configuration.',
+  },
+  wizardConfigurationModeLabel: {
+    id: 'dataIntegrations.wizard.configuration.modeLabel',
+    description:
+      'Label for the configuration mode radio group, read as the group name',
+    defaultMessage: 'Select a configuration mode',
+  },
+  wizardConfigurationModeRequired: {
+    id: 'dataIntegrations.wizard.configuration.modeRequired',
+    description: 'Validation message when no configuration mode is selected',
+    defaultMessage: 'Select a configuration mode to continue.',
+  },
+  wizardAccountAuthorization: {
+    id: 'dataIntegrations.wizard.configuration.accountAuthorization',
+    description: 'Label of the account authorization configuration mode',
+    defaultMessage: 'Account authorization',
+  },
+  wizardRecommended: {
+    id: 'dataIntegrations.wizard.configuration.recommended',
+    description:
+      'Chip marking account authorization as the recommended configuration mode',
+    defaultMessage: 'Recommended',
+  },
+  wizardAccountAuthorizationDescription: {
+    id: 'dataIntegrations.wizard.configuration.accountAuthorizationDescription',
+    description: 'Description of the account authorization configuration mode',
+    defaultMessage:
+      'A new automated integration configuration method. Provide your AWS account credentials and let Red Hat configure and manage your integration for you.',
+  },
+  wizardManualConfiguration: {
+    id: 'dataIntegrations.wizard.configuration.manual',
+    description: 'Label of the manual configuration mode',
+    defaultMessage: 'Manual configuration',
+  },
+  wizardManualConfigurationDescription: {
+    id: 'dataIntegrations.wizard.configuration.manualDescription',
+    description: 'Description of the manual configuration mode',
+    defaultMessage:
+      'Configure and manage your integration manually if you do not wish to provide account authorization credentials. You will set up integrations the same way you do today.',
+  },
+  wizardConfigurationModeReviewLabel: {
+    id: 'dataIntegrations.wizard.review.configurationMode',
+    description: 'Review row label for the chosen configuration mode',
+    defaultMessage: 'Configuration mode',
+  },
+
+  // Manual configuration credentials
+  wizardArnStepDescription: {
+    id: 'dataIntegrations.wizard.arn.stepDescription',
+    description: 'Introductory text above the AWS role ARN field',
+    defaultMessage:
+      'Enter the ARN of the role you created for Red Hat to assume in your AWS account.',
+  },
+  wizardArnLabel: {
+    id: 'dataIntegrations.wizard.arn.label',
+    description: 'Label for the AWS role ARN field',
+    defaultMessage: 'ARN',
+  },
+  wizardArnRequired: {
+    id: 'dataIntegrations.wizard.arn.required',
+    description: 'Validation message when the ARN is empty',
+    defaultMessage: 'Enter the ARN of the role to assume.',
+  },
+  wizardArnPattern: {
+    id: 'dataIntegrations.wizard.arn.pattern',
+    description: 'Validation message when the ARN has the wrong prefix',
+    defaultMessage: 'ARN must start with arn:aws:',
+  },
+  wizardArnLength: {
+    id: 'dataIntegrations.wizard.arn.length',
+    description: 'Validation message when the ARN is too short',
+    defaultMessage: 'ARN should have at least 10 characters',
+  },
   wizardAccessKeyIdLabel: {
     id: 'dataIntegrations.wizard.credentials.accessKeyId',
     description: 'Label for the AWS access key ID field',

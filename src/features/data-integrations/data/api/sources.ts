@@ -262,7 +262,13 @@ export function createSourcesApi(axios: AxiosInstance) {
      */
     async createSource(input: CreateSourceInput): Promise<Source> {
       const payload: BulkCreatePayload = {
-        sources: [{ name: input.name, source_type_name: input.sourceTypeName }],
+        sources: [
+          {
+            name: input.name,
+            source_type_name: input.sourceTypeName,
+            app_creation_workflow: input.appCreationWorkflow,
+          },
+        ],
         endpoints: [],
         authentications: [
           {

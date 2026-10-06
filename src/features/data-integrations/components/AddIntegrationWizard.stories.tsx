@@ -17,10 +17,11 @@ import { clearAndType, waitForModal } from '../../../shared/interactionHelpers';
 
 const ACCESS_KEY_ID = 'AKIAIOSFODNN7EXAMPLE';
 const SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY';
+const ARN = 'arn:aws:iam:123456789:role/CostManagement';
 
 /**
  * Walks an AWS wizard that opened pre-selected from naming through to review,
- * picking Cost Management on the way.
+ * taking account authorization and picking Cost Management on the way.
  *
  * Shared because five stories below only differ in what happens once they get
  * there, and the walk itself is already asserted end to end by
@@ -43,7 +44,8 @@ async function fillAwsDetails(
   );
   await user.click(modal.getByRole('button', { name: 'Next' }));
 
-  await modal.findByRole('heading', { name: 'Enter credentials' });
+  await modal.findByRole('heading', { name: 'Select configuration' });
+  await user.click(modal.getByRole('radio', { name: /Account authorization/ }));
   await clearAndType(
     user,
     () => modal.getByRole('textbox', { name: 'Access key ID' }),
@@ -76,10 +78,10 @@ async function fillAwsDetails(
  * The Add Data Integration wizard, built as a data-driven-forms schema — see
  * `wizard/integrationWizardSchema.ts`.
  *
- * AWS goes all the way through: provider, name, credentials, applications,
+ * AWS goes all the way through: provider, name, configuration, applications,
  * review, create. The other three providers stop on the authentication step,
  * which has nothing to offer them until RHCLOUD-51317 — which is also why the
- * application step is only ever exercised for AWS here.
+ * configuration and application steps are only ever exercised for AWS here.
  *
  * The cards are a radio group, which is why every assertion here reaches for
  * them by `role: 'radio'` — doing so also proves each card carries the
@@ -207,11 +209,12 @@ export const Default: Story = {
       );
     });
 
-    await step('AWS is not asked to pick an authentication type', async () => {
+    await step('AWS is asked how it wants to be configured', async () => {
       await user.click(modal.getByRole('button', { name: 'Next' }));
 
-      // It has exactly one, so the step that would offer it is skipped.
-      await modal.findByRole('heading', { name: 'Enter credentials' });
+      // Red Hat can manage AWS credentials, so the configuration choice
+      // replaces the authentication-type question entirely.
+      await modal.findByRole('heading', { name: 'Select configuration' });
       expect(
         modal.queryByRole('heading', { name: 'Select authentication type' }),
       ).not.toBeInTheDocument();
@@ -234,6 +237,7 @@ export const AmazonHappyPath: Story = {
       expect(modal.getByText('Amazon Web Services')).toBeInTheDocument();
       expect(modal.getByText('aws-production')).toBeInTheDocument();
       expect(modal.getByText('Cost Management')).toBeInTheDocument();
+      expect(modal.getByText('Account authorization')).toBeInTheDocument();
       expect(modal.getByText('Access key')).toBeInTheDocument();
 
       // The key is recognisable but not readable, and the secret is not on the
@@ -287,7 +291,10 @@ export const AmazonApplicationSelection: Story = {
     );
     await user.click(modal.getByRole('button', { name: 'Next' }));
 
-    await modal.findByRole('heading', { name: 'Enter credentials' });
+    await modal.findByRole('heading', { name: 'Select configuration' });
+    await user.click(
+      modal.getByRole('radio', { name: /Account authorization/ }),
+    );
     await clearAndType(
       user,
       () => modal.getByRole('textbox', { name: 'Access key ID' }),
@@ -362,19 +369,25 @@ export const AmazonReviewBack: Story = {
       expect(modal.queryByRole('button', { name: /^Edit/ })).toBeNull();
     });
 
-    await step('Back walks to credentials, values intact', async () => {
-      await user.click(modal.getByRole('button', { name: 'Back' }));
-      await modal.findByRole('heading', { name: 'Select applications' });
-      expect(
-        modal.getByRole('checkbox', { name: 'Cost Management' }),
-      ).toBeChecked();
+    await step(
+      'Back walks to the configuration step, values intact',
+      async () => {
+        await user.click(modal.getByRole('button', { name: 'Back' }));
+        await modal.findByRole('heading', { name: 'Select applications' });
+        expect(
+          modal.getByRole('checkbox', { name: 'Cost Management' }),
+        ).toBeChecked();
 
-      await user.click(modal.getByRole('button', { name: 'Back' }));
-      await modal.findByRole('heading', { name: 'Enter credentials' });
-      expect(modal.getByRole('textbox', { name: 'Access key ID' })).toHaveValue(
-        ACCESS_KEY_ID,
-      );
-    });
+        await user.click(modal.getByRole('button', { name: 'Back' }));
+        await modal.findByRole('heading', { name: 'Select configuration' });
+        expect(
+          modal.getByRole('radio', { name: /Account authorization/ }),
+        ).toBeChecked();
+        expect(
+          modal.getByRole('textbox', { name: 'Access key ID' }),
+        ).toHaveValue(ACCESS_KEY_ID);
+      },
+    );
 
     await step('The change shows up back on review', async () => {
       await clearAndType(
@@ -389,6 +402,89 @@ export const AmazonReviewBack: Story = {
 
       await modal.findByRole('heading', { name: 'Review details' });
       expect(modal.getByText(/^AKIA•+$/)).toBeInTheDocument();
+    });
+  },
+};
+
+/**
+ * The manual half of the configuration choice. It asks for a role to assume
+ * instead of an access key — `sources-ui` pairs `manual_configuration` with
+ * the `arn` authentication type, never with the superkey credential — and the
+ * review shows the ARN in full, because it is an identifier, not a secret.
+ */
+export const AmazonManualConfiguration: Story = {
+  args: { sourceType: 'amazon' },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await modal.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Integration name' }),
+      'aws-manual',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+
+    await step('Choosing manual hides the access key fields', async () => {
+      await modal.findByRole('heading', { name: 'Select configuration' });
+
+      await user.click(
+        modal.getByRole('radio', { name: /Account authorization/ }),
+      );
+      expect(
+        modal.getByRole('textbox', { name: 'Access key ID' }),
+      ).toBeInTheDocument();
+
+      await user.click(
+        modal.getByRole('radio', { name: 'Manual configuration' }),
+      );
+      expect(
+        modal.queryByRole('textbox', { name: 'Access key ID' }),
+      ).not.toBeInTheDocument();
+    });
+
+    await step('It asks for a role ARN, and checks the format', async () => {
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+      );
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+
+      await modal.findByRole('heading', { name: 'Enter credentials' });
+      await clearAndType(
+        user,
+        () => modal.getByRole('textbox', { name: 'ARN' }),
+        'not-an-arn',
+      );
+
+      // A filled field is not a valid one: the prefix check is what keeps
+      // Next disabled here, where the access key has nothing but REQUIRED.
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
+      );
+    });
+
+    await step('A valid ARN carries through to review', async () => {
+      await clearAndType(
+        user,
+        () => modal.getByRole('textbox', { name: 'ARN' }),
+        ARN,
+      );
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+      );
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+
+      await modal.findByRole('heading', { name: 'Select applications' });
+      await user.click(
+        modal.getByRole('checkbox', { name: 'Cost Management' }),
+      );
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+
+      await modal.findByRole('heading', { name: 'Review details' });
+      expect(modal.getByText('Manual configuration')).toBeInTheDocument();
+      // Shown in full: an ARN names a role, it is not a credential to hide.
+      expect(modal.getByText(ARN)).toBeInTheDocument();
     });
   },
 };

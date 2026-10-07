@@ -54,5 +54,4 @@ export interface BehaviorGroup {
 export interface NotifierSummary {
   type: EndpointType;
   subType?: string;
-  label: string;
 }

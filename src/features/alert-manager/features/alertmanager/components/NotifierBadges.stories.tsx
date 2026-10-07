@@ -13,45 +13,37 @@ type Story = StoryObj<typeof meta>;
 
 const emailNotifier: NotifierSummary = {
   type: 'email_subscription',
-  label: 'Email',
 };
 
 const slackNotifier: NotifierSummary = {
   type: 'camel',
   subType: 'slack',
-  label: 'Slack',
 };
 
 const teamsNotifier: NotifierSummary = {
   type: 'camel',
   subType: 'teams',
-  label: 'Teams',
 };
 
 const googleChatNotifier: NotifierSummary = {
   type: 'camel',
   subType: 'google_chat',
-  label: 'Google Chat',
 };
 
 const webhookNotifier: NotifierSummary = {
   type: 'webhook',
-  label: 'Webhook',
 };
 
 const pagerdutyNotifier: NotifierSummary = {
   type: 'pagerduty',
-  label: 'PagerDuty',
 };
 
 const drawerNotifier: NotifierSummary = {
   type: 'drawer',
-  label: 'Drawer',
 };
 
 const ansibleNotifier: NotifierSummary = {
   type: 'ansible',
-  label: 'Ansible',
 };
 
 /**
@@ -148,8 +140,11 @@ export const AllIntegrationTypes: Story = {
     });
 
     await step('Camel sub-type icons render as images', async () => {
-      const slackImg = canvas.getByRole('img', { name: '' });
-      expect(slackImg).toBeInTheDocument();
+      expect(canvas.getByRole('img', { name: 'Slack' })).toBeInTheDocument();
+      expect(canvas.getByRole('img', { name: 'Teams' })).toBeInTheDocument();
+      expect(
+        canvas.getByRole('img', { name: 'Google Chat' }),
+      ).toBeInTheDocument();
     });
   },
 };

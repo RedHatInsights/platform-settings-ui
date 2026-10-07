@@ -120,9 +120,15 @@ const AlertManagerTable: React.FC = () => {
   const cellRenderers: CellRendererMap<typeof columns, EventType> = {
     eventType: (row) => row.display_name,
     service: (row) => row.application.display_name,
-    myNotifiers: (row) => (
-      <NotifierBadges notifiers={notifiersMap.get(row.id) ?? []} />
-    ),
+    myNotifiers: (row) => {
+      const notifierState = notifiersMap.get(row.id);
+      return (
+        <NotifierBadges
+          notifiers={notifierState?.notifiers ?? []}
+          status={notifierState?.status ?? 'pending'}
+        />
+      );
+    },
   };
 
   // Filter configuration

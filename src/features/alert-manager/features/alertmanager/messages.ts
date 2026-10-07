@@ -115,6 +115,68 @@ export default defineMessages({
     description: 'Label shown when no notifiers are configured',
     defaultMessage: 'No notifiers',
   },
+  notifiersError: {
+    id: 'alertManager.table.notifiersError',
+    description: 'Label shown when notifiers failed to load',
+    defaultMessage: 'Unable to load notifiers',
+  },
+
+  // Notifier type labels
+  notifierEmail: {
+    id: 'alertManager.notifier.email',
+    description: 'Email notifier label',
+    defaultMessage: 'Email',
+  },
+  notifierDrawer: {
+    id: 'alertManager.notifier.drawer',
+    description: 'Drawer notifier label',
+    defaultMessage: 'Drawer',
+  },
+  notifierWebhook: {
+    id: 'alertManager.notifier.webhook',
+    description: 'Webhook notifier label',
+    defaultMessage: 'Webhook',
+  },
+  notifierAnsible: {
+    id: 'alertManager.notifier.ansible',
+    description: 'Ansible notifier label',
+    defaultMessage: 'Ansible',
+  },
+  notifierPagerDuty: {
+    id: 'alertManager.notifier.pagerduty',
+    description: 'PagerDuty notifier label',
+    defaultMessage: 'PagerDuty',
+  },
+  notifierIntegration: {
+    id: 'alertManager.notifier.integration',
+    description: 'Generic camel integration notifier label',
+    defaultMessage: 'Integration',
+  },
+  notifierSlack: {
+    id: 'alertManager.notifier.slack',
+    description: 'Slack notifier label',
+    defaultMessage: 'Slack',
+  },
+  notifierGoogleChat: {
+    id: 'alertManager.notifier.googleChat',
+    description: 'Google Chat notifier label',
+    defaultMessage: 'Google Chat',
+  },
+  notifierTeams: {
+    id: 'alertManager.notifier.teams',
+    description: 'Microsoft Teams notifier label',
+    defaultMessage: 'Teams',
+  },
+  notifierServiceNow: {
+    id: 'alertManager.notifier.servicenow',
+    description: 'ServiceNow notifier label',
+    defaultMessage: 'ServiceNow',
+  },
+  notifierSplunk: {
+    id: 'alertManager.notifier.splunk',
+    description: 'Splunk notifier label',
+    defaultMessage: 'Splunk',
+  },
 
   // Table aria labels
   tableAriaLabel: {

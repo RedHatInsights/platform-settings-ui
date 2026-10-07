@@ -13,9 +13,15 @@ export const eventTypeEndpointsQueryKey = (eventTypeId: string) => [
   eventTypeId,
 ];
 
+export interface EventTypeNotifierState {
+  status: 'pending' | 'error' | 'success';
+  notifiers: NotifierSummary[];
+}
+
 /**
  * Fetches behavior groups for each event type ID and extracts a
- * `Map<eventTypeId, NotifierSummary[]>` of configured notifiers.
+ * `Map<eventTypeId, EventTypeNotifierState>` of configured notifiers,
+ * preserving each query's loading/error status.
  */
 export const useEventTypeNotifiers = (eventTypeIds: string[]) => {
   const queries = useQueries({
@@ -30,11 +36,12 @@ export const useEventTypeNotifiers = (eventTypeIds: string[]) => {
     })),
   });
 
-  const notifiersMap = new Map<string, NotifierSummary[]>();
+  const notifiersMap = new Map<string, EventTypeNotifierState>();
   queries.forEach((query, index) => {
-    if (query.data) {
-      notifiersMap.set(eventTypeIds[index], query.data);
-    }
+    notifiersMap.set(eventTypeIds[index], {
+      status: query.isError ? 'error' : query.isPending ? 'pending' : 'success',
+      notifiers: query.data ?? [],
+    });
   });
 
   const isLoading = queries.some((q) => q.isLoading);

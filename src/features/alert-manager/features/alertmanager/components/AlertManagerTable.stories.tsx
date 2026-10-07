@@ -63,9 +63,11 @@ export const Default: Story = {
     await step('Notifier labels display for event types', async () => {
       await waitFor(
         () => {
-          // Event type 1 (Policy triggered) has Email + Slack
-          expect(canvas.queryByText('Email')).toBeInTheDocument();
-          expect(canvas.queryByText('Slack')).toBeInTheDocument();
+          // Multiple event types have Email / Slack notifiers
+          const emailLabels = canvas.queryAllByText('Email');
+          expect(emailLabels.length).toBeGreaterThanOrEqual(1);
+          const slackLabels = canvas.queryAllByText('Slack');
+          expect(slackLabels.length).toBeGreaterThanOrEqual(1);
         },
         { timeout: 10000 },
       );

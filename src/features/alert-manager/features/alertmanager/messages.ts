@@ -98,6 +98,24 @@ export default defineMessages({
     defaultMessage: 'Event types pagination',
   },
 
+  // My notifiers column
+  myNotifiersColumn: {
+    id: 'alertManager.table.myNotifiersColumn',
+    description: 'My notifiers column header',
+    defaultMessage: 'My notifiers',
+  },
+  myNotifiersTooltip: {
+    id: 'alertManager.table.myNotifiersTooltip',
+    description: 'Tooltip explaining what notifiers are',
+    defaultMessage:
+      'Notifiers are the communication channels configured to alert you when events fire, such as email, Slack, or webhooks.',
+  },
+  noNotifiers: {
+    id: 'alertManager.table.noNotifiers',
+    description: 'Label shown when no notifiers are configured',
+    defaultMessage: 'No notifiers',
+  },
+
   // Table aria labels
   tableAriaLabel: {
     id: 'alertManager.table.ariaLabel',

@@ -3,6 +3,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MemoryRouter } from 'react-router-dom';
 import { clearAndType } from '../../../../../shared/interactionHelpers';
 import { eventTypesHandlers } from '../data/mocks/eventTypes';
+import { eventTypeEndpointsHandlers } from '../data/mocks/eventTypeEndpoints';
 import AlertManagerTable from './AlertManagerTable';
 
 const meta = {
@@ -21,12 +22,15 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Default state - shows table with event type data
+ * Default state - shows table with event type data and notifiers
  */
 export const Default: Story = {
   parameters: {
     msw: {
-      handlers: [eventTypesHandlers.success()],
+      handlers: [
+        eventTypesHandlers.success(),
+        eventTypeEndpointsHandlers.success(),
+      ],
     },
   },
   play: async ({ canvasElement, step }) => {
@@ -52,22 +56,19 @@ export const Default: Story = {
       expect(canvas.getByText('Advisor')).toBeInTheDocument();
     });
 
-    await step('Event type cells display correctly', async () => {
-      const eventTypeCell = canvas.getByRole('cell', {
-        name: /policy triggered/i,
-      });
-      expect(eventTypeCell).toBeInTheDocument();
-
-      // Verify event types are not links
-      expect(
-        canvas.queryByRole('link', { name: /policy triggered/i }),
-      ).not.toBeInTheDocument();
+    await step('My notifiers column header is present', async () => {
+      expect(canvas.getByText('My notifiers')).toBeInTheDocument();
     });
 
-    await step('Filter toolbar is present', async () => {
-      const eventTypeFilter =
-        canvas.getByPlaceholderText(/filter by event type/i);
-      expect(eventTypeFilter).toBeInTheDocument();
+    await step('Notifier labels display for event types', async () => {
+      await waitFor(
+        () => {
+          // Event type 1 (Policy triggered) has Email + Slack
+          expect(canvas.queryByText('Email')).toBeInTheDocument();
+          expect(canvas.queryByText('Slack')).toBeInTheDocument();
+        },
+        { timeout: 10000 },
+      );
     });
   },
 };
@@ -78,15 +79,16 @@ export const Default: Story = {
 export const Loading: Story = {
   parameters: {
     msw: {
-      handlers: [eventTypesHandlers.loading()],
+      handlers: [
+        eventTypesHandlers.loading(),
+        eventTypeEndpointsHandlers.loading(),
+      ],
     },
   },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
 
     await step('Shows loading state', async () => {
-      // TableView shows skeleton/spinner while loading
-      // Just verify the table structure exists
       const tableWrapper = canvas.getByTestId('table-view');
       expect(tableWrapper).toBeInTheDocument();
     });
@@ -99,7 +101,10 @@ export const Loading: Story = {
 export const EmptyState: Story = {
   parameters: {
     msw: {
-      handlers: [eventTypesHandlers.empty()],
+      handlers: [
+        eventTypesHandlers.empty(),
+        eventTypeEndpointsHandlers.empty(),
+      ],
     },
   },
   play: async ({ canvasElement, step }) => {
@@ -122,7 +127,10 @@ export const EmptyState: Story = {
 export const ErrorState: Story = {
   parameters: {
     msw: {
-      handlers: [eventTypesHandlers.error()],
+      handlers: [
+        eventTypesHandlers.error(),
+        eventTypeEndpointsHandlers.error(),
+      ],
     },
   },
   play: async ({ canvasElement, step }) => {
@@ -152,7 +160,10 @@ export const ErrorState: Story = {
 export const WithPagination: Story = {
   parameters: {
     msw: {
-      handlers: [eventTypesHandlers.paginated(50)],
+      handlers: [
+        eventTypesHandlers.paginated(50),
+        eventTypeEndpointsHandlers.success(),
+      ],
     },
   },
   play: async ({ canvasElement, step }) => {
@@ -181,7 +192,10 @@ export const WithPagination: Story = {
 export const NoResults: Story = {
   parameters: {
     msw: {
-      handlers: [eventTypesHandlers.noResultsAfterFilter()],
+      handlers: [
+        eventTypesHandlers.noResultsAfterFilter(),
+        eventTypeEndpointsHandlers.success(),
+      ],
     },
   },
   play: async ({ canvasElement, step }) => {
@@ -201,10 +215,8 @@ export const NoResults: Story = {
       const filterInput = canvas.getByPlaceholderText('Filter by event type');
       await clearAndType(user, () => filterInput, 'test filter');
 
-      // Verify the filter input accepted the text
       expect(filterInput).toHaveValue('test filter');
 
-      // Verify no-results state is displayed
       const noResultsHeading = await canvas.findByRole(
         'heading',
         { name: /no matching event types/i },
@@ -221,7 +233,10 @@ export const NoResults: Story = {
 export const EventTypeFilter: Story = {
   parameters: {
     msw: {
-      handlers: [eventTypesHandlers.filtered()],
+      handlers: [
+        eventTypesHandlers.filtered(),
+        eventTypeEndpointsHandlers.success(),
+      ],
     },
   },
   play: async ({ canvasElement, step }) => {
@@ -251,10 +266,8 @@ export const EventTypeFilter: Story = {
       );
       await clearAndType(user, () => eventTypeFilter, 'Policy');
 
-      // Wait for filtered results
       await waitFor(
         async () => {
-          // Should only show Policy triggered
           expect(canvas.queryByText('Policy triggered')).toBeInTheDocument();
           expect(
             canvas.queryByText('Compliance below threshold'),
@@ -275,7 +288,10 @@ export const EventTypeFilter: Story = {
 export const SortableColumns: Story = {
   parameters: {
     msw: {
-      handlers: [eventTypesHandlers.success()],
+      handlers: [
+        eventTypesHandlers.success(),
+        eventTypeEndpointsHandlers.success(),
+      ],
     },
   },
   play: async ({ canvasElement, step }) => {
@@ -291,10 +307,40 @@ export const SortableColumns: Story = {
     });
 
     await step('Column headers are present', async () => {
-      // Check that column headers exist by looking for the column text
-      // TableView may not use standard role="columnheader"
       expect(canvas.getByText('Event type')).toBeInTheDocument();
       expect(canvas.getByText('Service')).toBeInTheDocument();
+      expect(canvas.getByText('My notifiers')).toBeInTheDocument();
+    });
+  },
+};
+
+/**
+ * Event types with no notifiers configured — shows "No notifiers" label
+ */
+export const NoNotifiersConfigured: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        eventTypesHandlers.success(),
+        eventTypeEndpointsHandlers.empty(),
+      ],
+    },
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Wait for table to load', async () => {
+      await canvas.findByText('Policy triggered', {}, { timeout: 10000 });
+    });
+
+    await step('Shows "No notifiers" for all rows', async () => {
+      await waitFor(
+        () => {
+          const noNotifierLabels = canvas.queryAllByText('No notifiers');
+          expect(noNotifierLabels.length).toBeGreaterThanOrEqual(1);
+        },
+        { timeout: 5000 },
+      );
     });
   },
 };

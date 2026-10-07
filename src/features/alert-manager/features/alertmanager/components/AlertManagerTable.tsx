@@ -10,12 +10,17 @@ import {
   TableView,
   useTableState,
 } from '@redhat-cloud-services/frontend-components/TableView';
+import { Popover } from '@patternfly/react-core/dist/dynamic/components/Popover';
+import { Button } from '@patternfly/react-core/dist/dynamic/components/Button';
+import OutlinedQuestionCircleIcon from '@patternfly/react-icons/dist/js/icons/outlined-question-circle-icon';
 import { EventType } from '../types';
 import { useEventTypes } from '../data/queries/useEventTypes';
+import { useEventTypeNotifiers } from '../data/queries/useEventTypeEndpoints';
+import NotifierBadges from './NotifierBadges';
 import messages from '../messages';
 import './AlertManagerTable.scss';
 
-const columns = ['eventType', 'service'] as const;
+const columns = ['eventType', 'service', 'myNotifiers'] as const;
 type ColumnKey = (typeof columns)[number];
 
 const AlertManagerTable: React.FC = () => {
@@ -72,6 +77,15 @@ const AlertManagerTable: React.FC = () => {
   // Fetch data
   const { data, isLoading, error } = useEventTypes(apiParams);
 
+  // Extract event type IDs for notifier fetching
+  const eventTypeIds = useMemo(
+    () => (data?.data ?? []).map((et) => et.id),
+    [data?.data],
+  );
+
+  // Fetch notifiers for visible event types
+  const { notifiersMap } = useEventTypeNotifiers(eventTypeIds);
+
   // Column configuration
   const columnConfig: ColumnConfigMap<typeof columns> = {
     eventType: {
@@ -82,12 +96,33 @@ const AlertManagerTable: React.FC = () => {
       label: intl.formatMessage(messages.serviceColumn),
       sortable: true,
     },
+    myNotifiers: {
+      label: (
+        <>
+          {intl.formatMessage(messages.myNotifiersColumn)}{' '}
+          <Popover
+            bodyContent={intl.formatMessage(messages.myNotifiersTooltip)}
+          >
+            <Button
+              variant="plain"
+              aria-label={intl.formatMessage(messages.myNotifiersTooltip)}
+              style={{ padding: 0 }}
+            >
+              <OutlinedQuestionCircleIcon />
+            </Button>
+          </Popover>
+        </>
+      ) as unknown as string,
+    },
   };
 
   // Cell renderers
   const cellRenderers: CellRendererMap<typeof columns, EventType> = {
     eventType: (row) => row.display_name,
     service: (row) => row.application.display_name,
+    myNotifiers: (row) => (
+      <NotifierBadges notifiers={notifiersMap.get(row.id) ?? []} />
+    ),
   };
 
   // Filter configuration

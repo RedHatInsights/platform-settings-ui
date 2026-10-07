@@ -23,6 +23,7 @@ import CheckCircleIcon from '@patternfly/react-icons/dist/js/icons/check-circle-
 import messages from '../../messages';
 import {
   ACCOUNT_AUTHORIZATION,
+  APPLICATIONS_FIELD,
   SOURCE_TYPE_FIELD,
 } from './integrationWizardSchema';
 import type { SourceTypeName } from '../../types';
@@ -148,10 +149,17 @@ const ApplicationSwitchGroup: React.FC<UseFieldApiConfig> = (props) => {
    * resets it, and that happens through the wizard's `crossroads` rather than
    * here — re-defaulting on every render would fight the user every time they
    * switched something off.
+   *
+   * Checked against `values` (read straight off `formApi.getState()`) rather
+   * than `input.value`: remounting this step after a visit — e.g. Back from
+   * review — leaves final-form's own field subscription torn down, so
+   * `input.value` reads as `undefined` for this first render even though the
+   * form still holds the real array. Defaulting off that stale read would
+   * stomp the user's choices every time they stepped away and back.
    */
   const didDefault = React.useRef(false);
   React.useEffect(() => {
-    if (didDefault.current || Array.isArray(input.value)) {
+    if (didDefault.current || Array.isArray(values[APPLICATIONS_FIELD])) {
       return;
     }
     didDefault.current = true;

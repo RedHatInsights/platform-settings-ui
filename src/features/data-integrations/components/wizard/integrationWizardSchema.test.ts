@@ -304,10 +304,19 @@ describe('createIntegrationWizardSchema', () => {
     const subForm = configurationStep().fields[2];
 
     // Gated on the mode, so declining account authorization unregisters the
-    // fields rather than leaving a required access key blocking Next.
+    // fields rather than leaving a required access key blocking Next. Picking
+    // manual configuration also clears the credential, so it cannot linger in
+    // the review step or a retried submission.
     expect(subForm.condition).toEqual({
       when: APP_CREATION_WORKFLOW_FIELD,
       is: ACCOUNT_AUTHORIZATION,
+      else: {
+        set: {
+          [AUTH_TYPE_FIELD]: undefined,
+          [AUTH_USERNAME_FIELD]: undefined,
+          [AUTH_PASSWORD_FIELD]: undefined,
+        },
+      },
     });
 
     const [authType, accessKeyId, secret] = subForm.fields;

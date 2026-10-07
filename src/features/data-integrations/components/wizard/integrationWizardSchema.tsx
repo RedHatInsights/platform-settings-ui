@@ -487,6 +487,17 @@ function configurationStep(intl: IntlShape) {
         condition: {
           when: APP_CREATION_WORKFLOW_FIELD,
           is: ACCOUNT_AUTHORIZATION,
+          // Switching to manual configuration hides these fields but would
+          // otherwise leave their values sitting in form state — still shown
+          // on the review step and still sent in the create payload if the
+          // user switches back and forth or retries a failed submission.
+          else: {
+            set: {
+              [AUTH_TYPE_FIELD]: undefined,
+              [AUTH_USERNAME_FIELD]: undefined,
+              [AUTH_PASSWORD_FIELD]: undefined,
+            },
+          },
         },
         fields: [
           {

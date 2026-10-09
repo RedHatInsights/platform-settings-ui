@@ -15,10 +15,19 @@ export function useBundleFacets() {
   return useQuery<BundleFacet[]>({
     queryKey: bundlesKeys.facets(),
     queryFn: async () => {
-      const response = await api.notificationResourceV1GetBundleFacets({
+      const response = await api.notificationResourceV3GetBundles({
         includeApplications: false,
       });
-      return response.data as BundleFacet[];
+      const bundles = response.data as unknown as Array<{
+        id: string;
+        name: string;
+        display_name: string;
+      }>;
+
+      return bundles.map(({ display_name, ...bundle }) => ({
+        ...bundle,
+        displayName: display_name,
+      })) as BundleFacet[];
     },
     staleTime: 10 * 60 * 1000,
   });

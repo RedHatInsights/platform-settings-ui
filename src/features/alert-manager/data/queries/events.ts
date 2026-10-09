@@ -16,11 +16,11 @@ export function useEvents(params: EventLogParams = {}) {
   return useQuery<PageEventLogEntry>({
     queryKey: eventsKeys.list(params),
     queryFn: async () => {
-      const response = await api.eventResourceV1GetEvents({
+      const response = await api.eventResourceV3GetEvents({
         limit: params.limit,
         offset: params.offset,
-        startDate: params.startDate,
-        endDate: params.endDate,
+        startDateTime: params.startDate,
+        endDateTime: params.endDate,
         bundleIds: params.bundleIds,
         appIds: params.appIds,
         endpointTypes: params.endpointTypes,
@@ -33,7 +33,7 @@ export function useEvents(params: EventLogParams = {}) {
         includeDetails: params.includeDetails,
         includePayload: params.includePayload,
       });
-      return response.data as PageEventLogEntry;
+      return response.data as unknown as PageEventLogEntry;
     },
     placeholderData: keepPreviousData,
   });

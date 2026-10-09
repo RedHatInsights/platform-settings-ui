@@ -29,19 +29,19 @@ function sortEvents(
   return direction === 'desc' ? sorted.reverse() : sorted;
 }
 
-export function createEmptyEventsHandler(baseUrl = '/api/notifications/v2') {
+export function createEmptyEventsHandler(baseUrl = '/api/notifications/v3') {
   return http.get(`${baseUrl}/notifications/events`, () =>
     HttpResponse.json({ data: [], links: {}, meta: { count: 0 } }),
   );
 }
 
-export function createErrorEventsHandler(baseUrl = '/api/notifications/v2') {
+export function createErrorEventsHandler(baseUrl = '/api/notifications/v3') {
   return http.get(`${baseUrl}/notifications/events`, () =>
     HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 }),
   );
 }
 
-export function createEventsHandlers(baseUrl = '/api/notifications/v2') {
+export function createEventsHandlers(baseUrl = '/api/notifications/v3') {
   return [
     http.get(`${baseUrl}/notifications/events`, ({ request }) => {
       const url = new URL(request.url);

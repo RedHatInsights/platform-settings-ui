@@ -1,33 +1,28 @@
-import axios from 'axios';
+import { notificationResourceV3GetEventTypes } from '@redhat-cloud-services/notifications-client/v3';
+import { APIFactory } from '@redhat-cloud-services/javascript-clients-shared/utils';
+import type { AxiosInstance } from 'axios';
 import { EventTypesParams, EventTypesResponse } from '../../types';
 
-const API_BASE = '/api/notifications/v1.0';
+const API_BASE = '/api/notifications/v3';
+
+const endpoints = { notificationResourceV3GetEventTypes };
+
+export function createEventTypesApi(axios: AxiosInstance) {
+  return APIFactory(API_BASE, endpoints, { axios });
+}
 
 export const fetchEventTypes = async (
+  axios: AxiosInstance,
   params: EventTypesParams,
 ): Promise<EventTypesResponse> => {
-  const queryParams = new URLSearchParams();
+  const api = createEventTypesApi(axios);
+  const response = await api.notificationResourceV3GetEventTypes({
+    limit: params.limit,
+    offset: params.offset,
+    sortBy: params.sortBy,
+    eventTypeName: params.eventTypeName,
+    applicationIds: params.applicationIds,
+  });
 
-  if (params.limit !== undefined) {
-    queryParams.append('limit', params.limit.toString());
-  }
-  if (params.offset !== undefined) {
-    queryParams.append('offset', params.offset.toString());
-  }
-  if (params.sortBy) {
-    queryParams.append('sortBy', params.sortBy);
-  }
-  if (params.eventTypeName) {
-    queryParams.append('eventTypeName', params.eventTypeName);
-  }
-  if (params.applicationIds && params.applicationIds.length > 0) {
-    params.applicationIds.forEach((id) => {
-      queryParams.append('applicationIds', id);
-    });
-  }
-
-  const response = await axios.get<EventTypesResponse>(
-    `${API_BASE}/notifications/eventTypes?${queryParams.toString()}`,
-  );
   return response.data;
 };

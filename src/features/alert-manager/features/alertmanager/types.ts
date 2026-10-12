@@ -41,16 +41,6 @@ export interface EndpointInfo {
   enabled: boolean;
 }
 
-export interface BehaviorGroupAction {
-  endpoint: EndpointInfo;
-}
-
-export interface BehaviorGroup {
-  id: string;
-  display_name: string;
-  actions: BehaviorGroupAction[];
-}
-
 export interface NotifierSummary {
   type: EndpointType;
   subType?: string;

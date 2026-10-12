@@ -3,7 +3,7 @@ import { useAppServices } from '../../../../../../shared/ServiceContext';
 import type { NotifierSummary } from '../../types';
 import {
   extractNotifiers,
-  fetchEventTypeBehaviorGroups,
+  fetchEventTypeEndpoints,
 } from '../api/eventTypeEndpoints';
 
 const STALE_TIME = 5 * 60 * 1000;
@@ -31,8 +31,8 @@ export const useEventTypeNotifiers = (eventTypeIds: string[]) => {
     queries: eventTypeIds.map((id) => ({
       queryKey: eventTypeEndpointsQueryKey(id),
       queryFn: async (): Promise<NotifierSummary[]> => {
-        const behaviorGroups = await fetchEventTypeBehaviorGroups(axios, id);
-        return extractNotifiers(behaviorGroups);
+        const endpoints = await fetchEventTypeEndpoints(axios, id);
+        return extractNotifiers(endpoints);
       },
       staleTime: STALE_TIME,
       enabled: eventTypeIds.length > 0,

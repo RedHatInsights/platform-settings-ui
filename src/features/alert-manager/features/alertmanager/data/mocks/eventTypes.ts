@@ -172,7 +172,7 @@ export const createMockEventTypesResponse = (
 };
 
 // MSW Handler Factories
-const API_BASE = '/api/notifications/v1.0';
+const API_BASE = '/api/notifications/v3';
 
 export const eventTypesHandlers = {
   success: (mockData?: EventTypesResponse) =>

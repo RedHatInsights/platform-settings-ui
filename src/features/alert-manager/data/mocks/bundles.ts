@@ -24,10 +24,15 @@ export const seedBundles: BundleFacet[] = [
   },
 ];
 
-export function createBundlesHandlers(baseUrl = '/api/notifications/v2') {
+export function createBundlesHandlers(baseUrl = '/api/notifications/v3') {
   return [
-    http.get(`${baseUrl}/notifications/facets/bundles`, () => {
-      return HttpResponse.json(seedBundles);
+    http.get(`${baseUrl}/notifications/bundles`, () => {
+      return HttpResponse.json(
+        seedBundles.map(({ displayName, ...bundle }) => ({
+          ...bundle,
+          display_name: displayName,
+        })),
+      );
     }),
   ];
 }

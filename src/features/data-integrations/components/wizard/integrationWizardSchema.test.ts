@@ -11,6 +11,7 @@ import {
   AUTH_TYPE_FIELD,
   AUTH_USERNAME_FIELD,
   CARD_SELECT_COMPONENT,
+  MANUAL_APPLICATION_FIELD,
   MANUAL_CONFIGURATION,
   REVIEW_SUMMARY_COMPONENT,
   SOURCE_NAME_FIELD,
@@ -77,6 +78,12 @@ const applicationTypes: ApplicationType[] = [
     display_name: 'RHEL management',
     supported_source_types: ['openshift'],
   },
+  {
+    id: '3',
+    name: '/insights/platform/provisioning',
+    display_name: 'Launch images',
+    supported_source_types: ['amazon'],
+  },
 ];
 
 /** Pulls the wizard field out of the schema. */
@@ -103,8 +110,15 @@ const configurationStep = () => wizardField().fields[2];
 const authTypeStep = () => wizardField().fields[3];
 const credentialsStep = () => wizardField().fields[4];
 const appStep = () => wizardField().fields[5];
-const reviewStep = () => wizardField().fields[6];
-const resultStep = () => wizardField().fields[7];
+const manualAppStep = () => wizardField().fields[6];
+const manualAwsStep = () => wizardField().fields[7];
+const step = (id: WizardStepId) =>
+  wizardField().fields.find(({ name }: { name: string }) => name === id)!;
+const manualPolicyStep = () => step(WizardStepId.ManualAwsPolicy);
+const manualRoleStep = () => step(WizardStepId.ManualAwsRole);
+const manualArnStep = () => step(WizardStepId.ManualAwsArn);
+const reviewStep = () => step(WizardStepId.Review);
+const resultStep = () => step(WizardStepId.SubmissionResult);
 
 const stepNames = (): string[] =>
   wizardField().fields.map((step: { name: string }) => step.name);
@@ -181,6 +195,7 @@ describe('createIntegrationWizardSchema', () => {
     expect(wizard.crossroads).toEqual([
       SOURCE_TYPE_FIELD,
       APP_CREATION_WORKFLOW_FIELD,
+      MANUAL_APPLICATION_FIELD,
     ]);
   });
 
@@ -207,6 +222,13 @@ describe('createIntegrationWizardSchema', () => {
       WizardStepId.AuthTypeSelection,
       WizardStepId.AuthCredentials,
       WizardStepId.ApplicationSelection,
+      WizardStepId.ManualApplicationSelection,
+      WizardStepId.ManualAwsConfiguration,
+      WizardStepId.ManualAwsCostUsage,
+      WizardStepId.ManualAwsCostTags,
+      WizardStepId.ManualAwsPolicy,
+      WizardStepId.ManualAwsRole,
+      WizardStepId.ManualAwsArn,
       WizardStepId.Review,
       WizardStepId.SubmissionResult,
     ]);
@@ -338,18 +360,15 @@ describe('createIntegrationWizardSchema', () => {
     }
   });
 
-  it('sends both configuration modes on to the applications step', () => {
+  it('routes account authorization to switches and manual configuration to a single application', () => {
     const { when, stepMapper } = configurationStep().nextStep;
 
     expect(when).toBe(APP_CREATION_WORKFLOW_FIELD);
-    // Account authorization has just collected its credential inline, and
-    // manual configuration is the user declining to give one at all, so
-    // neither has anything left to be asked here.
     expect(stepMapper[ACCOUNT_AUTHORIZATION]).toBe(
       WizardStepId.ApplicationSelection,
     );
     expect(stepMapper[MANUAL_CONFIGURATION]).toBe(
-      WizardStepId.ApplicationSelection,
+      WizardStepId.ManualApplicationSelection,
     );
   });
 
@@ -369,22 +388,40 @@ describe('createIntegrationWizardSchema', () => {
     expect(stepNames()).not.toContain(WizardStepId.EndpointConfiguration);
   });
 
-  it('sends no credential when the user chose manual configuration', () => {
+  it('requires one manual application and offers its AWS role fields', () => {
+    expect(manualAppStep().fields[1].isRequired).toBe(true);
     expect(
-      toCreateSourceInput({
-        source_type: 'amazon',
-        source: {
-          name: 'aws-manual',
-          app_creation_workflow: MANUAL_CONFIGURATION,
-        },
-      }),
-    ).toEqual({
-      name: 'aws-manual',
-      sourceTypeName: 'amazon',
-      appCreationWorkflow: MANUAL_CONFIGURATION,
-      authentication: undefined,
-      applicationTypeIds: [],
+      manualAppStep().fields[1].options.map(
+        ({ value }: { value: string }) => value,
+      ),
+    ).toEqual(['1', '2', '3']);
+    expect(manualAwsStep().nextStep.stepMapper).toEqual({
+      '1': WizardStepId.ManualAwsCostUsage,
+      '2': WizardStepId.ManualAwsPolicy,
+      '3': WizardStepId.ManualAwsRole,
     });
+    expect(manualAwsStep().fields).toHaveLength(3);
+    expect(step(WizardStepId.ManualAwsCostUsage).nextStep).toBe(
+      WizardStepId.ManualAwsCostTags,
+    );
+    expect(step(WizardStepId.ManualAwsCostTags).nextStep).toBe(
+      WizardStepId.ManualAwsPolicy,
+    );
+    expect(manualPolicyStep().nextStep).toBe(WizardStepId.ManualAwsRole);
+    expect(manualRoleStep().nextStep).toBe(WizardStepId.ManualAwsArn);
+    expect(manualArnStep().nextStep).toBe(WizardStepId.Review);
+  });
+
+  it('labels the AWS cost application for HCS-enrolled accounts', () => {
+    const schema = createIntegrationWizardSchema({
+      sourceTypes,
+      applicationTypes,
+      hcsEnrolled: true,
+      intl,
+    });
+    expect(schema.fields[0].fields[6].fields[1].options[0].label).toBe(
+      'Hybrid Committed Spend',
+    );
   });
 
   it('submits from review, into the result step', () => {
@@ -483,6 +520,47 @@ describe('toCreateSourceInput', () => {
         password: 'secret',
       },
       applicationTypeIds: ['1'],
+      manualApplication: undefined,
+    });
+  });
+
+  it('maps manual AWS ARN and application extras to one application', () => {
+    expect(
+      toCreateSourceInput(
+        {
+          source_type: 'amazon',
+          source: {
+            name: 'aws-manual',
+            app_creation_workflow: MANUAL_CONFIGURATION,
+          },
+          application: {
+            application_type_id: '1',
+            extra: { bucket: 'cost-bucket', bucket_region: 'us-east-1' },
+          },
+          authentication: {
+            username: 'arn:aws:iam::123:role/CostManagement',
+            extra: { external_id: 'uuid' },
+          },
+        },
+        applicationTypes,
+      ),
+    ).toEqual({
+      name: 'aws-manual',
+      sourceTypeName: 'amazon',
+      appCreationWorkflow: MANUAL_CONFIGURATION,
+      authentication: {
+        authtype: 'arn',
+        username: 'arn:aws:iam::123:role/CostManagement',
+        password: undefined,
+        extra: { external_id: 'uuid' },
+      },
+      applicationTypeIds: [],
+      availabilityWaitApplicationTypeIds: ['1', '2'],
+      manualApplication: {
+        id: '1',
+        name: '/insights/platform/cost-management',
+        extra: { bucket: 'cost-bucket', bucket_region: 'us-east-1' },
+      },
     });
   });
 
@@ -566,7 +644,7 @@ describe('buildApplicationOptions', () => {
   it('maps application types to switch options', () => {
     const options = buildApplicationOptions(applicationTypes);
 
-    expect(options).toHaveLength(2);
+    expect(options).toHaveLength(3);
     expect(options[0]).toEqual({
       value: '1',
       label: 'Cost Management',
@@ -595,7 +673,7 @@ describe('buildApplicationOptions', () => {
 
     const options = buildApplicationOptions(withImageBuilder);
 
-    expect(options).toHaveLength(2);
+    expect(options).toHaveLength(3);
     expect(options.find((o) => o.label === 'Image Builder')).toBeUndefined();
   });
 });

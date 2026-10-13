@@ -18,6 +18,7 @@ let nextId = 0;
 
 /** In-memory source collection backing the MSW handlers. Reset between stories. */
 export const sourcesDb = createResettableCollection(seedSources);
+export const bulkCreateRequests: BulkCreatePayload[] = [];
 
 /**
  * The api layer sends arguments as GraphQL variables rather than interpolating
@@ -263,10 +264,21 @@ export function createBulkCreateHandler(baseUrl = SOURCES_API_BASE) {
   return [
     http.post(`${baseUrl}/bulk_create`, async ({ request }) => {
       const payload = (await request.json()) as BulkCreatePayload;
+      bulkCreateRequests.push(payload);
       const created = sourcesDb.create(buildCreatedSource(payload));
 
-      return HttpResponse.json({ sources: [created] }, { status: 201 });
+      return HttpResponse.json(
+        { sources: [created], applications: created.applications },
+        { status: 201 },
+      );
     }),
+    http.post(
+      `${baseUrl}/sources/:id/check_availability`,
+      () => new HttpResponse(null, { status: 204 }),
+    ),
+    http.get(`${baseUrl}/applications/:id`, ({ params }) =>
+      HttpResponse.json({ id: params.id, availability_status: 'available' }),
+    ),
   ];
 }
 
@@ -331,9 +343,21 @@ export function createFlakyBulkCreateHandler(
 }
 
 /** Full happy-path handler set: bulk create, GraphQL list, REST detail, catalogues. */
-export function createSourcesHandlers(baseUrl = SOURCES_API_BASE) {
+export function createSourcesHandlers(
+  baseUrl = SOURCES_API_BASE,
+  hcsEnrolled = false,
+) {
   return [
     ...createBulkCreateHandler(baseUrl),
+    http.get('/api/cost-management/v1/sources/aws-s3-regions/', () =>
+      HttpResponse.json(['us-east-1', 'us-east-2', 'us-west-2']),
+    ),
+    http.get('/api/billing/v1/authorization/hcsEnrollment', () =>
+      HttpResponse.json({ hcsDeal: hcsEnrolled }),
+    ),
+    http.get(`${baseUrl}/app_meta_data`, () =>
+      HttpResponse.json({ data: [{ payload: '012345678901' }] }),
+    ),
 
     http.post(`${baseUrl}/graphql`, async ({ request }) => {
       const { variables } = (await request.json()) as SourcesRequestBody;

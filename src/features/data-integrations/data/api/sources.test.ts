@@ -16,6 +16,16 @@ describe('createSourcesApi', () => {
     jest.resetAllMocks();
   });
 
+  it('reads HCS enrollment from billing', async () => {
+    const get = jest.fn().mockResolvedValue({ data: { hcsDeal: true } });
+    const api = createSourcesApi({ get } as unknown as AxiosInstance);
+
+    await expect(api.getHcsEnrollment()).resolves.toBe(true);
+    expect(get).toHaveBeenCalledWith(
+      '/api/billing/v1/authorization/hcsEnrollment',
+    );
+  });
+
   describe('createSource', () => {
     const input = {
       name: 'my-source',
@@ -54,7 +64,87 @@ describe('createSourcesApi', () => {
           { application_type_id: '4', source_name: 'my-source' },
         ],
       });
+      expect(post).toHaveBeenCalledWith(
+        '/api/sources/v3.1/sources/src-1/check_availability',
+      );
       expect(result).toEqual(created);
+    });
+
+    it('keeps a created source successful if the availability check fails', async () => {
+      const created = { id: 'src-1', name: 'my-source' };
+      const post = jest
+        .fn()
+        .mockResolvedValueOnce({ data: { sources: [created] } })
+        .mockRejectedValueOnce(new Error('availability failed'));
+
+      await expect(
+        createSourcesApi({ post } as unknown as AxiosInstance).createSource(
+          input,
+        ),
+      ).resolves.toEqual(created);
+    });
+
+    it('waits for cost application availability after creation', async () => {
+      jest.useFakeTimers();
+      try {
+        const created = { id: 'src-1', name: 'my-source' };
+        const post = jest
+          .fn()
+          .mockResolvedValueOnce({
+            data: {
+              sources: [created],
+              applications: [{ id: 'app-1', application_type_id: '3' }],
+            },
+          })
+          .mockResolvedValueOnce({ data: {} });
+        const get = jest
+          .fn()
+          .mockResolvedValueOnce({
+            data: { availability_status: 'in_progress' },
+          })
+          .mockResolvedValueOnce({
+            data: { availability_status: 'available' },
+          });
+        const api = createSourcesApi({ post, get } as unknown as AxiosInstance);
+
+        const result = api.createSource({
+          ...input,
+          availabilityWaitApplicationTypeIds: ['3'],
+        });
+        await jest.advanceTimersByTimeAsync(1000);
+
+        await expect(result).resolves.toEqual(created);
+        expect(get).toHaveBeenCalledTimes(2);
+        expect(get).toHaveBeenCalledWith(
+          '/api/sources/v3.1/applications/app-1',
+        );
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('checks other applications once without waiting', async () => {
+      const created = { id: 'src-1', name: 'my-source' };
+      const post = jest.fn().mockResolvedValue({
+        data: {
+          sources: [created],
+          applications: [{ id: 'app-2', application_type_id: '4' }],
+        },
+      });
+      const get = jest.fn().mockResolvedValue({
+        data: { availability_status: 'in_progress' },
+      });
+
+      await expect(
+        createSourcesApi({
+          post,
+          get,
+        } as unknown as AxiosInstance).createSource({
+          ...input,
+          availabilityWaitApplicationTypeIds: ['3'],
+        }),
+      ).resolves.toEqual(created);
+      expect(get).toHaveBeenCalledTimes(1);
     });
 
     it('sends an empty applications array when none were selected', async () => {
@@ -78,15 +168,68 @@ describe('createSourcesApi', () => {
       );
     });
 
-    it('sends no authentication when the user chose manual configuration', async () => {
+    it('binds a manual AWS role to exactly one application', async () => {
       const post = jest
         .fn()
         .mockResolvedValue({ data: { sources: [{ id: 'src-1' }] } });
 
       const api = createSourcesApi({ post } as unknown as AxiosInstance);
-      await api.createSource({ ...input, authentication: undefined });
+      await api.createSource({
+        ...input,
+        appCreationWorkflow: 'manual_configuration',
+        authentication: {
+          authtype: 'arn',
+          username: 'arn:aws:iam::123:role/CostManagement',
+          extra: { external_id: 'uuid' },
+        },
+        manualApplication: {
+          id: '1',
+          name: '/insights/platform/cost-management',
+          extra: { bucket: 'cost-bucket', bucket_region: 'us-east-1' },
+        },
+      });
 
-      expect(post.mock.calls[0][1].authentications).toEqual([]);
+      expect(post.mock.calls[0][1]).toEqual({
+        sources: [
+          {
+            name: 'my-source',
+            source_type_name: 'amazon',
+            app_creation_workflow: 'manual_configuration',
+          },
+        ],
+        endpoints: [],
+        authentications: [
+          {
+            authtype: 'arn',
+            username: 'arn:aws:iam::123:role/CostManagement',
+            extra: { external_id: 'uuid' },
+            resource_type: 'application',
+            resource_name: '/insights/platform/cost-management',
+          },
+        ],
+        applications: [
+          {
+            application_type_id: '1',
+            source_name: 'my-source',
+            extra: { bucket: 'cost-bucket', bucket_region: 'us-east-1' },
+          },
+        ],
+      });
+    });
+
+    it('rejects an incomplete manual payload before posting', async () => {
+      const post = jest.fn();
+      const api = createSourcesApi({ post } as unknown as AxiosInstance);
+
+      await expect(
+        api.createSource({
+          ...input,
+          appCreationWorkflow: 'manual_configuration',
+        }),
+      ).rejects.toThrow(
+        'Manual configuration requires an application and role ARN',
+      );
+      expect(post).not.toHaveBeenCalled();
     });
 
     it('propagates a rejection from axios', async () => {

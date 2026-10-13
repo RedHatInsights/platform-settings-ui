@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { StorybookMockProvider } from '@redhat-cloud-services/hcc-storybook-hub';
 import AddIntegrationWizard from './AddIntegrationWizard';
 import {
+  bulkCreateRequests,
   createFailingBulkCreateHandler,
   createFailingSourceTypesHandler,
   createFlakyBulkCreateHandler,
@@ -236,9 +237,9 @@ export const AmazonHappyPath: Story = {
     await step('Review shows the answers, and hides the secret', async () => {
       expect(modal.getByText('Amazon Web Services')).toBeInTheDocument();
       expect(modal.getByText('aws-production')).toBeInTheDocument();
-      // Both applications, because account authorization turned them on.
+      // All AWS applications, because account authorization turned them on.
       expect(
-        modal.getByText('Cost Management, RHEL management'),
+        modal.getByText('Cost Management, RHEL management, Launch images'),
       ).toBeInTheDocument();
       expect(modal.getByText('Account authorization')).toBeInTheDocument();
       expect(modal.getByText('Access key')).toBeInTheDocument();
@@ -323,12 +324,15 @@ export const AmazonApplicationSelection: Story = {
       }
     });
 
-    await step('AWS is offered both of its applications', async () => {
+    await step('AWS is offered its applications', async () => {
       expect(
         modal.getByRole('switch', { name: 'Cost Management' }),
       ).toBeInTheDocument();
       expect(
         modal.getByRole('switch', { name: /RHEL management/ }),
+      ).toBeInTheDocument();
+      expect(
+        modal.getByRole('switch', { name: 'Launch images' }),
       ).toBeInTheDocument();
     });
 
@@ -406,35 +410,36 @@ export const AmazonReviewBack: Story = {
       expect(modal.getByText(/^AKIA•+$/)).toBeInTheDocument();
     });
 
-    await step('Switching to manual turns the applications off', async () => {
-      // They were defaulted on by account authorization. Without the
-      // configuration mode in `crossroads` they would stay on, and the user
-      // would create the integration they just opted out of.
-      await user.click(modal.getByRole('button', { name: 'Back' }));
-      await modal.findByRole('heading', { name: 'Select applications' });
-      await user.click(modal.getByRole('button', { name: 'Back' }));
+    await step(
+      'Switching to manual asks for one application instead',
+      async () => {
+        await user.click(modal.getByRole('button', { name: 'Back' }));
+        await modal.findByRole('heading', { name: 'Select applications' });
+        await user.click(modal.getByRole('button', { name: 'Back' }));
 
-      await modal.findByRole('heading', { name: 'Select configuration' });
-      await user.click(
-        modal.getByRole('radio', { name: 'Manual configuration' }),
-      );
-      await user.click(modal.getByRole('button', { name: 'Next' }));
+        await modal.findByRole('heading', { name: 'Select configuration' });
+        await user.click(
+          modal.getByRole('radio', { name: 'Manual configuration' }),
+        );
+        await user.click(modal.getByRole('button', { name: 'Next' }));
 
-      await modal.findByRole('heading', { name: 'Select applications' });
-      for (const toggle of modal.getAllByRole('switch')) {
-        expect(toggle).not.toBeChecked();
-      }
-    });
+        await modal.findByRole('heading', { name: 'Select application' });
+        expect(modal.queryAllByRole('switch')).toHaveLength(0);
+      },
+    );
   },
 };
 
 /**
- * The manual half of the configuration choice. It hands over no credential —
- * that is what the user is declining — so the wizard goes straight on to
- * applications, and the review has no credential rows to show.
+ * Manual AWS configuration binds a role to one application.
  */
 export const AmazonManualConfiguration: Story = {
   args: { sourceType: 'amazon' },
+  parameters: {
+    featureFlags: {
+      'platform.sources.integrations.new-hccm-stg-account': true,
+    },
+  },
   play: async ({ step }) => {
     const user = userEvent.setup();
     const modal = within(document.body);
@@ -470,33 +475,79 @@ export const AmazonManualConfiguration: Story = {
       );
     });
 
-    await step('It goes straight on to applications', async () => {
+    await step('It asks for one application', async () => {
       await user.click(modal.getByRole('button', { name: 'Next' }));
 
-      await modal.findByRole('heading', { name: 'Select applications' });
+      await modal.findByRole('heading', { name: 'Select application' });
       expect(
         modal.queryByRole('heading', { name: 'Enter credentials' }),
       ).not.toBeInTheDocument();
     });
 
-    await step('Nothing is turned on for the user', async () => {
-      // The counterpart to account authorization: Red Hat has no credentials
-      // to set anything up with, so the user opts in to each one.
-      for (const toggle of modal.getAllByRole('switch')) {
-        expect(toggle).not.toBeChecked();
-      }
-
-      await user.click(modal.getByRole('switch', { name: 'Cost Management' }));
+    await step('Cost Management collects its AWS details', async () => {
+      await user.click(modal.getByRole('radio', { name: 'Cost Management' }));
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+      await modal.findByRole('heading', { name: 'Configure AWS access' });
+      await clearAndType(
+        user,
+        () => modal.getByRole('textbox', { name: 'S3 bucket name' }),
+        'my-cost-bucket',
+      );
+      await user.selectOptions(
+        modal.getByRole('combobox', { name: 'AWS region' }),
+        'us-east-1',
+      );
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+      await modal.findByRole('heading', {
+        name: 'Create cost and usage report',
+      });
+      expect(
+        modal.getByText(/Legacy CUR export named koku/),
+      ).toBeInTheDocument();
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+      await modal.findByRole('heading', {
+        name: 'Tags, aliases and organizational units',
+      });
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+      await modal.findByRole('heading', { name: 'Create IAM policy' });
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+      await modal.findByRole('heading', { name: 'Create IAM role' });
+      expect(
+        modal.getByText(
+          'Enable the external ID requirement and use this value:',
+        ),
+      ).toBeInTheDocument();
+      expect(modal.getByDisplayValue('148761653619')).toBeInTheDocument();
+      const externalId = (
+        modal.getByRole('textbox', { name: 'External ID' }) as HTMLInputElement
+      ).value;
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+      await modal.findByRole('heading', { name: 'Enter ARN' });
+      await user.click(modal.getByRole('button', { name: 'Back' }));
+      await modal.findByRole('heading', { name: 'Create IAM role' });
+      expect(modal.getByRole('textbox', { name: 'External ID' })).toHaveValue(
+        externalId,
+      );
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+      await modal.findByRole('heading', { name: 'Enter ARN' });
+      await clearAndType(
+        user,
+        () => modal.getByRole('textbox', { name: 'IAM role ARN' }),
+        'arn:aws:iam::123456789:role/CostManagement',
+      );
       await user.click(modal.getByRole('button', { name: 'Next' }));
     });
 
-    await step('Review names the mode and shows no credentials', async () => {
+    await step('Review names the mode and the IAM role', async () => {
       await modal.findByRole('heading', { name: 'Review details' });
 
       expect(modal.getByText('Manual configuration')).toBeInTheDocument();
       expect(modal.getByText('Cost Management')).toBeInTheDocument();
       expect(modal.queryByText('Access key ID')).not.toBeInTheDocument();
       expect(modal.queryByText('Secret access key')).not.toBeInTheDocument();
+      expect(
+        modal.getByText('arn:aws:iam::123456789:role/CostManagement'),
+      ).toBeInTheDocument();
     });
 
     await step('It still creates the integration', async () => {
@@ -506,7 +557,251 @@ export const AmazonManualConfiguration: Story = {
       expect(
         sourcesDb.findAll().find(({ name }) => name === 'aws-manual'),
       ).toBeDefined();
+      const request = bulkCreateRequests[bulkCreateRequests.length - 1];
+      expect(request.sources[0].name).toBe('aws-manual');
+      expect(request.authentications[0]).toEqual(
+        expect.objectContaining({
+          authtype: 'arn',
+          username: 'arn:aws:iam::123456789:role/CostManagement',
+          resource_type: 'application',
+          resource_name: '/insights/platform/cost-management',
+          extra: { external_id: expect.any(String) },
+        }),
+      );
+      expect(request.applications).toEqual([
+        expect.objectContaining({
+          application_type_id: '1',
+          extra: expect.objectContaining({
+            bucket: 'my-cost-bucket',
+            bucket_region: 'us-east-1',
+          }),
+        }),
+      ]);
     });
+  },
+};
+
+export const AmazonManualHcsEnrollment: Story = {
+  args: { sourceType: 'amazon' },
+  parameters: {
+    msw: { handlers: createSourcesHandlers(undefined, true) },
+  },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+    await modal.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Integration name' }),
+      'aws-hcs',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Select configuration' });
+    await user.click(
+      modal.getByRole('radio', { name: 'Manual configuration' }),
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Select application' });
+    await modal.findByRole('radio', { name: 'Hybrid Committed Spend' });
+    await user.click(
+      modal.getByRole('radio', { name: 'Hybrid Committed Spend' }),
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Configure AWS access' });
+    expect(
+      modal.getByText(/Create an S3 bucket for Hybrid Committed Spend/),
+    ).toBeInTheDocument();
+    expect(
+      modal.queryByRole('link', { name: 'AWS setup instructions' }),
+    ).not.toBeInTheDocument();
+  },
+};
+
+export const AmazonManualSwitchApplication: Story = {
+  args: { sourceType: 'amazon' },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await modal.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Integration name' }),
+      'aws-switch',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Select configuration' });
+    await user.click(
+      modal.getByRole('radio', { name: 'Manual configuration' }),
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Select application' });
+    await user.click(modal.getByRole('radio', { name: 'RHEL management' }));
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Configure AWS access' });
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Create IAM policy' });
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Create IAM role' });
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Enter ARN' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'IAM role ARN' }),
+      'arn:aws:iam::123456789:role/SubscriptionWatch',
+    );
+    for (const heading of [
+      'Create IAM role',
+      'Create IAM policy',
+      'Configure AWS access',
+      'Select application',
+    ]) {
+      await user.click(modal.getByRole('button', { name: 'Back' }));
+      await modal.findByRole('heading', { name: heading });
+    }
+    await modal.findByRole('heading', { name: 'Select application' });
+    await user.click(modal.getByRole('radio', { name: 'Cost Management' }));
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Configure AWS access' });
+    expect(modal.getByRole('textbox', { name: 'S3 bucket name' })).toHaveValue(
+      '',
+    );
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'S3 bucket name' }),
+      'new-bucket',
+    );
+    await user.selectOptions(
+      modal.getByRole('combobox', { name: 'AWS region' }),
+      'us-east-1',
+    );
+    for (const heading of [
+      'Create cost and usage report',
+      'Tags, aliases and organizational units',
+      'Create IAM policy',
+      'Create IAM role',
+      'Enter ARN',
+    ]) {
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+      await modal.findByRole('heading', { name: heading });
+    }
+    expect(modal.getByRole('textbox', { name: 'IAM role ARN' })).toHaveValue(
+      '',
+    );
+  },
+};
+
+export const AmazonManualRhelManagement: Story = {
+  args: { sourceType: 'amazon' },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+    await modal.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Integration name' }),
+      'aws-rhel',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Select configuration' });
+    await user.click(
+      modal.getByRole('radio', { name: 'Manual configuration' }),
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Select application' });
+    await user.click(modal.getByRole('radio', { name: 'RHEL management' }));
+    for (const heading of [
+      'Configure AWS access',
+      'Create IAM policy',
+      'Create IAM role',
+      'Enter ARN',
+    ]) {
+      await user.click(modal.getByRole('button', { name: 'Next' }));
+      await modal.findByRole('heading', { name: heading });
+    }
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'IAM role ARN' }),
+      'arn:aws:iam::123456789:role/SubscriptionWatch',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Review details' });
+    expect(modal.getByText('RHEL management IAM role')).toBeInTheDocument();
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+    await modal.findByRole('heading', { name: 'Integration added' });
+    const request = bulkCreateRequests[bulkCreateRequests.length - 1];
+    expect(request.authentications[0]).toEqual(
+      expect.objectContaining({
+        authtype: 'cloud-meter-arn',
+        resource_type: 'application',
+        resource_name: '/insights/platform/cloud-meter',
+        extra: { external_id: expect.any(String) },
+      }),
+    );
+    expect(request.applications).toEqual([
+      expect.objectContaining({ application_type_id: '2' }),
+    ]);
+  },
+};
+
+export const AmazonManualLaunchImages: Story = {
+  args: { sourceType: 'amazon' },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+    await modal.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Integration name' }),
+      'aws-launch-images',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Select configuration' });
+    await user.click(
+      modal.getByRole('radio', { name: 'Manual configuration' }),
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Select application' });
+    await user.click(modal.getByRole('radio', { name: 'Launch images' }));
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Configure AWS access' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'AWS account number' }),
+      '123456789012',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Create IAM role' });
+    expect(
+      await modal.findByRole('link', {
+        name: 'Connect AWS with CloudFormation',
+      }),
+    ).toHaveAttribute(
+      'href',
+      expect.stringContaining('ProvisioningAwsAccount=012345678901'),
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Enter ARN' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'IAM role ARN' }),
+      'arn:aws:iam::123456789012:role/RH-HCC-provisioning-role',
+    );
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Review details' });
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+    await modal.findByRole('heading', { name: 'Integration added' });
+    const request = bulkCreateRequests[bulkCreateRequests.length - 1];
+    expect(request.authentications[0]).toEqual(
+      expect.objectContaining({
+        authtype: 'provisioning-arn',
+        resource_type: 'application',
+        resource_name: '/insights/platform/provisioning',
+      }),
+    );
+    expect(request.applications).toEqual([
+      expect.objectContaining({ application_type_id: '3' }),
+    ]);
   },
 };
 

@@ -378,6 +378,200 @@ export default defineMessages({
     defaultMessage:
       'Configure and manage your integration manually if you do not wish to provide account authorization credentials. You will set up integrations the same way you do today.',
   },
+  wizardManualApplicationTitle: {
+    id: 'dataIntegrations.wizard.manual.applicationTitle',
+    defaultMessage: 'Select application',
+  },
+  wizardManualApplicationDescription: {
+    id: 'dataIntegrations.wizard.manual.applicationDescription',
+    defaultMessage:
+      'Select one application to connect to your integration. You can connect additional applications after integration creation.',
+  },
+  wizardManualApplicationLabel: {
+    id: 'dataIntegrations.wizard.manual.applicationLabel',
+    defaultMessage: 'Select an application',
+  },
+  wizardManualAwsConfigurationTitle: {
+    id: 'dataIntegrations.wizard.manual.awsConfigurationTitle',
+    defaultMessage: 'Configure AWS access',
+  },
+  wizardAwsCostUsageTitle: {
+    id: 'dataIntegrations.wizard.manual.awsCostUsageTitle',
+    defaultMessage: 'Create cost and usage report',
+  },
+  wizardAwsHcsName: {
+    id: 'dataIntegrations.wizard.manual.awsHcsName',
+    defaultMessage: 'Hybrid Committed Spend',
+  },
+  wizardAwsCostTagsTitle: {
+    id: 'dataIntegrations.wizard.manual.awsCostTagsTitle',
+    defaultMessage: 'Tags, aliases and organizational units',
+  },
+  wizardAwsCostUsageInstructions: {
+    id: 'dataIntegrations.wizard.manual.awsCostUsageInstructions',
+    defaultMessage:
+      'Choose whether to send the default AWS data export to {application} or customize it manually.',
+  },
+  wizardAwsCostExportDefault: {
+    id: 'dataIntegrations.wizard.manual.awsCostExportDefault',
+    defaultMessage:
+      'In AWS, create a Legacy CUR export named koku. Include resource IDs, enable automatic refresh, select hourly data, enable Redshift and QuickSight, disable Athena, use GZIP compression, and set the report path prefix to cost.',
+  },
+  wizardAwsCostExportCustom: {
+    id: 'dataIntegrations.wizard.manual.awsCostExportCustom',
+    defaultMessage:
+      'Skip creating the default data export. Follow the additional configuration steps for a customized export.',
+  },
+  wizardAwsCostTagsInstructions: {
+    id: 'dataIntegrations.wizard.manual.awsCostTagsInstructions',
+    defaultMessage:
+      'In AWS Billing and Cost Management, open Cost Allocation Tags and activate the tags you want {application} to import.',
+  },
+  wizardAwsPolicyTitle: {
+    id: 'dataIntegrations.wizard.manual.awsPolicyTitle',
+    defaultMessage: 'Create IAM policy',
+  },
+  wizardAwsRoleTitle: {
+    id: 'dataIntegrations.wizard.manual.awsRoleTitle',
+    defaultMessage: 'Create IAM role',
+  },
+  wizardAwsArnTitle: {
+    id: 'dataIntegrations.wizard.manual.awsArnTitle',
+    defaultMessage: 'Enter ARN',
+  },
+  wizardAwsBucket: {
+    id: 'dataIntegrations.wizard.manual.awsBucket',
+    defaultMessage: 'S3 bucket name',
+  },
+  wizardAwsBucketPattern: {
+    id: 'dataIntegrations.wizard.manual.awsBucketPattern',
+    defaultMessage:
+      'S3 bucket names must use lowercase letters, numbers, dots, and hyphens.',
+  },
+  wizardAwsRegion: {
+    id: 'dataIntegrations.wizard.manual.awsRegion',
+    defaultMessage: 'AWS region',
+  },
+  wizardAwsSelectRegion: {
+    id: 'dataIntegrations.wizard.manual.awsSelectRegion',
+    defaultMessage: 'Select a region',
+  },
+  wizardAwsExportMode: {
+    id: 'dataIntegrations.wizard.manual.awsExportMode',
+    defaultMessage: 'Cost and usage report',
+  },
+  wizardAwsDefaultExport: {
+    id: 'dataIntegrations.wizard.manual.awsDefaultExport',
+    defaultMessage: 'Send the default data export to Cost Management',
+  },
+  wizardAwsCustomExport: {
+    id: 'dataIntegrations.wizard.manual.awsCustomExport',
+    defaultMessage: 'Customize the data export manually',
+  },
+  wizardAwsMetered: {
+    id: 'dataIntegrations.wizard.manual.awsMetered',
+    defaultMessage: 'Include RHEL usage',
+  },
+  wizardAwsRegionsError: {
+    id: 'dataIntegrations.wizard.manual.awsRegionsError',
+    defaultMessage:
+      'AWS regions could not be loaded. Try closing and reopening the wizard.',
+  },
+  wizardAwsRoleArn: {
+    id: 'dataIntegrations.wizard.manual.awsRoleArn',
+    defaultMessage: 'IAM role ARN',
+  },
+  wizardAwsAccountNumber: {
+    id: 'dataIntegrations.wizard.manual.awsAccountNumber',
+    defaultMessage: 'AWS account number',
+  },
+  wizardAwsAccountInstructions: {
+    id: 'dataIntegrations.wizard.manual.awsAccountInstructions',
+    defaultMessage: 'Sign in to AWS and enter your account number below.',
+  },
+  wizardAwsPolicyInstructions: {
+    id: 'dataIntegrations.wizard.manual.awsPolicyInstructions',
+    defaultMessage: 'In AWS IAM, create a policy using this JSON:',
+  },
+  wizardAwsCreateRoleInstructions: {
+    id: 'dataIntegrations.wizard.manual.awsCreateRoleInstructions',
+    defaultMessage:
+      'Create an IAM role and attach the policy you just created.',
+  },
+  wizardAwsArnInstructions: {
+    id: 'dataIntegrations.wizard.manual.awsArnInstructions',
+    defaultMessage: 'Copy the ARN of the role you created and enter it below.',
+  },
+  wizardAwsAliases: {
+    id: 'dataIntegrations.wizard.manual.awsAliases',
+    defaultMessage: 'Include AWS account aliases',
+  },
+  wizardAwsOrgUnits: {
+    id: 'dataIntegrations.wizard.manual.awsOrgUnits',
+    defaultMessage: 'Include AWS organizational units',
+  },
+  wizardAwsProvisioningInstructions: {
+    id: 'dataIntegrations.wizard.manual.awsProvisioningInstructions',
+    defaultMessage:
+      'Create the provisioning IAM role in your AWS account, then enter its ARN below.',
+  },
+  wizardAwsProvisioningError: {
+    id: 'dataIntegrations.wizard.manual.awsProvisioningError',
+    defaultMessage:
+      'Unable to load the provisioning account. Return to this step to try again.',
+  },
+  wizardAwsConnectCloudFormation: {
+    id: 'dataIntegrations.wizard.manual.awsConnectCloudFormation',
+    defaultMessage: 'Connect AWS with CloudFormation',
+  },
+  wizardAwsCostInstructions: {
+    id: 'dataIntegrations.wizard.manual.awsCostInstructions',
+    defaultMessage:
+      'Create an S3 bucket for {application}, then follow the data export, IAM policy, and role steps.',
+  },
+  wizardAwsSetupInstructions: {
+    id: 'dataIntegrations.wizard.manual.awsSetupInstructions',
+    defaultMessage: 'AWS setup instructions',
+  },
+  wizardAwsRhelInstructions: {
+    id: 'dataIntegrations.wizard.manual.awsRhelInstructions',
+    defaultMessage:
+      'Create an IAM policy granting sts:GetCallerIdentity, then create an IAM role for RHEL management.',
+  },
+  wizardAwsTrustAccount: {
+    id: 'dataIntegrations.wizard.manual.awsTrustAccount',
+    defaultMessage:
+      'In the AWS IAM role trust settings, choose another AWS account and use this account ID:',
+  },
+  wizardAwsExternalId: {
+    id: 'dataIntegrations.wizard.manual.awsExternalId',
+    defaultMessage: 'Enable the external ID requirement and use this value:',
+  },
+  wizardAwsExternalIdLabel: {
+    id: 'dataIntegrations.wizard.manual.awsExternalIdLabel',
+    defaultMessage: 'External ID',
+  },
+  wizardAwsFinishRole: {
+    id: 'dataIntegrations.wizard.manual.awsFinishRole',
+    defaultMessage:
+      'Attach your IAM policy to the role, then copy its ARN into the field below.',
+  },
+  wizardAwsRoleArnPattern: {
+    id: 'dataIntegrations.wizard.manual.awsRoleArnPattern',
+    defaultMessage: 'ARN must start with arn:aws:',
+  },
+  wizardAwsArnAuth: {
+    id: 'dataIntegrations.wizard.manual.awsArnAuth',
+    defaultMessage: 'AWS IAM role',
+  },
+  wizardRhelArnAuth: {
+    id: 'dataIntegrations.wizard.manual.rhelArnAuth',
+    defaultMessage: 'RHEL management IAM role',
+  },
+  wizardProvisioningArnAuth: {
+    id: 'dataIntegrations.wizard.manual.provisioningArnAuth',
+    defaultMessage: 'Launch images IAM role',
+  },
   wizardConfigurationModeReviewLabel: {
     id: 'dataIntegrations.wizard.review.configurationMode',
     description: 'Review row label for the chosen configuration mode',

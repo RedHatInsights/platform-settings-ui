@@ -9,10 +9,12 @@ import {
 } from '@patternfly/react-core/dist/dynamic/components/DescriptionList';
 import messages from '../../messages';
 import { useApplicationTypes } from '../../data/queries/useApplicationTypes';
+import { useHcsEnrollment } from '../../data/queries/useHcsEnrollment';
 import {
   authTypeLabel,
   buildApplicationOptions,
   configurationModeLabel,
+  manualAwsAuthType,
   providerLabel,
 } from './integrationWizardSchema';
 import type { IntegrationWizardValues } from './integrationWizardSchema';
@@ -48,12 +50,9 @@ const ReviewSummary: React.FC = () => {
   const provider = values.source_type;
   const workflow = values.source?.app_creation_workflow;
 
-  /*
-   * Only account authorization hands over a credential, so the rows that
-   * describe one are absent for manual configuration rather than empty — a
-   * blank "Access key ID" reads like something went missing.
-   */
-  const accessKeyId = values.authentication?.username;
+  const credential = values.authentication?.username;
+  const isAccountAuthorization = workflow === 'account_authorization';
+  const { data: hcsEnrolled = false } = useHcsEnrollment(provider === 'amazon');
 
   /*
    * Already fetched and cached by the wizard host, so this resolves from cache
@@ -62,8 +61,22 @@ const ReviewSummary: React.FC = () => {
    */
   const { data: applicationTypes } = useApplicationTypes();
   const selectedApplications = buildApplicationOptions(applicationTypes ?? [])
-    .filter(({ value }) => values.applications?.includes(value))
-    .map(({ label }) => label);
+    .filter(({ value }) =>
+      isAccountAuthorization
+        ? values.applications?.includes(value)
+        : value === values.application?.application_type_id,
+    )
+    .map(({ label, name }) =>
+      hcsEnrolled && name === '/insights/platform/cost-management'
+        ? intl.formatMessage(messages.wizardAwsHcsName)
+        : label,
+    );
+  const manualAppName = applicationTypes?.find(
+    ({ id }) => id === values.application?.application_type_id,
+  )?.name;
+  const authType = isAccountAuthorization
+    ? values.authentication?.authtype
+    : manualAwsAuthType(manualAppName);
 
   return (
     /*
@@ -106,34 +119,40 @@ const ReviewSummary: React.FC = () => {
           {selectedApplications.join(', ')}
         </DescriptionListDescription>
       </DescriptionListGroup>
-      {accessKeyId && (
+      {credential && (
         <>
           <DescriptionListGroup>
             <DescriptionListTerm>
               {intl.formatMessage(messages.wizardReviewAuthType)}
             </DescriptionListTerm>
             <DescriptionListDescription>
-              {values.authentication?.authtype
-                ? authTypeLabel(values.authentication.authtype, intl)
-                : ''}
+              {authType ? authTypeLabel(authType, intl) : ''}
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
             <DescriptionListTerm>
-              {intl.formatMessage(messages.wizardAccessKeyIdLabel)}
+              {intl.formatMessage(
+                isAccountAuthorization
+                  ? messages.wizardAccessKeyIdLabel
+                  : messages.wizardAwsRoleArn,
+              )}
             </DescriptionListTerm>
             <DescriptionListDescription>
-              {maskAccessKeyId(accessKeyId)}
+              {isAccountAuthorization
+                ? maskAccessKeyId(credential)
+                : credential}
             </DescriptionListDescription>
           </DescriptionListGroup>
-          <DescriptionListGroup>
-            <DescriptionListTerm>
-              {intl.formatMessage(messages.wizardSecretAccessKeyLabel)}
-            </DescriptionListTerm>
-            <DescriptionListDescription>
-              {intl.formatMessage(messages.wizardReviewSecretMasked)}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
+          {isAccountAuthorization && (
+            <DescriptionListGroup>
+              <DescriptionListTerm>
+                {intl.formatMessage(messages.wizardSecretAccessKeyLabel)}
+              </DescriptionListTerm>
+              <DescriptionListDescription>
+                {intl.formatMessage(messages.wizardReviewSecretMasked)}
+              </DescriptionListDescription>
+            </DescriptionListGroup>
+          )}
         </>
       )}
     </DescriptionList>

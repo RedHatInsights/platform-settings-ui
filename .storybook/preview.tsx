@@ -11,6 +11,7 @@ import NotificationsProvider from '@redhat-cloud-services/frontend-components-no
 import { useAddNotification } from '@redhat-cloud-services/frontend-components-notifications/hooks';
 import {
   StorybookMockProvider,
+  FeatureFlagsProvider,
   hccPreviewDefaults,
 } from '@redhat-cloud-services/hcc-storybook-hub';
 import Axios from 'axios';
@@ -86,9 +87,11 @@ const preview: Preview = {
           <IntlProvider locale="en" defaultLocale="en">
             <NotificationsProvider>
               <ServiceProviderWithNotifications overrides={parameters.services}>
-                <QueryClientProvider client={queryClient}>
-                  <Story />
-                </QueryClientProvider>
+                <FeatureFlagsProvider value={parameters.featureFlags ?? {}}>
+                  <QueryClientProvider client={queryClient}>
+                    <Story />
+                  </QueryClientProvider>
+                </FeatureFlagsProvider>
               </ServiceProviderWithNotifications>
             </NotificationsProvider>
           </IntlProvider>

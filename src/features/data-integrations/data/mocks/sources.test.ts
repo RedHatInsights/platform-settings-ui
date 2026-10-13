@@ -103,7 +103,10 @@ describe('createSourcesHandlers', () => {
     expect(created?.source_type_id).toBe('2');
 
     expect(jsonSpy).toHaveBeenCalledWith(
-      { sources: [expect.objectContaining({ name: 'resolver-test' })] },
+      {
+        sources: [expect.objectContaining({ name: 'resolver-test' })],
+        applications: [],
+      },
       { status: 201 },
     );
   });

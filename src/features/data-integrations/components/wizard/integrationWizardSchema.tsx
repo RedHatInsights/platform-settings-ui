@@ -32,6 +32,13 @@ export enum WizardStepId {
   AuthCredentials = 'auth-credentials',
   EndpointConfiguration = 'endpoint-configuration',
   ApplicationSelection = 'application-selection',
+  ManualApplicationSelection = 'manual-application-selection',
+  ManualAwsConfiguration = 'manual-aws-configuration',
+  ManualAwsCostUsage = 'manual-aws-cost-usage',
+  ManualAwsCostTags = 'manual-aws-cost-tags',
+  ManualAwsPolicy = 'manual-aws-policy',
+  ManualAwsRole = 'manual-aws-role',
+  ManualAwsArn = 'manual-aws-arn',
   Review = 'review',
   SubmissionResult = 'submission-result',
 }
@@ -86,6 +93,11 @@ export function hasSuperKeyAuth(sourceType?: SourceType): boolean {
 export const CARD_SELECT_COMPONENT = 'card-select';
 export const REVIEW_SUMMARY_COMPONENT = 'review-summary';
 export const SUBMISSION_RESULT_COMPONENT = 'submission-result';
+export const AWS_MANUAL_INSTRUCTIONS_COMPONENT = 'aws-manual-instructions';
+export const AWS_REGION_SELECT_COMPONENT = 'aws-region-select';
+export const MANUAL_AWS_APPLICATION_SELECT_COMPONENT =
+  'manual-aws-application-select';
+export const AWS_EXTERNAL_ID_COMPONENT = 'aws-external-id';
 
 /**
  * Authentication types each provider offers, in card order.
@@ -108,6 +120,9 @@ const AUTH_TYPE_LABELS: Record<
   (typeof messages)[keyof typeof messages]
 > = {
   [ACCESS_KEY_AUTH_TYPE]: messages.wizardAuthTypeAccessKey,
+  arn: messages.wizardAwsArnAuth,
+  'cloud-meter-arn': messages.wizardRhelArnAuth,
+  'provisioning-arn': messages.wizardProvisioningArnAuth,
 };
 
 /** Translated label for a configuration mode, for the review summary. */
@@ -134,6 +149,10 @@ export const APPLICATION_SELECT_COMPONENT = 'application-switch-group';
 
 /** Field name for the selected application type ids. */
 export const APPLICATIONS_FIELD = 'applications';
+export const MANUAL_APPLICATION_FIELD = 'application.application_type_id';
+export const AWS_BUCKET_FIELD = 'application.extra.bucket';
+export const AWS_REGION_FIELD = 'application.extra.bucket_region';
+export const AWS_ARN_FIELD = AUTH_USERNAME_FIELD;
 
 /**
  * Id of the wizard's heading, and the name of the wizard field.
@@ -176,6 +195,7 @@ const OFFERED_APPLICATIONS: Record<string, SourceTypeName[]> = {
   // so it is offered to the three cloud providers and not to OpenShift. Both
   // lists are sources-ui's `supported_source_types` fixtures.
   '/insights/platform/cloud-meter': ['amazon', 'google', 'azure'],
+  '/insights/platform/provisioning': ['amazon'],
 };
 
 const PROVIDER_LABELS = {
@@ -231,6 +251,9 @@ export interface IntegrationWizardSchemaOptions {
   sourceTypes: SourceType[];
   /** The application catalogue, as returned by `useApplicationTypes()`. */
   applicationTypes: ApplicationType[];
+  awsRegions?: string[];
+  isAwsRegionsError?: boolean;
+  hcsEnrolled?: boolean;
   intl: IntlShape;
   /**
    * Provider the wizard was opened with, if any. Its only effect on the schema
@@ -291,6 +314,9 @@ export function createWizardInitialValues(
 export function createIntegrationWizardSchema({
   sourceTypes,
   applicationTypes,
+  awsRegions = [],
+  isAwsRegionsError = false,
+  hcsEnrolled = false,
   intl,
   selectedType,
 }: IntegrationWizardSchemaOptions): LegacySchemaType {
@@ -327,7 +353,11 @@ export function createIntegrationWizardSchema({
          * now so the auth and application steps reset correctly the moment
          * stories 2-4 add them, instead of shipping stale answers.
          */
-        crossroads: [SOURCE_TYPE_FIELD, APP_CREATION_WORKFLOW_FIELD],
+        crossroads: [
+          SOURCE_TYPE_FIELD,
+          APP_CREATION_WORKFLOW_FIELD,
+          MANUAL_APPLICATION_FIELD,
+        ],
         initialState: startingType
           ? {
               activeStep: WizardStepId.NameIntegration,
@@ -346,6 +376,18 @@ export function createIntegrationWizardSchema({
           authTypeSelectionStep(intl),
           authCredentialsStep(intl),
           applicationSelectionStep(applicationTypes, intl),
+          manualApplicationSelectionStep(applicationTypes, hcsEnrolled, intl),
+          manualAwsConfigurationStep(
+            applicationTypes,
+            awsRegions,
+            isAwsRegionsError,
+            intl,
+          ),
+          manualAwsCostUsageStep(intl),
+          manualAwsCostTagsStep(intl),
+          manualAwsPolicyStep(applicationTypes, intl),
+          manualAwsRoleStep(applicationTypes, intl),
+          manualAwsArnStep(applicationTypes, intl),
           reviewStep(intl),
           submissionResultStep(intl),
         ],
@@ -428,8 +470,8 @@ function stepAfterNaming(sourceTypes: SourceType[]) {
  * mode is selected; picking manual configuration unregisters them rather than
  * leaving a required access key blocking Next invisibly.
  *
- * Both modes go on to the applications step. Manual configuration collects no
- * credential — that is what the user opted out of.
+ * Manual configuration uses an application-bound role instead of an account
+ * access key.
  */
 function configurationStep(intl: IntlShape) {
   return {
@@ -437,12 +479,9 @@ function configurationStep(intl: IntlShape) {
     title: intl.formatMessage(messages.wizardConfigurationStepTitle),
     nextStep: {
       when: APP_CREATION_WORKFLOW_FIELD,
-      // Neither mode asks for anything else here: account authorization has
-      // just collected its credential, and manual configuration is the user
-      // saying they will set the integration up themselves.
       stepMapper: {
         [ACCOUNT_AUTHORIZATION]: WizardStepId.ApplicationSelection,
-        [MANUAL_CONFIGURATION]: WizardStepId.ApplicationSelection,
+        [MANUAL_CONFIGURATION]: WizardStepId.ManualApplicationSelection,
       },
     },
     fields: [
@@ -646,6 +685,336 @@ function applicationSelectionStep(
   };
 }
 
+const COST_APP = '/insights/platform/cost-management';
+const RHEL_APP = '/insights/platform/cloud-meter';
+const PROVISIONING_APP = '/insights/platform/provisioning';
+
+export function manualAwsAuthType(
+  appName?: string,
+): AuthenticationType | undefined {
+  if (appName === COST_APP) return 'arn';
+  if (appName === RHEL_APP) return 'cloud-meter-arn';
+  if (appName === PROVISIONING_APP) return 'provisioning-arn';
+  return undefined;
+}
+
+function manualApplicationSelectionStep(
+  applicationTypes: ApplicationType[],
+  hcsEnrolled: boolean,
+  intl: IntlShape,
+) {
+  return {
+    name: WizardStepId.ManualApplicationSelection,
+    title: intl.formatMessage(messages.wizardManualApplicationTitle),
+    nextStep: WizardStepId.ManualAwsConfiguration,
+    fields: [
+      {
+        component: componentTypes.PLAIN_TEXT,
+        name: 'manual-application-description',
+        label: intl.formatMessage(messages.wizardManualApplicationDescription),
+      },
+      {
+        component: MANUAL_AWS_APPLICATION_SELECT_COMPONENT,
+        name: MANUAL_APPLICATION_FIELD,
+        label: intl.formatMessage(messages.wizardManualApplicationLabel),
+        isRequired: true,
+        options: applicationTypes
+          .filter(({ name }) =>
+            [COST_APP, RHEL_APP, PROVISIONING_APP].includes(name),
+          )
+          .map(({ id, name, display_name }) => ({
+            value: id,
+            label:
+              hcsEnrolled && name === COST_APP
+                ? intl.formatMessage(messages.wizardAwsHcsName)
+                : display_name,
+          })),
+        validate: [{ type: validatorTypes.REQUIRED }],
+      },
+    ],
+  };
+}
+
+function manualAwsConfigurationStep(
+  applicationTypes: ApplicationType[],
+  awsRegions: string[],
+  isAwsRegionsError: boolean,
+  intl: IntlShape,
+) {
+  const appId = (name: string) =>
+    applicationTypes.find((app) => app.name === name)?.id;
+  const provisioningId = appId(PROVISIONING_APP);
+
+  return {
+    name: WizardStepId.ManualAwsConfiguration,
+    title: intl.formatMessage(messages.wizardManualAwsConfigurationTitle),
+    nextStep: {
+      when: MANUAL_APPLICATION_FIELD,
+      stepMapper: Object.fromEntries(
+        applicationTypes
+          .filter(({ name }) =>
+            [COST_APP, RHEL_APP, PROVISIONING_APP].includes(name),
+          )
+          .map(({ id }) => [
+            id,
+            id === provisioningId
+              ? WizardStepId.ManualAwsRole
+              : id === appId(COST_APP)
+                ? WizardStepId.ManualAwsCostUsage
+                : WizardStepId.ManualAwsPolicy,
+          ]),
+      ),
+    },
+    fields: [
+      ...([COST_APP, RHEL_APP, PROVISIONING_APP] as const).flatMap(
+        (appName) => {
+          const id = appId(appName);
+          if (!id) return [];
+          return [
+            {
+              component: componentTypes.SUB_FORM,
+              name: `manual-aws-${id}`,
+              condition: { when: MANUAL_APPLICATION_FIELD, is: id },
+              fields: [
+                {
+                  component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
+                  name: `manual-aws-instructions-${id}`,
+                  appName,
+                  applicationTypeId: id,
+                  stage: 'details',
+                },
+                ...(appName === COST_APP
+                  ? [
+                      {
+                        component: componentTypes.TEXT_FIELD,
+                        name: AWS_BUCKET_FIELD,
+                        label: intl.formatMessage(messages.wizardAwsBucket),
+                        isRequired: true,
+                        validate: [
+                          { type: validatorTypes.REQUIRED },
+                          {
+                            type: validatorTypes.PATTERN,
+                            pattern:
+                              /(?!(^((2(5[0-5]|[0-4][0-9])|[01]?[0-9]{1,2})\.){3}(2(5[0-5]|[0-4][0-9])|[01]?[0-9]{1,2})$|^xn--|-s3alias$))^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/,
+                            message: intl.formatMessage(
+                              messages.wizardAwsBucketPattern,
+                            ),
+                          },
+                        ],
+                      },
+                      {
+                        component: AWS_REGION_SELECT_COMPONENT,
+                        name: AWS_REGION_FIELD,
+                        label: intl.formatMessage(messages.wizardAwsRegion),
+                        isRequired: true,
+                        validate: [{ type: validatorTypes.REQUIRED }],
+                        options: awsRegions.map((region) => ({
+                          value: region,
+                          label: region,
+                        })),
+                      },
+                      ...(isAwsRegionsError
+                        ? [
+                            {
+                              component: componentTypes.PLAIN_TEXT,
+                              name: 'aws-region-error',
+                              label: intl.formatMessage(
+                                messages.wizardAwsRegionsError,
+                              ),
+                            },
+                          ]
+                        : []),
+                    ]
+                  : []),
+                ...(appName === PROVISIONING_APP
+                  ? [
+                      {
+                        component: componentTypes.TEXT_FIELD,
+                        name: 'meta.account',
+                        label: intl.formatMessage(
+                          messages.wizardAwsAccountNumber,
+                        ),
+                        placeholder: '123456789012',
+                        isRequired: true,
+                        validate: [{ type: validatorTypes.REQUIRED }],
+                      },
+                    ]
+                  : []),
+              ],
+            },
+          ];
+        },
+      ),
+    ],
+  };
+}
+
+function manualAwsCostUsageStep(intl: IntlShape) {
+  return {
+    name: WizardStepId.ManualAwsCostUsage,
+    title: intl.formatMessage(messages.wizardAwsCostUsageTitle),
+    nextStep: WizardStepId.ManualAwsCostTags,
+    fields: [
+      {
+        component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
+        name: 'manual-aws-cost-usage-instructions',
+        appName: COST_APP,
+        applicationTypeId: '',
+        stage: 'usage',
+      },
+      {
+        component: componentTypes.RADIO,
+        name: 'application.extra.storage_only',
+        label: intl.formatMessage(messages.wizardAwsExportMode),
+        initialValue: false,
+        initializeOnMount: true,
+        options: [
+          {
+            value: false,
+            label: intl.formatMessage(messages.wizardAwsDefaultExport),
+          },
+          {
+            value: true,
+            label: intl.formatMessage(messages.wizardAwsCustomExport),
+          },
+        ],
+      },
+      {
+        component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
+        name: 'manual-aws-cost-export-default',
+        condition: { when: 'application.extra.storage_only', is: false },
+        appName: COST_APP,
+        applicationTypeId: '',
+        stage: 'export-default',
+      },
+      {
+        component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
+        name: 'manual-aws-cost-export-custom',
+        condition: { when: 'application.extra.storage_only', is: true },
+        appName: COST_APP,
+        applicationTypeId: '',
+        stage: 'export-custom',
+      },
+    ],
+  };
+}
+
+function manualAwsCostTagsStep(intl: IntlShape) {
+  return {
+    name: WizardStepId.ManualAwsCostTags,
+    title: intl.formatMessage(messages.wizardAwsCostTagsTitle),
+    nextStep: WizardStepId.ManualAwsPolicy,
+    fields: [
+      {
+        component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
+        name: 'manual-aws-cost-tags-instructions',
+        appName: COST_APP,
+        applicationTypeId: '',
+        stage: 'tags',
+      },
+      {
+        component: componentTypes.CHECKBOX,
+        name: 'application.extra.metered',
+        label: intl.formatMessage(messages.wizardAwsMetered),
+      },
+      {
+        component: componentTypes.CHECKBOX,
+        name: 'aws.aliases.enabled',
+        label: intl.formatMessage(messages.wizardAwsAliases),
+      },
+      {
+        component: componentTypes.CHECKBOX,
+        name: 'aws.org_units.enabled',
+        label: intl.formatMessage(messages.wizardAwsOrgUnits),
+      },
+    ],
+  };
+}
+
+function manualInstructionFields(
+  applicationTypes: ApplicationType[],
+  stage: 'policy' | 'role' | 'arn',
+) {
+  return applicationTypes
+    .filter(({ name }) =>
+      (stage === 'policy'
+        ? [COST_APP, RHEL_APP]
+        : [COST_APP, RHEL_APP, PROVISIONING_APP]
+      ).includes(name),
+    )
+    .map(({ id, name }) => ({
+      component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
+      name: `manual-aws-${stage}-${id}`,
+      condition: { when: MANUAL_APPLICATION_FIELD, is: id },
+      appName: name,
+      applicationTypeId: id,
+      stage,
+    }));
+}
+
+function manualAwsPolicyStep(
+  applicationTypes: ApplicationType[],
+  intl: IntlShape,
+) {
+  return {
+    name: WizardStepId.ManualAwsPolicy,
+    title: intl.formatMessage(messages.wizardAwsPolicyTitle),
+    nextStep: WizardStepId.ManualAwsRole,
+    fields: manualInstructionFields(applicationTypes, 'policy'),
+  };
+}
+
+function manualAwsRoleStep(
+  applicationTypes: ApplicationType[],
+  intl: IntlShape,
+) {
+  return {
+    name: WizardStepId.ManualAwsRole,
+    title: intl.formatMessage(messages.wizardAwsRoleTitle),
+    nextStep: WizardStepId.ManualAwsArn,
+    fields: [
+      ...manualInstructionFields(applicationTypes, 'role'),
+      ...applicationTypes
+        .filter(({ name }) => [COST_APP, RHEL_APP].includes(name))
+        .map(({ id }) => ({
+          component: AWS_EXTERNAL_ID_COMPONENT,
+          name: 'authentication.extra.external_id',
+          condition: { when: MANUAL_APPLICATION_FIELD, is: id },
+        })),
+    ],
+  };
+}
+
+function manualAwsArnStep(
+  applicationTypes: ApplicationType[],
+  intl: IntlShape,
+) {
+  return {
+    name: WizardStepId.ManualAwsArn,
+    title: intl.formatMessage(messages.wizardAwsArnTitle),
+    nextStep: WizardStepId.Review,
+    fields: [
+      ...manualInstructionFields(applicationTypes, 'arn'),
+      {
+        component: componentTypes.TEXT_FIELD,
+        name: AWS_ARN_FIELD,
+        label: intl.formatMessage(messages.wizardAwsRoleArn),
+        placeholder: 'arn:aws:iam:123456789:role/CostManagement',
+        isRequired: true,
+        validate: [
+          { type: validatorTypes.REQUIRED },
+          {
+            type: validatorTypes.PATTERN,
+            pattern: /^arn:aws:.*/,
+            message: intl.formatMessage(messages.wizardAwsRoleArnPattern),
+          },
+          { type: validatorTypes.MIN_LENGTH, threshold: 10 },
+        ],
+      },
+    ],
+  };
+}
+
 /**
  * The authentication type step.
  *
@@ -810,7 +1179,14 @@ export interface IntegrationWizardValues {
     authtype?: AuthenticationType;
     username?: string;
     password?: string;
+    extra?: { external_id?: string };
   };
+  application?: {
+    application_type_id?: string;
+    extra?: Record<string, unknown>;
+  };
+  aws?: { aliases?: { enabled?: boolean }; org_units?: { enabled?: boolean } };
+  meta?: { account?: string };
   [APPLICATIONS_FIELD]?: string[];
 }
 
@@ -824,24 +1200,45 @@ export interface IntegrationWizardValues {
  */
 export function toCreateSourceInput(
   values: IntegrationWizardValues,
+  applicationTypes: ApplicationType[] = [],
 ): CreateSourceInput {
+  const manual = values.source?.app_creation_workflow === MANUAL_CONFIGURATION;
+  const manualApplication = applicationTypes.find(
+    ({ id }) => id === values.application?.application_type_id,
+  );
+  const manualAuthType = manualAwsAuthType(manualApplication?.name);
+  if (manual && !manualAuthType) {
+    throw new Error('Unknown manual AWS application');
+  }
   return {
     name: values.source?.name ?? '',
     sourceTypeName: values[SOURCE_TYPE_FIELD] ?? '',
     appCreationWorkflow: values.source?.app_creation_workflow,
-    /*
-     * Absent for manual configuration — the user declined to hand over
-     * credentials, so there is nothing to authenticate with. Sending the
-     * `authtype` with empty slots would create a credential that cannot work
-     * rather than no credential at all.
-     */
     authentication: values.authentication?.username
       ? {
-          authtype: values.authentication.authtype ?? ACCESS_KEY_AUTH_TYPE,
+          authtype: manual
+            ? manualAuthType!
+            : (values.authentication.authtype ?? ACCESS_KEY_AUTH_TYPE),
           username: values.authentication.username,
           password: values.authentication.password,
+          ...(manual ? { extra: values.authentication.extra } : {}),
         }
       : undefined,
-    applicationTypeIds: values[APPLICATIONS_FIELD] ?? [],
+    applicationTypeIds: manual ? [] : (values[APPLICATIONS_FIELD] ?? []),
+    ...(applicationTypes.length
+      ? {
+          availabilityWaitApplicationTypeIds: applicationTypes
+            .filter(({ name }) => [COST_APP, RHEL_APP].includes(name))
+            .map(({ id }) => id),
+        }
+      : {}),
+    manualApplication:
+      manualApplication && manual
+        ? {
+            id: manualApplication.id,
+            name: manualApplication.name,
+            extra: values.application?.extra,
+          }
+        : undefined,
   };
 }

@@ -135,10 +135,13 @@ export interface Application {
 }
 
 /**
- * Credential scheme for a provider. Only AWS Access Key is offered today;
- * each provider the wizard gains contributes its own identifiers.
+ * AWS account authorization and application-specific manual role schemes.
  */
-export type AuthenticationType = 'access_key_secret_key';
+export type AuthenticationType =
+  | 'access_key_secret_key'
+  | 'arn'
+  | 'cloud-meter-arn'
+  | 'provisioning-arn';
 
 /**
  * Which half of the "Select configuration" choice the user took.
@@ -156,15 +159,14 @@ export type AppCreationWorkflow =
  * One entry in the `authentications` array of a bulk create.
  *
  * `username` and `password` are the API's generic credential slots, not literal
- * user credentials — for AWS they carry the access key id and secret access
- * key. `resource_type`/`resource_name` are what bind the authentication to a
- * resource created in the same request, which is why the source's name has to
- * be repeated here.
+ * user credentials — for AWS they carry either an access key pair or a role
+ * ARN. `resource_type`/`resource_name` bind it to a resource in the request.
  */
 export interface SourceAuthenticationInput {
   authtype: AuthenticationType;
   username?: string;
   password?: string;
+  extra?: { external_id?: string };
   resource_type: 'source' | 'endpoint' | 'application';
   resource_name: string;
 }
@@ -188,16 +190,20 @@ export interface BulkCreatePayload {
   }>;
   endpoints: never[];
   authentications: SourceAuthenticationInput[];
-  applications: Array<{ application_type_id: string; source_name: string }>;
+  applications: Array<{
+    application_type_id: string;
+    source_name: string;
+    extra?: Record<string, unknown>;
+  }>;
 }
 
 /**
- * Response to a bulk create. Only `sources` is read — the created
- * authentication is not shown anywhere, and the other two arrays are always
- * empty for the providers offered today.
+ * Response to a bulk create. The created application ids are used for the
+ * post-create availability check; authentications are not shown anywhere.
  */
 export interface BulkCreateResponse {
   sources?: Source[];
+  applications?: SourceApplication[];
 }
 
 /**
@@ -213,13 +219,21 @@ export interface CreateSourceInput {
   sourceTypeName: string;
   /** Absent for a provider that never offered the configuration choice. */
   appCreationWorkflow?: AppCreationWorkflow;
-  /** Absent when the user chose manual configuration. */
+  /** Account credential or application-specific manual role. */
   authentication?: Omit<
     SourceAuthenticationInput,
     'resource_type' | 'resource_name'
   >;
   /** Application types to associate, by id. Empty or absent is allowed. */
   applicationTypeIds?: string[];
+  /** Cost and RHEL application ids that sources-ui waits on after creation. */
+  availabilityWaitApplicationTypeIds?: string[];
+  /** Manual configuration creates exactly one application with its own auth. */
+  manualApplication?: {
+    id: string;
+    name: string;
+    extra?: Record<string, unknown>;
+  };
 }
 
 export interface CollectionLinks {

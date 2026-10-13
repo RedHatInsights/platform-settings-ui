@@ -5,12 +5,20 @@ import type { ComponentMapper } from '@data-driven-forms/react-form-renderer/com
 import FormTemplate from '@data-driven-forms/pf4-component-mapper/form-template';
 import pf4ComponentMapper from '@data-driven-forms/pf4-component-mapper/component-mapper';
 import ApplicationSwitchGroup from './ApplicationSwitchGroup';
+import AwsManualInstructions from './AwsManualInstructions';
+import AwsRegionSelect from './AwsRegionSelect';
+import AwsExternalId from './AwsExternalId';
+import ManualAwsApplicationSelect from './ManualAwsApplicationSelect';
 import SourceTypeCardSelect from './SourceTypeCardSelect';
 import ReviewSummary from './ReviewSummary';
 import SubmissionResult from './SubmissionResult';
 import {
   APPLICATION_SELECT_COMPONENT,
+  AWS_EXTERNAL_ID_COMPONENT,
+  AWS_MANUAL_INSTRUCTIONS_COMPONENT,
+  AWS_REGION_SELECT_COMPONENT,
   CARD_SELECT_COMPONENT,
+  MANUAL_AWS_APPLICATION_SELECT_COMPONENT,
   REVIEW_SUMMARY_COMPONENT,
   SUBMISSION_RESULT_COMPONENT,
 } from './integrationWizardSchema';
@@ -24,6 +32,10 @@ import {
 export const mapperExtension = {
   [CARD_SELECT_COMPONENT]: SourceTypeCardSelect,
   [APPLICATION_SELECT_COMPONENT]: ApplicationSwitchGroup,
+  [AWS_MANUAL_INSTRUCTIONS_COMPONENT]: AwsManualInstructions,
+  [AWS_EXTERNAL_ID_COMPONENT]: AwsExternalId,
+  [AWS_REGION_SELECT_COMPONENT]: AwsRegionSelect,
+  [MANUAL_AWS_APPLICATION_SELECT_COMPONENT]: ManualAwsApplicationSelect,
   [REVIEW_SUMMARY_COMPONENT]: ReviewSummary,
   [SUBMISSION_RESULT_COMPONENT]: SubmissionResult,
 };

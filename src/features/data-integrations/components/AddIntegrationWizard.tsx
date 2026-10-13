@@ -23,6 +23,8 @@ import { WizardSubmissionContext } from './wizard/SubmissionResult';
 import { useApplicationTypes } from '../data/queries/useApplicationTypes';
 import { useSourceTypes } from '../data/queries/useSourceTypes';
 import { useCreateSource } from '../data/queries/useCreateSource';
+import { useAwsRegions } from '../data/queries/useAwsRegions';
+import { useHcsEnrollment } from '../data/queries/useHcsEnrollment';
 import messages from '../messages';
 import type { SourceTypeName } from '../types';
 
@@ -64,6 +66,12 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
     isLoading: isLoadingAppTypes,
     isError: isAppTypesError,
   } = useApplicationTypes();
+  const { data: awsRegions = [], isError: isAwsRegionsError } = useAwsRegions(
+    isOpen && (!sourceType || sourceType === 'amazon'),
+  );
+  const { data: hcsEnrolled = false } = useHcsEnrollment(
+    isOpen && (!sourceType || sourceType === 'amazon'),
+  );
 
   const isLoading = isLoadingSourceTypes || isLoadingAppTypes;
   const isError = isSourceTypesError || isAppTypesError;
@@ -106,11 +114,23 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
         ? createIntegrationWizardSchema({
             sourceTypes,
             applicationTypes,
+            awsRegions,
+            isAwsRegionsError,
+            hcsEnrolled,
             intl,
             selectedType: sourceType,
           })
         : undefined,
-    [sourceTypes, applicationTypes, hasProviders, intl, sourceType],
+    [
+      sourceTypes,
+      applicationTypes,
+      awsRegions,
+      isAwsRegionsError,
+      hcsEnrolled,
+      hasProviders,
+      intl,
+      sourceType,
+    ],
   );
 
   const initialValues = useMemo(
@@ -220,10 +240,13 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
            */
           onSubmit={(values) =>
             createSource.mutate(
-              toCreateSourceInput({
-                ...initialValues,
-                ...values,
-              } as IntegrationWizardValues),
+              toCreateSourceInput(
+                {
+                  ...initialValues,
+                  ...values,
+                } as IntegrationWizardValues,
+                applicationTypes,
+              ),
             )
           }
         />

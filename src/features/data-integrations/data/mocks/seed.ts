@@ -10,6 +10,7 @@ import type {
  */
 export const APPLICATION_TYPE_COST = '1';
 export const APPLICATION_TYPE_RHEL = '2';
+export const APPLICATION_TYPE_PROVISIONING = '3';
 
 /**
  * Red Hat services that can attach to a data source. The table's
@@ -29,7 +30,13 @@ export const seedApplicationTypes: ApplicationType[] = [
     name: '/insights/platform/cloud-meter',
     display_name: 'RHEL management',
     created_at: '2020-03-10T14:15:00Z',
-    supported_source_types: ['openshift'],
+    supported_source_types: ['amazon', 'google', 'azure'],
+  },
+  {
+    id: APPLICATION_TYPE_PROVISIONING,
+    name: '/insights/platform/provisioning',
+    display_name: 'Launch images',
+    supported_source_types: ['amazon'],
   },
 ];
 

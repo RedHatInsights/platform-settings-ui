@@ -403,6 +403,10 @@ export default defineMessages({
     id: 'dataIntegrations.wizard.manual.awsHcsName',
     defaultMessage: 'Hybrid Committed Spend',
   },
+  wizardAwsCostManagementName: {
+    id: 'dataIntegrations.wizard.manual.awsCostManagementName',
+    defaultMessage: 'Cost Management',
+  },
   wizardAwsCostTagsTitle: {
     id: 'dataIntegrations.wizard.manual.awsCostTagsTitle',
     defaultMessage: 'Tags, aliases and organizational units',

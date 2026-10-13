@@ -1,13 +1,12 @@
 import React from 'react';
 import { useIntl } from 'react-intl';
 import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
-import { useQuery } from '@tanstack/react-query';
 import { ClipboardCopy } from '@patternfly/react-core/dist/dynamic/components/ClipboardCopy';
 import { Content } from '@patternfly/react-core/dist/dynamic/components/Content';
 import { useNewHccmStgAccount } from '../../../../capabilities/useNewHccmStgAccount';
 import { useAppServices } from '../../../../shared/ServiceContext';
-import { createSourcesApi } from '../../data/api/sources';
 import { useHcsEnrollment } from '../../data/queries/useHcsEnrollment';
+import { useAwsProvisioningAccount } from '../../data/queries/useAwsProvisioningAccount';
 import messages from '../../messages';
 import type { IntegrationWizardValues } from './integrationWizardSchema';
 
@@ -32,20 +31,17 @@ const AwsManualInstructions: React.FC<{
 }> = ({ appName, applicationTypeId, stage }) => {
   const form = useFormApi();
   const intl = useIntl();
-  const { axios } = useAppServices();
+  const { environment } = useAppServices();
   const newHccmStgAccount = useNewHccmStgAccount();
   const { data: showHcs = false } = useHcsEnrollment(appName === COST_APP);
   const application = showHcs
     ? intl.formatMessage(messages.wizardAwsHcsName)
-    : 'Cost Management';
+    : intl.formatMessage(messages.wizardAwsCostManagementName);
   const values = form.getState().values as IntegrationWizardValues;
-  const provisioning = useQuery({
-    queryKey: ['aws-provisioning-account', applicationTypeId],
-    queryFn: () =>
-      createSourcesApi(axios).getAwsProvisioningAccount(applicationTypeId),
-    enabled: appName === PROVISIONING_APP && stage === 'role',
-    staleTime: 60 * 60 * 1000,
-  });
+  const provisioning = useAwsProvisioningAccount(
+    applicationTypeId,
+    appName === PROVISIONING_APP && stage === 'role',
+  );
 
   if (stage === 'details') {
     return (
@@ -185,7 +181,7 @@ const AwsManualInstructions: React.FC<{
   const trustAccountId =
     appName === RHEL_APP
       ? '998366406740'
-      : newHccmStgAccount
+      : newHccmStgAccount && environment === 'stage'
         ? '148761653619'
         : '589173575009';
 

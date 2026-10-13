@@ -999,7 +999,7 @@ function manualAwsArnStep(
         component: componentTypes.TEXT_FIELD,
         name: AWS_ARN_FIELD,
         label: intl.formatMessage(messages.wizardAwsRoleArn),
-        placeholder: 'arn:aws:iam:123456789:role/CostManagement',
+        placeholder: 'arn:aws:iam::123456789012:role/CostManagement',
         isRequired: true,
         validate: [
           { type: validatorTypes.REQUIRED },

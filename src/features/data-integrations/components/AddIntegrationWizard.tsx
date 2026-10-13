@@ -28,6 +28,8 @@ import { useHcsEnrollment } from '../data/queries/useHcsEnrollment';
 import messages from '../messages';
 import type { SourceTypeName } from '../types';
 
+const EMPTY_AWS_REGIONS: string[] = [];
+
 export interface AddIntegrationWizardProps {
   isOpen: boolean;
   /**
@@ -66,9 +68,8 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
     isLoading: isLoadingAppTypes,
     isError: isAppTypesError,
   } = useApplicationTypes();
-  const { data: awsRegions = [], isError: isAwsRegionsError } = useAwsRegions(
-    isOpen && (!sourceType || sourceType === 'amazon'),
-  );
+  const { data: awsRegions = EMPTY_AWS_REGIONS, isError: isAwsRegionsError } =
+    useAwsRegions(isOpen && (!sourceType || sourceType === 'amazon'));
   const { data: hcsEnrolled = false } = useHcsEnrollment(
     isOpen && (!sourceType || sourceType === 'amazon'),
   );

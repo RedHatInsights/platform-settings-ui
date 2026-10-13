@@ -13,7 +13,6 @@ export { SourceNotFoundError } from './data/errors';
 export type {
   Application,
   ApplicationType,
-  CreateApplicationInput,
   CreateSourceInput,
   PageSource,
   PageSourceType,

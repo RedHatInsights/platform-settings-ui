@@ -1,8 +1,6 @@
 import {
   type ListApplicationTypesReturnType,
   type ListSourceTypesReturnType,
-  createApplication,
-  createSource,
   listApplicationTypes,
   listSourceTypes,
   postGraphQL,
@@ -11,9 +9,9 @@ import {
 import { APIFactory } from '@redhat-cloud-services/javascript-clients-shared/utils';
 import type { AxiosInstance } from 'axios';
 import type {
-  Application,
   ApplicationType,
-  CreateApplicationInput,
+  BulkCreatePayload,
+  BulkCreateResponse,
   CreateSourceInput,
   PageSource,
   Source,
@@ -34,10 +32,37 @@ const SOURCES_API_BASE = '/api/sources/v3.1';
  */
 const SOURCE_TYPES_LIMIT = 100;
 const APPLICATION_TYPES_LIMIT = 100;
+const AVAILABILITY_WAIT_MS = 10_000;
+const AVAILABILITY_POLL_MS = 1_000;
+
+async function checkApplicationAvailability(
+  axios: AxiosInstance,
+  id: string,
+  wait: boolean,
+): Promise<void> {
+  const deadline = Date.now() + (wait ? AVAILABILITY_WAIT_MS : 0);
+
+  try {
+    while (true) {
+      const { data } = await axios.get<{ availability_status?: string }>(
+        `${SOURCES_API_BASE}/applications/${id}`,
+      );
+      if (
+        !wait ||
+        data.availability_status === 'available' ||
+        data.availability_status === 'unavailable' ||
+        Date.now() >= deadline
+      ) {
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, AVAILABILITY_POLL_MS));
+    }
+  } catch {
+    // Creation succeeded; a failed status read must not invite a duplicate retry.
+  }
+}
 
 const endpoints = {
-  createApplication,
-  createSource,
   listApplicationTypes,
   listSourceTypes,
   postGraphQL,
@@ -252,6 +277,94 @@ export function createSourcesApi(axios: AxiosInstance) {
       return sources[0];
     },
 
+    /**
+     * Creates a source, its authentication and its applications in one
+     * transaction.
+     *
+     * Goes over raw axios rather than `api`: the generated client ships
+     * `CreateSource`, `CreateAuthentication` and friends but no `BulkCreate`,
+     * and doing it as two calls can leave a credential-less source behind when
+     * the second fails — which is why sources-ui posts `/bulk_create` too.
+     *
+     * The provider goes in as `source_type_name`; the API resolves it, so the
+     * caller does not need the catalogue loaded to submit.
+     */
+    async createSource(input: CreateSourceInput): Promise<Source> {
+      const manual = input.appCreationWorkflow === 'manual_configuration';
+      const manualApplication = input.manualApplication;
+
+      if (manual && (!manualApplication || !input.authentication?.username)) {
+        throw new Error(
+          'Manual configuration requires an application and role ARN',
+        );
+      }
+
+      const payload: BulkCreatePayload = {
+        sources: [
+          {
+            name: input.name,
+            source_type_name: input.sourceTypeName,
+            app_creation_workflow: input.appCreationWorkflow,
+          },
+        ],
+        endpoints: [],
+        authentications: input.authentication
+          ? [
+              {
+                ...input.authentication,
+                resource_type: manual ? 'application' : 'source',
+                resource_name: manual ? manualApplication!.name : input.name,
+              },
+            ]
+          : [],
+        applications: manual
+          ? [
+              {
+                application_type_id: manualApplication!.id,
+                source_name: input.name,
+                extra: manualApplication!.extra,
+              },
+            ]
+          : (input.applicationTypeIds ?? []).map((application_type_id) => ({
+              application_type_id,
+              source_name: input.name,
+            })),
+      };
+
+      const response = await axios.post<BulkCreateResponse>(
+        `${SOURCES_API_BASE}/bulk_create`,
+        payload,
+      );
+
+      const created = response.data?.sources?.[0];
+
+      if (!created) {
+        throw new Error('Sources bulk create returned no source');
+      }
+
+      try {
+        await axios.post(
+          `${SOURCES_API_BASE}/sources/${created.id}/check_availability`,
+        );
+      } catch {
+        // Creation succeeded; a failed status check must not invite a duplicate retry.
+      }
+
+      await Promise.all(
+        (response.data?.applications ?? []).map((application) =>
+          checkApplicationAvailability(
+            axios,
+            application.id,
+            input.availabilityWaitApplicationTypeIds?.includes(
+              application.application_type_id,
+            ) ?? false,
+          ),
+        ),
+      );
+
+      return created;
+    },
+
     async getSourceTypes(): Promise<SourceType[]> {
       const response = await api.listSourceTypes({ limit: SOURCE_TYPES_LIMIT });
       const collection: ListSourceTypesReturnType = response.data;
@@ -268,20 +381,29 @@ export function createSourcesApi(axios: AxiosInstance) {
       return (collection.data ?? []) as ApplicationType[];
     },
 
-    /** Creates a new source via `POST /sources`. */
-    async createSource(input: CreateSourceInput): Promise<Source> {
-      const response = await api.createSource({ source: input });
-
-      return response.data as Source;
+    async getAwsRegions(): Promise<string[]> {
+      const response = await axios.get<string[]>(
+        '/api/cost-management/v1/sources/aws-s3-regions/?limit=10000&offset=0',
+      );
+      return response.data;
     },
 
-    /** Associates an application type with a source via `POST /applications`. */
-    async createApplication(
-      input: CreateApplicationInput,
-    ): Promise<Application> {
-      const response = await api.createApplication({ application: input });
+    async getHcsEnrollment(): Promise<boolean> {
+      const response = await axios.get<{ hcsDeal: boolean }>(
+        '/api/billing/v1/authorization/hcsEnrollment',
+      );
+      return response.data.hcsDeal;
+    },
 
-      return response.data as Application;
+    async getAwsProvisioningAccount(
+      applicationTypeId: string,
+    ): Promise<string> {
+      const response = await axios.get<{ data: Array<{ payload: string }> }>(
+        `${SOURCES_API_BASE}/app_meta_data?filter[name]=aws_wizard_account_number&application_type_id=${encodeURIComponent(applicationTypeId)}`,
+      );
+      const account = response.data.data?.[0]?.payload;
+      if (!account) throw new Error('AWS provisioning account is unavailable');
+      return account;
     },
   };
 }

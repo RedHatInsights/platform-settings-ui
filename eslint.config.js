@@ -56,6 +56,20 @@ module.exports = defineConfig(
     },
   },
   {
+    files: ['src/capabilities/**/*.ts', 'src/capabilities/**/*.tsx'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths:
+            governancePlugin.configs.recommended.restrictedImportPaths.filter(
+              (p) => p.name !== '@unleash/proxy-client-react',
+            ),
+        },
+      ],
+    },
+  },
+  {
     files: ['src/App.tsx'],
     rules: {
       'no-restricted-imports': [

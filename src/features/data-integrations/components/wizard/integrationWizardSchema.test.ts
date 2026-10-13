@@ -2,10 +2,18 @@ import type { IntlShape, MessageDescriptor } from 'react-intl';
 import componentTypes from '@data-driven-forms/react-form-renderer/component-types';
 import validatorTypes from '@data-driven-forms/react-form-renderer/validator-types';
 import {
+  ACCESS_KEY_AUTH_TYPE,
+  ACCOUNT_AUTHORIZATION,
   APPLICATIONS_FIELD,
   APPLICATION_SELECT_COMPONENT,
+  APP_CREATION_WORKFLOW_FIELD,
+  AUTH_PASSWORD_FIELD,
+  AUTH_TYPE_FIELD,
+  AUTH_USERNAME_FIELD,
   CARD_SELECT_COMPONENT,
-  REVIEW_STEP_COMPONENT,
+  MANUAL_APPLICATION_FIELD,
+  MANUAL_CONFIGURATION,
+  REVIEW_SUMMARY_COMPONENT,
   SOURCE_NAME_FIELD,
   SOURCE_TYPE_FIELD,
   WizardStepId,
@@ -14,7 +22,7 @@ import {
   createIntegrationWizardSchema,
   createWizardInitialValues,
   resolveSelectedType,
-  validateArrayNotEmpty,
+  toCreateSourceInput,
 } from './integrationWizardSchema';
 import type {
   ApplicationType,
@@ -42,7 +50,17 @@ const intl = {
 
 const sourceTypes: SourceType[] = [
   { id: '1', name: 'openshift', product_name: 'OpenShift Container Platform' },
-  { id: '2', name: 'amazon', product_name: 'Amazon Web Services' },
+  {
+    id: '2',
+    name: 'amazon',
+    product_name: 'Amazon Web Services',
+    schema: {
+      authentication: [
+        { type: 'access_key_secret_key', is_superkey: true },
+        { type: 'arn' },
+      ],
+    },
+  },
   { id: '3', name: 'google', product_name: 'Google Cloud Platform' },
   { id: '4', name: 'azure', product_name: 'Microsoft Azure' },
 ];
@@ -59,6 +77,12 @@ const applicationTypes: ApplicationType[] = [
     name: '/insights/platform/cloud-meter',
     display_name: 'RHEL management',
     supported_source_types: ['openshift'],
+  },
+  {
+    id: '3',
+    name: '/insights/platform/provisioning',
+    display_name: 'Launch images',
+    supported_source_types: ['amazon'],
   },
 ];
 
@@ -82,13 +106,22 @@ const firstStep = (types: SourceType[] = sourceTypes) =>
 const nameStep = (types: SourceType[] = sourceTypes) =>
   wizardField(types).fields[1];
 
-/** Pulls the application selection step out of the schema. */
-const appStep = (types: SourceType[] = sourceTypes) =>
-  wizardField(types).fields[2];
+const configurationStep = () => wizardField().fields[2];
+const authTypeStep = () => wizardField().fields[3];
+const credentialsStep = () => wizardField().fields[4];
+const appStep = () => wizardField().fields[5];
+const manualAppStep = () => wizardField().fields[6];
+const manualAwsStep = () => wizardField().fields[7];
+const step = (id: WizardStepId) =>
+  wizardField().fields.find(({ name }: { name: string }) => name === id)!;
+const manualPolicyStep = () => step(WizardStepId.ManualAwsPolicy);
+const manualRoleStep = () => step(WizardStepId.ManualAwsRole);
+const manualArnStep = () => step(WizardStepId.ManualAwsArn);
+const reviewStep = () => step(WizardStepId.Review);
+const resultStep = () => step(WizardStepId.SubmissionResult);
 
-/** Pulls the review step out of the schema. */
-const revStep = (types: SourceType[] = sourceTypes) =>
-  wizardField(types).fields[3];
+const stepNames = (): string[] =>
+  wizardField().fields.map((step: { name: string }) => step.name);
 
 describe('buildSourceTypeOptions', () => {
   it('lists the offered providers in dropdown order', () => {
@@ -159,7 +192,11 @@ describe('createIntegrationWizardSchema', () => {
       intl,
     }).fields;
 
-    expect(wizard.crossroads).toEqual([SOURCE_TYPE_FIELD]);
+    expect(wizard.crossroads).toEqual([
+      SOURCE_TYPE_FIELD,
+      APP_CREATION_WORKFLOW_FIELD,
+      MANUAL_APPLICATION_FIELD,
+    ]);
   });
 
   it('translates every button label', () => {
@@ -177,23 +214,221 @@ describe('createIntegrationWizardSchema', () => {
     });
   });
 
-  it('implements all four steps in order', () => {
-    expect(
-      wizardField().fields.map((step: { name: string }) => step.name),
-    ).toEqual([
+  it('declares the steps in order', () => {
+    expect(stepNames()).toEqual([
       WizardStepId.SourceTypeSelection,
       WizardStepId.NameIntegration,
+      WizardStepId.Configuration,
+      WizardStepId.AuthTypeSelection,
+      WizardStepId.AuthCredentials,
       WizardStepId.ApplicationSelection,
+      WizardStepId.ManualApplicationSelection,
+      WizardStepId.ManualAwsConfiguration,
+      WizardStepId.ManualAwsCostUsage,
+      WizardStepId.ManualAwsCostTags,
+      WizardStepId.ManualAwsPolicy,
+      WizardStepId.ManualAwsRole,
+      WizardStepId.ManualAwsArn,
       WizardStepId.Review,
+      WizardStepId.SubmissionResult,
     ]);
   });
 
-  it('chains steps: source type -> naming -> app selection -> review', () => {
+  it('chains steps: source type -> naming -> configuration -> apps -> review', () => {
     expect(firstStep().nextStep).toBe(WizardStepId.NameIntegration);
-    expect(nameStep().nextStep).toBe(WizardStepId.ApplicationSelection);
+    expect(credentialsStep().nextStep).toBe(WizardStepId.ApplicationSelection);
     expect(appStep().nextStep).toBe(WizardStepId.Review);
-    // Review is the last step, making its primary button submit.
-    expect(revStep().nextStep).toBeUndefined();
+  });
+
+  /**
+   * The crash this guards against: `selectNext` returns `undefined` for a
+   * value the mapper has no key for, but `nextStep` itself is still truthy, so
+   * the footer still offers Next and navigates to a step that does not exist.
+   * Asserting it over the whole schema catches it for providers added later
+   * too, which is the only reason this is worth a test of its own.
+   */
+  it('routes every step to one that exists', () => {
+    const names = stepNames();
+
+    for (const step of wizardField().fields) {
+      const { nextStep } = step;
+
+      if (typeof nextStep === 'string') {
+        expect(names).toContain(nextStep);
+      } else if (nextStep) {
+        for (const target of Object.values(nextStep.stepMapper)) {
+          expect(names).toContain(target);
+        }
+      }
+    }
+  });
+
+  it('routes every provider somewhere after naming', () => {
+    const { when, stepMapper } = nameStep().nextStep;
+
+    expect(when).toBe(SOURCE_TYPE_FIELD);
+    expect(Object.keys(stepMapper).sort()).toEqual(
+      sourceTypes.map(({ name }) => name).sort(),
+    );
+  });
+
+  it('offers the configuration choice only where Red Hat can manage credentials', () => {
+    // AWS marks `access_key_secret_key` as its superkey; nothing else in the
+    // catalogue does, so nothing else is asked the question.
+    expect(nameStep().nextStep.stepMapper.amazon).toBe(
+      WizardStepId.Configuration,
+    );
+    expect(nameStep().nextStep.stepMapper.google).toBe(
+      WizardStepId.AuthTypeSelection,
+    );
+  });
+
+  it('falls back to the old routing when the catalogue has no superkey', () => {
+    // The gate is backend data, not a provider list: AWS without the flag is
+    // routed like any other single-auth-type provider.
+    const withoutSuperKey = sourceTypes.map((type) =>
+      type.name === 'amazon' ? { ...type, schema: undefined } : type,
+    );
+
+    expect(nameStep(withoutSuperKey).nextStep.stepMapper.amazon).toBe(
+      WizardStepId.AuthCredentials,
+    );
+  });
+
+  it('holds unsupported providers on the authentication step', () => {
+    // No options plus a required validator is what keeps the primary button
+    // disabled, which is what makes the unmapped `nextStep` above unreachable.
+    const authField = authTypeStep().fields[1];
+
+    expect(authField.name).toBe(AUTH_TYPE_FIELD);
+    expect(authField.options).toEqual([]);
+    expect(authField.validate).toEqual([
+      {
+        type: validatorTypes.REQUIRED,
+        message: 'Select an authentication type to continue.',
+      },
+    ]);
+  });
+
+  it('offers both configuration modes, account authorization first', () => {
+    const [, accountAuth, , manual] = configurationStep().fields;
+
+    // Two radios sharing one field name, which is what lets the
+    // account-authorization half own the credential sub-form between them.
+    expect(accountAuth.name).toBe(APP_CREATION_WORKFLOW_FIELD);
+    expect(manual.name).toBe(APP_CREATION_WORKFLOW_FIELD);
+    expect(accountAuth.options[0].value).toBe(ACCOUNT_AUTHORIZATION);
+    expect(manual.options[0].value).toBe(MANUAL_CONFIGURATION);
+    expect(accountAuth.isRequired).toBe(true);
+  });
+
+  it('collects the access key inside the configuration step', () => {
+    const subForm = configurationStep().fields[2];
+
+    // Gated on the mode, so declining account authorization unregisters the
+    // fields rather than leaving a required access key blocking Next. Picking
+    // manual configuration also clears the credential, so it cannot linger in
+    // the review step or a retried submission.
+    expect(subForm.condition).toEqual({
+      when: APP_CREATION_WORKFLOW_FIELD,
+      is: ACCOUNT_AUTHORIZATION,
+      else: {
+        set: {
+          [AUTH_TYPE_FIELD]: undefined,
+          [AUTH_USERNAME_FIELD]: undefined,
+          [AUTH_PASSWORD_FIELD]: undefined,
+        },
+      },
+    });
+
+    const [authType, accessKeyId, secret] = subForm.fields;
+
+    expect(authType.name).toBe(AUTH_TYPE_FIELD);
+    expect(authType.hideField).toBe(true);
+    expect(authType.initialValue).toBe(ACCESS_KEY_AUTH_TYPE);
+    expect(authType.initializeOnMount).toBe(true);
+
+    expect(accessKeyId.name).toBe(AUTH_USERNAME_FIELD);
+    expect(secret.name).toBe(AUTH_PASSWORD_FIELD);
+    expect(secret.type).toBe('password');
+
+    // REQUIRED only: a format check that rejects a key AWS accepts is worse
+    // than letting the API answer. sources-ui has none either.
+    for (const field of [accessKeyId, secret]) {
+      expect(field.validate).toHaveLength(1);
+      expect(field.validate[0].type).toBe(validatorTypes.REQUIRED);
+    }
+  });
+
+  it('routes account authorization to switches and manual configuration to a single application', () => {
+    const { when, stepMapper } = configurationStep().nextStep;
+
+    expect(when).toBe(APP_CREATION_WORKFLOW_FIELD);
+    expect(stepMapper[ACCOUNT_AUTHORIZATION]).toBe(
+      WizardStepId.ApplicationSelection,
+    );
+    expect(stepMapper[MANUAL_CONFIGURATION]).toBe(
+      WizardStepId.ManualApplicationSelection,
+    );
+  });
+
+  it('leaves the generic credentials step unreachable, but intact', () => {
+    // Nothing routes here while AWS is the only provider with credentials,
+    // and it collects them in the configuration step. It stays as the target
+    // `stepAfterNaming` falls back to.
+    const [, authType, accessKeyId, secret] = credentialsStep().fields;
+
+    expect(authType.initialValue).toBe(ACCESS_KEY_AUTH_TYPE);
+    expect(accessKeyId.name).toBe(AUTH_USERNAME_FIELD);
+    expect(secret.name).toBe(AUTH_PASSWORD_FIELD);
+    expect(secret.type).toBe('password');
+
+    // No endpoint or SSL configuration: `amazon.endpoint` is empty in
+    // sources-ui, so AWS has nothing to configure there.
+    expect(stepNames()).not.toContain(WizardStepId.EndpointConfiguration);
+  });
+
+  it('requires one manual application and offers its AWS role fields', () => {
+    expect(manualAppStep().fields[1].isRequired).toBe(true);
+    expect(
+      manualAppStep().fields[1].options.map(
+        ({ value }: { value: string }) => value,
+      ),
+    ).toEqual(['1', '2', '3']);
+    expect(manualAwsStep().nextStep.stepMapper).toEqual({
+      '1': WizardStepId.ManualAwsCostUsage,
+      '2': WizardStepId.ManualAwsPolicy,
+      '3': WizardStepId.ManualAwsRole,
+    });
+    expect(manualAwsStep().fields).toHaveLength(3);
+    expect(step(WizardStepId.ManualAwsCostUsage).nextStep).toBe(
+      WizardStepId.ManualAwsCostTags,
+    );
+    expect(step(WizardStepId.ManualAwsCostTags).nextStep).toBe(
+      WizardStepId.ManualAwsPolicy,
+    );
+    expect(manualPolicyStep().nextStep).toBe(WizardStepId.ManualAwsRole);
+    expect(manualRoleStep().nextStep).toBe(WizardStepId.ManualAwsArn);
+    expect(manualArnStep().nextStep).toBe(WizardStepId.Review);
+  });
+
+  it('labels the AWS cost application for HCS-enrolled accounts', () => {
+    const schema = createIntegrationWizardSchema({
+      sourceTypes,
+      applicationTypes,
+      hcsEnrolled: true,
+      intl,
+    });
+    expect(schema.fields[0].fields[6].fields[1].options[0].label).toBe(
+      'Hybrid Committed Spend',
+    );
+  });
+
+  it('submits from review, into the result step', () => {
+    expect(reviewStep().nextStep).toBe(WizardStepId.SubmissionResult);
+    // This flag is what turns review's primary button into the submit button.
+    expect(resultStep().isProgressAfterSubmissionStep).toBe(true);
+    expect(resultStep().nextStep).toBeUndefined();
   });
 
   it('starts on naming when the provider is already chosen', () => {
@@ -259,6 +494,86 @@ describe('createIntegrationWizardSchema', () => {
   });
 });
 
+describe('toCreateSourceInput', () => {
+  it('flattens the form values onto the create payload', () => {
+    expect(
+      toCreateSourceInput({
+        source_type: 'amazon',
+        source: {
+          name: 'My AWS integration',
+          app_creation_workflow: ACCOUNT_AUTHORIZATION,
+        },
+        authentication: {
+          authtype: ACCESS_KEY_AUTH_TYPE,
+          username: 'AKIAIOSFODNN7EXAMPLE',
+          password: 'secret',
+        },
+        applications: ['1'],
+      }),
+    ).toEqual({
+      name: 'My AWS integration',
+      sourceTypeName: 'amazon',
+      appCreationWorkflow: ACCOUNT_AUTHORIZATION,
+      authentication: {
+        authtype: ACCESS_KEY_AUTH_TYPE,
+        username: 'AKIAIOSFODNN7EXAMPLE',
+        password: 'secret',
+      },
+      applicationTypeIds: ['1'],
+      manualApplication: undefined,
+    });
+  });
+
+  it('maps manual AWS ARN and application extras to one application', () => {
+    expect(
+      toCreateSourceInput(
+        {
+          source_type: 'amazon',
+          source: {
+            name: 'aws-manual',
+            app_creation_workflow: MANUAL_CONFIGURATION,
+          },
+          application: {
+            application_type_id: '1',
+            extra: { bucket: 'cost-bucket', bucket_region: 'us-east-1' },
+          },
+          authentication: {
+            username: 'arn:aws:iam::123:role/CostManagement',
+            extra: { external_id: 'uuid' },
+          },
+        },
+        applicationTypes,
+      ),
+    ).toEqual({
+      name: 'aws-manual',
+      sourceTypeName: 'amazon',
+      appCreationWorkflow: MANUAL_CONFIGURATION,
+      authentication: {
+        authtype: 'arn',
+        username: 'arn:aws:iam::123:role/CostManagement',
+        password: undefined,
+        extra: { external_id: 'uuid' },
+      },
+      applicationTypeIds: [],
+      availabilityWaitApplicationTypeIds: ['1', '2'],
+      manualApplication: {
+        id: '1',
+        name: '/insights/platform/cost-management',
+        extra: { bucket: 'cost-bucket', bucket_region: 'us-east-1' },
+      },
+    });
+  });
+
+  it('sends no applications when none were selected', () => {
+    expect(
+      toCreateSourceInput({
+        source_type: 'amazon',
+        source: { name: 'My AWS integration' },
+      }).applicationTypeIds,
+    ).toEqual([]);
+  });
+});
+
 describe('resolveSelectedType', () => {
   it('keeps a provider the catalogue offers', () => {
     expect(resolveSelectedType(sourceTypes, 'azure')).toBe('azure');
@@ -301,36 +616,48 @@ describe('createWizardInitialValues', () => {
 });
 
 describe('application selection step', () => {
-  it('renders as a required application-checkbox-select', () => {
-    const checkboxField = appStep().fields[1];
+  it('renders as an application switch group, required of nothing', () => {
+    const switchField = appStep().fields[1];
 
-    expect(checkboxField.component).toBe(APPLICATION_SELECT_COMPONENT);
-    expect(checkboxField.name).toBe(APPLICATIONS_FIELD);
-    expect(checkboxField.isRequired).toBe(true);
+    expect(switchField.component).toBe(APPLICATION_SELECT_COMPONENT);
+    expect(switchField.name).toBe(APPLICATIONS_FIELD);
+    // An integration with no applications is a valid thing to create, and
+    // the step says they can be turned on later.
+    expect(switchField.isRequired).toBeUndefined();
+    expect(switchField.validate).toBeUndefined();
   });
 
   it('provides an option per application type', () => {
-    const checkboxField = appStep().fields[1];
+    const switchField = appStep().fields[1];
 
-    expect(checkboxField.options).toHaveLength(applicationTypes.length);
-    expect(checkboxField.options[0]).toEqual({
+    expect(switchField.options).toHaveLength(applicationTypes.length);
+    expect(switchField.options[0]).toEqual({
       value: '1',
       label: 'Cost Management',
-      supportedSourceTypes: ['amazon', 'google', 'azure'],
+      name: '/insights/platform/cost-management',
+      supportedSourceTypes: ['openshift', 'amazon', 'google', 'azure'],
     });
   });
 });
 
 describe('buildApplicationOptions', () => {
-  it('maps application types to checkbox options', () => {
+  it('maps application types to switch options', () => {
     const options = buildApplicationOptions(applicationTypes);
 
-    expect(options).toHaveLength(2);
+    expect(options).toHaveLength(3);
     expect(options[0]).toEqual({
       value: '1',
       label: 'Cost Management',
-      supportedSourceTypes: ['amazon', 'google', 'azure'],
+      name: '/insights/platform/cost-management',
+      supportedSourceTypes: ['openshift', 'amazon', 'google', 'azure'],
     });
+  });
+
+  it('offers RHEL management to the clouds, not to OpenShift', () => {
+    const [, rhel] = buildApplicationOptions(applicationTypes);
+
+    // It is about RHEL instances running in someone else's cloud.
+    expect(rhel.supportedSourceTypes).toEqual(['amazon', 'google', 'azure']);
   });
 
   it('filters out application types not in the offered allowlist', () => {
@@ -346,66 +673,17 @@ describe('buildApplicationOptions', () => {
 
     const options = buildApplicationOptions(withImageBuilder);
 
-    expect(options).toHaveLength(2);
+    expect(options).toHaveLength(3);
     expect(options.find((o) => o.label === 'Image Builder')).toBeUndefined();
   });
 });
 
-describe('validateArrayNotEmpty', () => {
-  it('passes for a non-empty array', () => {
-    expect(
-      validateArrayNotEmpty(['a'], {}, { message: 'Required' }),
-    ).toBeUndefined();
-  });
-
-  it('fails for an empty array', () => {
-    expect(validateArrayNotEmpty([], {}, { message: 'Required' })).toBe(
-      'Required',
-    );
-  });
-
-  it('fails for undefined', () => {
-    expect(validateArrayNotEmpty(undefined, {}, { message: 'Required' })).toBe(
-      'Required',
-    );
-  });
-
-  it('uses a default message when none is provided', () => {
-    expect(validateArrayNotEmpty([], {}, {})).toBe('Select at least one item.');
-  });
-});
-
 describe('review step', () => {
-  it('renders as a review-step component', () => {
-    const reviewField = revStep().fields[0];
+  it('renders the review summary component', () => {
+    const [description, summary] = reviewStep().fields;
 
-    expect(reviewField.component).toBe(REVIEW_STEP_COMPONENT);
-    expect(reviewField.name).toBe('review-summary');
-  });
-
-  it('passes a description for the review summary', () => {
-    const reviewField = revStep().fields[0];
-
-    expect(reviewField.description).toMatch(/Review the information below/);
-  });
-
-  it('passes translated labels for the summary', () => {
-    const reviewField = revStep().fields[0];
-
-    expect(reviewField.labels).toEqual({
-      review: 'Review integration details',
-      sourceType: 'Integration type',
-      name: 'Name',
-      applications: 'Applications',
-    });
-  });
-
-  it('passes source type and application options for name resolution', () => {
-    const reviewField = revStep().fields[0];
-
-    expect(reviewField.sourceTypeOptions).toHaveLength(sourceTypes.length);
-    expect(reviewField.applicationOptions).toHaveLength(
-      applicationTypes.length,
-    );
+    expect(description.label).toMatch(/Review the details below/);
+    expect(summary.component).toBe(REVIEW_SUMMARY_COMPONENT);
+    expect(summary.name).toBe('review-summary');
   });
 });

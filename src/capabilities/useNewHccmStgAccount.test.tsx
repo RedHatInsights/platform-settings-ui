@@ -4,6 +4,10 @@ import { useNewHccmStgAccount } from './useNewHccmStgAccount';
 
 jest.mock('@unleash/proxy-client-react', () => ({ useFlag: jest.fn() }));
 
+beforeEach(() => {
+  jest.mocked(useFlag).mockClear();
+});
+
 it.each([true, false])(
   'returns the staging-account flag when it is %s',
   (enabled) => {

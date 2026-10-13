@@ -7,12 +7,15 @@ import { createCliServices } from '../../../../shared/AppServices.cli';
 import { ServiceProvider } from '../../../../shared/ServiceContext';
 import AwsManualInstructions from './AwsManualInstructions';
 
+const mockFormValues = {
+  application: { extra: { bucket: 'cost-bucket' } },
+  aws: { aliases: { enabled: false }, org_units: { enabled: false } },
+};
+
 jest.mock('@data-driven-forms/react-form-renderer/use-form-api', () => ({
   __esModule: true,
   default: () => ({
-    getState: () => ({
-      values: { application: { extra: { bucket: 'cost-bucket' } } },
-    }),
+    getState: () => ({ values: mockFormValues }),
   }),
 }));
 jest.mock('../../../../capabilities/useNewHccmStgAccount', () => ({
@@ -55,6 +58,8 @@ function setup(
 
 beforeEach(() => {
   jest.mocked(useNewHccmStgAccount).mockReturnValue(false);
+  mockFormValues.aws.aliases.enabled = false;
+  mockFormValues.aws.org_units.enabled = false;
 });
 
 it('shows a bucket-scoped cost policy', () => {
@@ -67,6 +72,34 @@ it('shows a bucket-scoped cost policy', () => {
   expect(policy).not.toHaveAttribute(
     'value',
     expect.stringContaining('iam:ListAccountAliases'),
+  );
+});
+
+it('includes account alias permissions when enabled', () => {
+  mockFormValues.aws.aliases.enabled = true;
+  setup(COST_APP, 'policy');
+  const policy = screen.getByRole('textbox', { name: 'Copyable input' });
+  expect(policy).toHaveAttribute(
+    'value',
+    expect.stringContaining('iam:ListAccountAliases'),
+  );
+  expect(policy).toHaveAttribute(
+    'value',
+    expect.stringContaining('arn:aws:s3:::cost-bucket'),
+  );
+});
+
+it('includes organization permissions when enabled', () => {
+  mockFormValues.aws.org_units.enabled = true;
+  setup(COST_APP, 'policy');
+  const policy = screen.getByRole('textbox', { name: 'Copyable input' });
+  expect(policy).toHaveAttribute(
+    'value',
+    expect.stringContaining('organizations:List*'),
+  );
+  expect(policy).toHaveAttribute(
+    'value',
+    expect.stringContaining('organizations:Describe*'),
   );
 });
 

@@ -69,10 +69,8 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
     isError: isAppTypesError,
   } = useApplicationTypes();
   const { data: awsRegions = EMPTY_AWS_REGIONS, isError: isAwsRegionsError } =
-    useAwsRegions(isOpen && (!sourceType || sourceType === 'amazon'));
-  const { data: hcsEnrolled = false } = useHcsEnrollment(
-    isOpen && (!sourceType || sourceType === 'amazon'),
-  );
+    useAwsRegions(isOpen);
+  const { data: hcsEnrolled = false } = useHcsEnrollment(isOpen);
 
   const isLoading = isLoadingSourceTypes || isLoadingAppTypes;
   const isError = isSourceTypesError || isAppTypesError;

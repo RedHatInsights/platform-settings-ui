@@ -292,6 +292,12 @@ export function createSourcesApi(axios: AxiosInstance) {
     async createSource(input: CreateSourceInput): Promise<Source> {
       const manual = input.appCreationWorkflow === 'manual_configuration';
       const manualApplication = input.manualApplication;
+      const selectedApplication = manual
+        ? manualApplication
+        : input.selectedApplication;
+      const parsedEndpoint = input.endpoint?.url
+        ? new URL(input.endpoint.url)
+        : undefined;
 
       if (manual && (!manualApplication || !input.authentication?.username)) {
         throw new Error(
@@ -305,24 +311,48 @@ export function createSourcesApi(axios: AxiosInstance) {
             name: input.name,
             source_type_name: input.sourceTypeName,
             app_creation_workflow: input.appCreationWorkflow,
+            ...(input.sourceRef ? { source_ref: input.sourceRef } : {}),
           },
         ],
-        endpoints: [],
-        authentications: input.authentication
+        endpoints: input.endpoint
           ? [
               {
-                ...input.authentication,
-                resource_type: manual ? 'application' : 'source',
-                resource_name: manual ? manualApplication!.name : input.name,
+                role: input.endpoint.role,
+                verify_ssl: input.endpoint.verify_ssl,
+                certificate_authority: input.endpoint.certificate_authority,
+                source_name: input.name,
+                default: true,
+                scheme: parsedEndpoint?.protocol.replace(/:$/, ''),
+                host: parsedEndpoint?.hostname,
+                port: parsedEndpoint?.port
+                  ? Number(parsedEndpoint.port)
+                  : undefined,
+                path: parsedEndpoint?.pathname,
               },
             ]
           : [],
-        applications: manual
+        authentications:
+          input.authentication && input.authentication.authtype !== 'empty'
+            ? [
+                {
+                  ...input.authentication,
+                  resource_type: input.endpoint
+                    ? 'endpoint'
+                    : selectedApplication
+                      ? 'application'
+                      : 'source',
+                  resource_name: input.endpoint
+                    ? parsedEndpoint?.hostname
+                    : (selectedApplication?.name ?? input.name),
+                },
+              ]
+            : [],
+        applications: selectedApplication
           ? [
               {
-                application_type_id: manualApplication!.id,
+                application_type_id: selectedApplication.id,
                 source_name: input.name,
-                extra: manualApplication!.extra,
+                extra: selectedApplication.extra,
               },
             ]
           : (input.applicationTypeIds ?? []).map((application_type_id) => ({
@@ -382,10 +412,13 @@ export function createSourcesApi(axios: AxiosInstance) {
     },
 
     async getAwsRegions(): Promise<string[]> {
-      const response = await axios.get<string[]>(
+      const response = await axios.get<{ data: string[] }>(
         '/api/cost-management/v1/sources/aws-s3-regions/?limit=10000&offset=0',
       );
-      return response.data;
+      if (!Array.isArray(response.data?.data)) {
+        throw new Error('AWS regions response is invalid');
+      }
+      return response.data.data;
     },
 
     async getHcsEnrollment(): Promise<boolean> {
@@ -403,6 +436,36 @@ export function createSourcesApi(axios: AxiosInstance) {
       );
       const account = response.data.data?.[0]?.payload;
       if (!account) throw new Error('AWS provisioning account is unavailable');
+      return account;
+    },
+
+    async getAzureLighthouseLink(): Promise<string> {
+      const response = await axios.get<{ data: Array<{ payload: string }> }>(
+        `${SOURCES_API_BASE}/app_meta_data?filter[name]=azure_lighthouse_template`,
+      );
+      const link = response.data.data?.[0]?.payload;
+      if (!link) throw new Error('Azure Lighthouse link is unavailable');
+      return link;
+    },
+
+    async getGoogleBillingAccount(): Promise<string> {
+      const response = await axios.get<{
+        data: Array<{ payload: string }>;
+      }>(`${SOURCES_API_BASE}/app_meta_data?filter[name]=gcp_service_account`);
+      const account = response.data.data?.[0]?.payload;
+      if (!account) throw new Error('Google billing account is unavailable');
+      return account;
+    },
+
+    async getGoogleProvisioningAccount(
+      applicationTypeId: string,
+    ): Promise<string> {
+      const response = await axios.get<{ data: Array<{ payload: string }> }>(
+        `${SOURCES_API_BASE}/app_meta_data?filter[name]=gcp_service_account&application_type_id=${encodeURIComponent(applicationTypeId)}`,
+      );
+      const account = response.data.data?.[0]?.payload;
+      if (!account)
+        throw new Error('Google provisioning account is unavailable');
       return account;
     },
   };

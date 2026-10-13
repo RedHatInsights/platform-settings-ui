@@ -217,6 +217,110 @@ describe('createSourcesApi', () => {
       });
     });
 
+    it('binds an OpenShift token to the parsed cluster endpoint', async () => {
+      const post = jest
+        .fn()
+        .mockResolvedValue({ data: { sources: [{ id: 'src-1' }] } });
+      await createSourcesApi({ post } as unknown as AxiosInstance).createSource(
+        {
+          name: 'cluster',
+          sourceTypeName: 'openshift',
+          authentication: { authtype: 'token', password: 'secret-token' },
+          endpoint: {
+            role: 'kubernetes',
+            url: 'https://api.example.com:6443/path',
+            verify_ssl: true,
+          },
+        },
+      );
+
+      const payload = post.mock.calls[0][1];
+      expect(payload.endpoints).toEqual([
+        expect.objectContaining({
+          source_name: 'cluster',
+          role: 'kubernetes',
+          scheme: 'https',
+          host: 'api.example.com',
+          port: 6443,
+          path: '/path',
+          verify_ssl: true,
+        }),
+      ]);
+      expect(payload.authentications).toEqual([
+        expect.objectContaining({
+          resource_type: 'endpoint',
+          resource_name: 'api.example.com',
+        }),
+      ]);
+    });
+
+    it('creates OpenShift Cost Management without an endpoint', async () => {
+      const post = jest
+        .fn()
+        .mockResolvedValue({ data: { sources: [{ id: 'src-1' }] } });
+      await createSourcesApi({ post } as unknown as AxiosInstance).createSource(
+        {
+          name: 'cluster-cost',
+          sourceTypeName: 'openshift',
+          sourceRef: 'cluster_id',
+          selectedApplication: {
+            id: '1',
+            name: '/insights/platform/cost-management',
+          },
+          authentication: { authtype: 'token' },
+        },
+      );
+
+      const payload = post.mock.calls[0][1];
+      expect(payload.sources[0].source_ref).toBe('cluster_id');
+      expect(payload.endpoints).toEqual([]);
+      expect(payload.authentications[0]).toEqual(
+        expect.objectContaining({
+          resource_type: 'application',
+          resource_name: '/insights/platform/cost-management',
+        }),
+      );
+    });
+
+    it('sends Azure tenant ID in authentication.extra and skips empty Google RHEL auth', async () => {
+      const post = jest
+        .fn()
+        .mockResolvedValue({ data: { sources: [{ id: 'src-1' }] } });
+      const api = createSourcesApi({ post } as unknown as AxiosInstance);
+      await api.createSource({
+        name: 'azure-cost',
+        sourceTypeName: 'azure',
+        selectedApplication: {
+          id: '1',
+          name: '/insights/platform/cost-management',
+          extra: { subscription_id: 'sub' },
+        },
+        authentication: {
+          authtype: 'tenant_id_client_id_client_secret',
+          username: 'client',
+          password: 'secret',
+          extra: { azure: { tenant_id: 'tenant' } },
+        },
+      });
+      expect(post.mock.calls[0][1].authentications[0]).toEqual(
+        expect.objectContaining({
+          resource_type: 'application',
+          extra: { azure: { tenant_id: 'tenant' } },
+        }),
+      );
+
+      await api.createSource({
+        name: 'google-rhel',
+        sourceTypeName: 'google',
+        selectedApplication: {
+          id: '2',
+          name: '/insights/platform/cloud-meter',
+        },
+        authentication: { authtype: 'empty' },
+      });
+      expect(post.mock.calls[2][1].authentications).toEqual([]);
+    });
+
     it('rejects an incomplete manual payload before posting', async () => {
       const post = jest.fn();
       const api = createSourcesApi({ post } as unknown as AxiosInstance);

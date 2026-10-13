@@ -10,6 +10,7 @@ import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
 import { Content } from '@patternfly/react-core/dist/dynamic/components/Content';
 import { FormGroup } from '@patternfly/react-core/dist/dynamic/components/Form';
 import { Label } from '@patternfly/react-core/dist/dynamic/components/Label';
+import { Radio } from '@patternfly/react-core/dist/dynamic/components/Radio';
 import { Switch } from '@patternfly/react-core/dist/dynamic/components/Switch';
 import {
   Flex,
@@ -38,9 +39,13 @@ export interface ApplicationOption {
   supportedSourceTypes?: string[];
 }
 
-interface SwitchGroupProps extends UseFieldApiProps<string[] | undefined> {
+interface SwitchGroupProps extends UseFieldApiProps<
+  string[] | string | undefined
+> {
   label: string;
   options: ApplicationOption[];
+  selectionMode?: 'multiple' | 'single';
+  isRequired?: boolean;
 }
 
 const COST_MANAGEMENT = '/insights/platform/cost-management';
@@ -104,12 +109,10 @@ function bundlePoints(
 }
 
 /**
- * The `application-switch-group` data-driven-forms component: one switch per
- * application the chosen provider supports.
+ * The application selector shared by AWS switches and Azure/Google radios.
  *
- * Switches rather than checkboxes because these are capabilities being turned
- * on, not a set being picked from — and nothing is required, so the step can
- * be passed with everything off.
+ * AWS uses optional switches because it can connect several applications;
+ * Azure and Google use one required radio choice.
  *
  * Which ones start on depends on the configuration mode: account
  * authorization hands Red Hat the credentials to set everything up, so
@@ -118,7 +121,13 @@ function bundlePoints(
  */
 const ApplicationSwitchGroup: React.FC<UseFieldApiConfig> = (props) => {
   const intl = useIntl();
-  const { input, label, options } = useFieldApi(props) as SwitchGroupProps;
+  const {
+    input,
+    label,
+    options,
+    selectionMode = 'multiple',
+    isRequired,
+  } = useFieldApi(props) as SwitchGroupProps;
 
   const formApi = useFormApi();
   const values = formApi.getState().values;
@@ -137,6 +146,10 @@ const ApplicationSwitchGroup: React.FC<UseFieldApiConfig> = (props) => {
   const selectedValues: string[] = Array.isArray(input.value)
     ? input.value
     : [];
+  const selectedValue =
+    typeof input.value === 'string'
+      ? input.value
+      : (values.application?.application_type_id as string | undefined);
 
   const compatibleIds = React.useMemo(
     () => compatibleOptions.map(({ value }) => value),
@@ -159,6 +172,17 @@ const ApplicationSwitchGroup: React.FC<UseFieldApiConfig> = (props) => {
    */
   const didDefault = React.useRef(false);
   React.useEffect(() => {
+    if (selectionMode === 'single') {
+      if (didDefault.current || values.application?.application_type_id) {
+        return;
+      }
+      didDefault.current = true;
+      input.onChange(
+        compatibleOptions.find(({ name }) => name === COST_MANAGEMENT)?.value ??
+          compatibleIds[0],
+      );
+      return;
+    }
     if (didDefault.current || Array.isArray(values[APPLICATIONS_FIELD])) {
       return;
     }
@@ -169,6 +193,12 @@ const ApplicationSwitchGroup: React.FC<UseFieldApiConfig> = (props) => {
   // A provider swapped after the fact can leave an application behind that it
   // does not support, which would be submitted invisibly.
   React.useEffect(() => {
+    if (selectionMode === 'single') {
+      if (selectedValue && !compatibleIds.includes(selectedValue)) {
+        input.onChange(compatibleIds[0]);
+      }
+      return;
+    }
     const pruned = selectedValues.filter((id) => compatibleIds.includes(id));
 
     if (pruned.length !== selectedValues.length) {
@@ -184,35 +214,63 @@ const ApplicationSwitchGroup: React.FC<UseFieldApiConfig> = (props) => {
     );
     input.onBlur();
   };
+  const select = (value: string) => {
+    input.onChange(value);
+    input.onBlur();
+  };
 
   return (
-    <FormGroup label={label} fieldId={input.name} isStack>
+    <FormGroup
+      label={label}
+      fieldId={input.name}
+      isRequired={isRequired}
+      isStack
+    >
       <Stack hasGutter>
         {compatibleOptions.map((option) => {
-          const isChecked = selectedValues.includes(option.value);
+          const isChecked =
+            selectionMode === 'single'
+              ? selectedValue === option.value
+              : selectedValues.includes(option.value);
+          const optionLabel =
+            option.name === CLOUD_METER ? (
+              <>
+                {option.label}{' '}
+                <Label color="purple">
+                  {intl.formatMessage(messages.wizardBundle)}
+                </Label>
+              </>
+            ) : (
+              option.label
+            );
 
           return (
             <StackItem key={option.value}>
-              <Switch
-                id={`application-${option.value}`}
-                name={input.name}
-                label={
-                  option.name === CLOUD_METER ? (
-                    <>
-                      {option.label}{' '}
-                      <Label color="purple">
-                        {intl.formatMessage(messages.wizardBundle)}
-                      </Label>
-                    </>
-                  ) : (
-                    option.label
-                  )
-                }
-                isChecked={isChecked}
-                onChange={(_event, checked) => toggle(option.value, checked)}
-              />
+              {selectionMode === 'single' ? (
+                <Radio
+                  id={`application-${option.value}`}
+                  name={input.name}
+                  value={option.value}
+                  label={optionLabel}
+                  isChecked={isChecked}
+                  onChange={() => select(option.value)}
+                />
+              ) : (
+                <Switch
+                  id={`application-${option.value}`}
+                  name={input.name}
+                  label={optionLabel}
+                  isChecked={isChecked}
+                  onChange={(_event, checked) => toggle(option.value, checked)}
+                />
+              )}
               {option.name === COST_MANAGEMENT && (
-                <Content component="p">
+                <Content
+                  component="p"
+                  className={
+                    selectionMode === 'single' ? 'pf-v6-u-ml-lg' : undefined
+                  }
+                >
                   {intl.formatMessage(messages.costManagementDescription)}
                 </Content>
               )}
@@ -245,6 +303,12 @@ const ApplicationSwitchGroup: React.FC<UseFieldApiConfig> = (props) => {
                   ))}
                 </Stack>
               )}
+              {option.name === '/insights/platform/provisioning' &&
+                selectionMode === 'single' && (
+                  <Content component="p" className="pf-v6-u-ml-lg">
+                    {intl.formatMessage(messages.provisioningDescription)}
+                  </Content>
+                )}
             </StackItem>
           );
         })}

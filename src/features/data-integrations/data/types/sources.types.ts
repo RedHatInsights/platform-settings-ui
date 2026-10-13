@@ -141,7 +141,13 @@ export type AuthenticationType =
   | 'access_key_secret_key'
   | 'arn'
   | 'cloud-meter-arn'
-  | 'provisioning-arn';
+  | 'provisioning-arn'
+  | 'token'
+  | 'username_password_tenant_id'
+  | 'tenant_id_client_id_client_secret'
+  | 'lighthouse_subscription_id'
+  | 'project_id_service_account_json'
+  | 'empty';
 
 /**
  * Which half of the "Select configuration" choice the user took.
@@ -166,9 +172,9 @@ export interface SourceAuthenticationInput {
   authtype: AuthenticationType;
   username?: string;
   password?: string;
-  extra?: { external_id?: string };
+  extra?: { external_id?: string; azure?: { tenant_id?: string } };
   resource_type: 'source' | 'endpoint' | 'application';
-  resource_name: string;
+  resource_name?: string;
 }
 
 /**
@@ -176,8 +182,7 @@ export interface SourceAuthenticationInput {
  *
  * The four arrays are created in one transaction, so a rejected authentication
  * takes the source down with it rather than leaving a credential-less source
- * behind. `endpoints` is typed `never[]` because no provider offered today
- * populates it; widen it when one does.
+ * behind. Generic OpenShift, Azure, and Google sources can create endpoints.
  *
  * Applications are bound to the source by `source_name`, the same way
  * authentications are — nothing in the payload has an id yet.
@@ -187,8 +192,19 @@ export interface BulkCreatePayload {
     name: string;
     source_type_name: string;
     app_creation_workflow?: AppCreationWorkflow;
+    source_ref?: string;
   }>;
-  endpoints: never[];
+  endpoints: Array<{
+    source_name: string;
+    default: true;
+    role?: string;
+    scheme?: string;
+    host?: string;
+    port?: number;
+    path?: string;
+    verify_ssl?: boolean;
+    certificate_authority?: string;
+  }>;
   authentications: SourceAuthenticationInput[];
   applications: Array<{
     application_type_id: string;
@@ -219,6 +235,13 @@ export interface CreateSourceInput {
   sourceTypeName: string;
   /** Absent for a provider that never offered the configuration choice. */
   appCreationWorkflow?: AppCreationWorkflow;
+  sourceRef?: string;
+  endpoint?: {
+    role?: string;
+    url?: string;
+    verify_ssl?: boolean;
+    certificate_authority?: string;
+  };
   /** Account credential or application-specific manual role. */
   authentication?: Omit<
     SourceAuthenticationInput,
@@ -230,6 +253,12 @@ export interface CreateSourceInput {
   availabilityWaitApplicationTypeIds?: string[];
   /** Manual configuration creates exactly one application with its own auth. */
   manualApplication?: {
+    id: string;
+    name: string;
+    extra?: Record<string, unknown>;
+  };
+  /** One application chosen in the provider-specific Sources wizard. */
+  selectedApplication?: {
     id: string;
     name: string;
     extra?: Record<string, unknown>;

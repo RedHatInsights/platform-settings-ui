@@ -1,9 +1,9 @@
 import React from 'react';
 import componentTypes from '@data-driven-forms/react-form-renderer/component-types';
 import validatorTypes from '@data-driven-forms/react-form-renderer/validator-types';
+import { Label } from '@patternfly/react-core/dist/dynamic/components/Label';
 import type { LegacySchemaType } from '@data-driven-forms/react-form-renderer/common-types';
 import type { IntlShape } from 'react-intl';
-import { Label } from '@patternfly/react-core/dist/dynamic/components/Label';
 import messages from '../../messages';
 import { getSourceTypeIcon } from '../../constants/sourceTypeIcons';
 import type { SourceTypeName } from '../../types';
@@ -15,23 +15,18 @@ import type {
   SourceType,
 } from '../../data/types/sources.types';
 import type { ApplicationOption } from './ApplicationSwitchGroup';
+import { providerWizardSteps } from './providerWizardSteps';
 
-/**
- * Every step the Add Data Integration wizard will eventually have.
- *
- * Only {@link WizardStepId.SourceTypeSelection} is implemented here. The rest
- * are declared up front so the follow-up auth stories (RHCLOUD-51314 onwards)
- * add steps against fixed ids rather than renaming as they go — `crossroads`
- * and `nextStep` resolvers both address steps by id.
- */
+/** Step ids referenced by the wizard's route and crossroads mappings. */
 export enum WizardStepId {
   SourceTypeSelection = 'source-type-selection',
   NameIntegration = 'name-integration',
   Configuration = 'configuration',
-  AuthTypeSelection = 'auth-type-selection',
   AuthCredentials = 'auth-credentials',
   EndpointConfiguration = 'endpoint-configuration',
   ApplicationSelection = 'application-selection',
+  AzureApplication = 'azure-application',
+  GoogleApplication = 'google-application',
   ManualApplicationSelection = 'manual-application-selection',
   ManualAwsConfiguration = 'manual-aws-configuration',
   ManualAwsCostUsage = 'manual-aws-cost-usage',
@@ -43,10 +38,7 @@ export enum WizardStepId {
   SubmissionResult = 'submission-result',
 }
 
-/**
- * Field name for the chosen provider. Matches `sources-ui`'s wizard so the
- * auth schemas that stories 2-4 port over keep working unchanged.
- */
+/** Field name for the chosen provider, matching sources-ui. */
 export const SOURCE_TYPE_FIELD = 'source_type';
 
 /** Field name for the integration's display name. */
@@ -64,10 +56,7 @@ export const AUTH_TYPE_FIELD = 'authentication.authtype';
 export const AUTH_USERNAME_FIELD = 'authentication.username';
 export const AUTH_PASSWORD_FIELD = 'authentication.password';
 
-/**
- * The only authentication type offered today — AWS's superkey credential, the
- * one account authorization has Red Hat manage.
- */
+/** AWS's superkey credential for account authorization. */
 export const ACCESS_KEY_AUTH_TYPE = 'access_key_secret_key';
 
 /** Field name and values for the configuration mode, both from `sources-ui`. */
@@ -99,22 +88,7 @@ export const MANUAL_AWS_APPLICATION_SELECT_COMPONENT =
   'manual-aws-application-select';
 export const AWS_EXTERNAL_ID_COMPONENT = 'aws-external-id';
 
-/**
- * Authentication types each provider offers, in card order.
- *
- * AWS has exactly one, which is why the wizard routes straight past the
- * authentication step for it — see {@link createIntegrationWizardSchema}. The
- * other three are empty until RHCLOUD-51317 implements them; an empty list is
- * what makes that step a dead end they cannot advance past, rather than a
- * broken one.
- */
-const AUTH_TYPES_BY_PROVIDER: Record<SourceTypeName, string[]> = {
-  amazon: [ACCESS_KEY_AUTH_TYPE],
-  openshift: [],
-  google: [],
-  azure: [],
-};
-
+/** Translated AWS authentication labels shown in review. */
 const AUTH_TYPE_LABELS: Record<
   string,
   (typeof messages)[keyof typeof messages]
@@ -254,6 +228,7 @@ export interface IntegrationWizardSchemaOptions {
   awsRegions?: string[];
   isAwsRegionsError?: boolean;
   hcsEnrolled?: boolean;
+  enableLighthouse?: boolean;
   intl: IntlShape;
   /**
    * Provider the wizard was opened with, if any. Its only effect on the schema
@@ -317,6 +292,7 @@ export function createIntegrationWizardSchema({
   awsRegions = [],
   isAwsRegionsError = false,
   hcsEnrolled = false,
+  enableLighthouse = false,
   intl,
   selectedType,
 }: IntegrationWizardSchemaOptions): LegacySchemaType {
@@ -373,7 +349,6 @@ export function createIntegrationWizardSchema({
           sourceTypeStep(sourceTypes, intl),
           nameIntegrationStep(sourceTypes, intl),
           configurationStep(intl),
-          authTypeSelectionStep(intl),
           authCredentialsStep(intl),
           applicationSelectionStep(applicationTypes, intl),
           manualApplicationSelectionStep(applicationTypes, hcsEnrolled, intl),
@@ -388,6 +363,7 @@ export function createIntegrationWizardSchema({
           manualAwsPolicyStep(applicationTypes, intl),
           manualAwsRoleStep(applicationTypes, intl),
           manualAwsArnStep(applicationTypes, intl),
+          ...providerWizardSteps(applicationTypes, intl, enableLighthouse),
           reviewStep(intl),
           submissionResultStep(intl),
         ],
@@ -430,11 +406,9 @@ function sourceTypeStep(sourceTypes: SourceType[], intl: IntlShape) {
  * Where naming leads, per provider.
  *
  * A provider Red Hat can manage credentials for is asked how it wants to be
- * configured; that step then collects the credential itself. Everything else
- * keeps the older routing: exactly one authentication type skips the selection
- * step, because asking someone to pick from a list of one is a click that
- * answers nothing, and none at all lands on it and is held by the required
- * validator — see {@link authTypeSelectionStep}.
+ * configured; that step then collects the credential itself. Other providers
+ * select an application first, as they do in sources-ui. AWS without the
+ * superkey catalogue flag falls back to its generic credential step.
  *
  * Every provider that can reach this resolver must be a key. `selectNext`
  * returns `undefined` for an unmapped value while `nextStep` itself stays
@@ -452,9 +426,13 @@ function stepAfterNaming(sourceTypes: SourceType[]) {
     }
 
     stepMapper[provider] =
-      AUTH_TYPES_BY_PROVIDER[provider].length === 1
-        ? WizardStepId.AuthCredentials
-        : WizardStepId.AuthTypeSelection;
+      provider === 'openshift'
+        ? 'openshift-application'
+        : provider === 'azure'
+          ? WizardStepId.AzureApplication
+          : provider === 'google'
+            ? WizardStepId.GoogleApplication
+            : WizardStepId.AuthCredentials;
   }
 
   return { when: SOURCE_TYPE_FIELD, stepMapper };
@@ -1016,58 +994,8 @@ function manualAwsArnStep(
 }
 
 /**
- * The authentication type step.
- *
- * Only providers with something other than exactly one authentication type
- * reach it — see {@link stepAfterNaming} — which today means the three with
- * none at all. So it renders the "not supported yet" line and an option-less
- * required radio group, and the failing validator is what holds the primary
- * button disabled. That matters beyond tidiness: `selectNext` returns
- * `undefined` for a value the `stepMapper` below has no key for, which would
- * navigate the wizard to a step that does not exist.
- *
- * RHCLOUD-51317 fills `AUTH_TYPES_BY_PROVIDER` in and gives this step real
- * per-provider options.
- */
-function authTypeSelectionStep(intl: IntlShape) {
-  return {
-    name: WizardStepId.AuthTypeSelection,
-    title: intl.formatMessage(messages.wizardAuthTypeStepTitle),
-    nextStep: {
-      when: AUTH_TYPE_FIELD,
-      stepMapper: { [ACCESS_KEY_AUTH_TYPE]: WizardStepId.AuthCredentials },
-    },
-    fields: [
-      {
-        component: componentTypes.PLAIN_TEXT,
-        name: 'auth-type-step-description',
-        label: intl.formatMessage(messages.wizardAuthTypeUnavailable),
-      },
-      {
-        component: componentTypes.RADIO,
-        name: AUTH_TYPE_FIELD,
-        label: intl.formatMessage(messages.wizardAuthTypeLabel),
-        isRequired: true,
-        options: [],
-        validate: [
-          {
-            type: validatorTypes.REQUIRED,
-            message: intl.formatMessage(messages.wizardAuthTypeRequired),
-          },
-        ],
-      },
-    ],
-  };
-}
-
-/**
- * The generic credentials step.
- *
- * Nothing routes here today: AWS collects its credential inside the
- * configuration step, and the three providers without an authentication type
- * stop before this one. It is the target {@link stepAfterNaming} falls back to
- * for a provider with exactly one authentication type and no superkey — the
- * shape RHCLOUD-51317's providers arrive in.
+ * AWS fallback when the catalogue has no superkey flag. The normal AWS path
+ * collects the same fields in the configuration step.
  *
  * `authtype` is not something the user picks, so it is written into the form
  * on mount instead of being asked for. `initializeOnMount` makes that survive
@@ -1174,17 +1102,27 @@ function submissionResultStep(intl: IntlShape) {
 /** The form's value shape, as final-form nests the dotted field names. */
 export interface IntegrationWizardValues {
   [SOURCE_TYPE_FIELD]?: SourceTypeName;
-  source?: { name?: string; app_creation_workflow?: AppCreationWorkflow };
+  source?: {
+    name?: string;
+    app_creation_workflow?: AppCreationWorkflow;
+    source_ref?: string;
+  };
   authentication?: {
     authtype?: AuthenticationType;
     username?: string;
     password?: string;
-    extra?: { external_id?: string };
+    extra?: { external_id?: string; azure?: { tenant_id?: string } };
   };
   application?: {
     application_type_id?: string;
     extra?: Record<string, unknown>;
   };
+  endpoint?: {
+    role?: string;
+    verify_ssl?: boolean;
+    certificate_authority?: string;
+  };
+  url?: string;
   aws?: { aliases?: { enabled?: boolean }; org_units?: { enabled?: boolean } };
   meta?: { account?: string };
   [APPLICATIONS_FIELD]?: string[];
@@ -1203,6 +1141,7 @@ export function toCreateSourceInput(
   applicationTypes: ApplicationType[] = [],
 ): CreateSourceInput {
   const manual = values.source?.app_creation_workflow === MANUAL_CONFIGURATION;
+  const provider = values[SOURCE_TYPE_FIELD];
   const manualApplication = applicationTypes.find(
     ({ id }) => id === values.application?.application_type_id,
   );
@@ -1212,16 +1151,35 @@ export function toCreateSourceInput(
   }
   return {
     name: values.source?.name ?? '',
-    sourceTypeName: values[SOURCE_TYPE_FIELD] ?? '',
+    sourceTypeName: provider ?? '',
     appCreationWorkflow: values.source?.app_creation_workflow,
-    authentication: values.authentication?.username
+    sourceRef:
+      provider === 'openshift' && manualApplication?.name === COST_APP
+        ? values.source?.source_ref
+        : undefined,
+    endpoint:
+      provider !== 'amazon' &&
+      !manualApplication &&
+      (values.url || values.endpoint)
+        ? { ...values.endpoint, url: values.url }
+        : undefined,
+    authentication: (
+      provider === 'amazon'
+        ? Boolean(values.authentication?.username)
+        : Boolean(
+            values.authentication?.authtype &&
+            values.authentication.authtype !== 'empty',
+          )
+    )
       ? {
           authtype: manual
             ? manualAuthType!
-            : (values.authentication.authtype ?? ACCESS_KEY_AUTH_TYPE),
-          username: values.authentication.username,
-          password: values.authentication.password,
-          ...(manual ? { extra: values.authentication.extra } : {}),
+            : (values.authentication?.authtype ?? ACCESS_KEY_AUTH_TYPE),
+          username: values.authentication?.username,
+          password: values.authentication?.password,
+          ...(values.authentication?.extra
+            ? { extra: values.authentication.extra }
+            : {}),
         }
       : undefined,
     applicationTypeIds: manual ? [] : (values[APPLICATIONS_FIELD] ?? []),
@@ -1234,6 +1192,14 @@ export function toCreateSourceInput(
       : {}),
     manualApplication:
       manualApplication && manual
+        ? {
+            id: manualApplication.id,
+            name: manualApplication.name,
+            extra: values.application?.extra,
+          }
+        : undefined,
+    selectedApplication:
+      provider !== 'amazon' && manualApplication
         ? {
             id: manualApplication.id,
             name: manualApplication.name,

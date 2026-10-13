@@ -250,6 +250,7 @@ function buildCreatedSource(payload: BulkCreatePayload): Source {
   return {
     id: `src-${Date.now()}-${nextId++}`,
     name: requested.name,
+    source_ref: requested.source_ref,
     source_type_id: sourceType?.id ?? '0',
     created_at: new Date().toISOString(),
     applications: payload.applications.map(({ application_type_id }) => ({
@@ -350,13 +351,31 @@ export function createSourcesHandlers(
   return [
     ...createBulkCreateHandler(baseUrl),
     http.get('/api/cost-management/v1/sources/aws-s3-regions/', () =>
-      HttpResponse.json(['us-east-1', 'us-east-2', 'us-west-2']),
+      HttpResponse.json({
+        meta: { count: 3 },
+        data: ['us-east-1', 'us-east-2', 'us-west-2'],
+      }),
     ),
     http.get('/api/billing/v1/authorization/hcsEnrollment', () =>
       HttpResponse.json({ hcsDeal: hcsEnrolled }),
     ),
-    http.get(`${baseUrl}/app_meta_data`, () =>
-      HttpResponse.json({ data: [{ payload: '012345678901' }] }),
+    http.get(`${baseUrl}/app_meta_data`, ({ request }) =>
+      HttpResponse.json({
+        data: [
+          {
+            payload:
+              new URL(request.url).searchParams.get('filter[name]') ===
+              'azure_lighthouse_template'
+                ? 'https://portal.azure.com/#create/Microsoft.Template'
+                : new URL(request.url).searchParams.get('filter[name]') ===
+                    'gcp_service_account'
+                  ? new URL(request.url).searchParams.has('application_type_id')
+                    ? 'provisioning@example.iam.gserviceaccount.com'
+                    : 'billing-export@example.iam.gserviceaccount.com'
+                  : '012345678901',
+          },
+        ],
+      }),
     ),
 
     http.post(`${baseUrl}/graphql`, async ({ request }) => {

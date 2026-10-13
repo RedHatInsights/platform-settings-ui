@@ -31,7 +31,7 @@ describe('useAwsRegions', () => {
 
   it('returns regions from the API', async () => {
     const { get, wrapper } = setup();
-    get.mockResolvedValue({ data: ['us-east-1'] });
+    get.mockResolvedValue({ data: { meta: { count: 1 }, data: ['us-east-1'] } });
     const { result } = renderHook(() => useAwsRegions(true), { wrapper });
     await waitFor(() => expect(result.current.data).toEqual(['us-east-1']));
     expect(get).toHaveBeenCalledWith(

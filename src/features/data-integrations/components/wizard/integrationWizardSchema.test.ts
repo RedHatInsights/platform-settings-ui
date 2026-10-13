@@ -106,14 +106,13 @@ const firstStep = (types: SourceType[] = sourceTypes) =>
 const nameStep = (types: SourceType[] = sourceTypes) =>
   wizardField(types).fields[1];
 
-const configurationStep = () => wizardField().fields[2];
-const authTypeStep = () => wizardField().fields[3];
-const credentialsStep = () => wizardField().fields[4];
-const appStep = () => wizardField().fields[5];
-const manualAppStep = () => wizardField().fields[6];
-const manualAwsStep = () => wizardField().fields[7];
 const step = (id: WizardStepId) =>
   wizardField().fields.find(({ name }: { name: string }) => name === id)!;
+const configurationStep = () => step(WizardStepId.Configuration);
+const credentialsStep = () => step(WizardStepId.AuthCredentials);
+const appStep = () => step(WizardStepId.ApplicationSelection);
+const manualAppStep = () => step(WizardStepId.ManualApplicationSelection);
+const manualAwsStep = () => step(WizardStepId.ManualAwsConfiguration);
 const manualPolicyStep = () => step(WizardStepId.ManualAwsPolicy);
 const manualRoleStep = () => step(WizardStepId.ManualAwsRole);
 const manualArnStep = () => step(WizardStepId.ManualAwsArn);
@@ -219,7 +218,6 @@ describe('createIntegrationWizardSchema', () => {
       WizardStepId.SourceTypeSelection,
       WizardStepId.NameIntegration,
       WizardStepId.Configuration,
-      WizardStepId.AuthTypeSelection,
       WizardStepId.AuthCredentials,
       WizardStepId.ApplicationSelection,
       WizardStepId.ManualApplicationSelection,
@@ -229,6 +227,36 @@ describe('createIntegrationWizardSchema', () => {
       WizardStepId.ManualAwsPolicy,
       WizardStepId.ManualAwsRole,
       WizardStepId.ManualAwsArn,
+      WizardStepId.AzureApplication,
+      WizardStepId.GoogleApplication,
+      'openshift-application',
+      'openshift-generic',
+      'openshift-endpoint',
+      'openshift-cost',
+      'azure-provisioning',
+      'azure-provisioning-subscription',
+      'azure-generic',
+      'azure-rhel',
+      'azure-rhel-playbook',
+      'azure-rhel-subscription',
+      'azure-cost',
+      'azure-cost-storage',
+      'azure-cost-export',
+      'azure-cost-export-custom',
+      'azure-cost-subscription',
+      'azure-cost-roles',
+      'google-provisioning',
+      'google-provisioning-role',
+      'google-generic',
+      'google-rhel',
+      'google-rhel-playbook',
+      'google-cost',
+      'google-cost-bucket',
+      'google-cost-iam',
+      'google-cost-access',
+      'google-cost-dataset',
+      'google-cost-dataset-custom',
+      'google-cost-billing',
       WizardStepId.Review,
       WizardStepId.SubmissionResult,
     ]);
@@ -279,7 +307,7 @@ describe('createIntegrationWizardSchema', () => {
       WizardStepId.Configuration,
     );
     expect(nameStep().nextStep.stepMapper.google).toBe(
-      WizardStepId.AuthTypeSelection,
+      WizardStepId.GoogleApplication,
     );
   });
 
@@ -295,19 +323,26 @@ describe('createIntegrationWizardSchema', () => {
     );
   });
 
-  it('holds unsupported providers on the authentication step', () => {
-    // No options plus a required validator is what keeps the primary button
-    // disabled, which is what makes the unmapped `nextStep` above unreachable.
-    const authField = authTypeStep().fields[1];
-
-    expect(authField.name).toBe(AUTH_TYPE_FIELD);
-    expect(authField.options).toEqual([]);
-    expect(authField.validate).toEqual([
-      {
-        type: validatorTypes.REQUIRED,
-        message: 'Select an authentication type to continue.',
-      },
-    ]);
+  it('routes each provider and application to a concrete flow', () => {
+    const names = stepNames();
+    expect(nameStep().nextStep.stepMapper.openshift).toBe(
+      'openshift-application',
+    );
+    expect(
+      step('openshift-application' as WizardStepId).nextStep.stepMapper['1'],
+    ).toBe('openshift-cost');
+    for (const provider of ['azure', 'google']) {
+      const app = step(`${provider}-application` as WizardStepId);
+      expect(nameStep().nextStep.stepMapper[provider]).toBe(app.name);
+      expect(app.fields[1].component).toBe('application-switch-group');
+      expect(app.fields[1].selectionMode).toBe('single');
+      expect(
+        app.fields[1].options.map(({ value }: { value: string }) => value),
+      ).toEqual(['1', '2', '3']);
+      for (const target of Object.values(app.nextStep.stepMapper)) {
+        expect(names).toContain(target);
+      }
+    }
   });
 
   it('offers both configuration modes, account authorization first', () => {
@@ -419,7 +454,11 @@ describe('createIntegrationWizardSchema', () => {
       hcsEnrolled: true,
       intl,
     });
-    expect(schema.fields[0].fields[6].fields[1].options[0].label).toBe(
+    const manualApplication = schema.fields[0].fields.find(
+      ({ name }: { name: string }) =>
+        name === WizardStepId.ManualApplicationSelection,
+    )!;
+    expect(manualApplication.fields[1].options[0].label).toBe(
       'Hybrid Committed Spend',
     );
   });
@@ -438,6 +477,9 @@ describe('createIntegrationWizardSchema', () => {
       maxStepIndex: 1,
       prevSteps: [WizardStepId.SourceTypeSelection],
     });
+    expect(wizardField(sourceTypes, 'openshift').initialState).toEqual(
+      wizardField(sourceTypes, 'amazon').initialState,
+    );
   });
 
   it('starts on the source type step when no provider was chosen', () => {
@@ -571,6 +613,85 @@ describe('toCreateSourceInput', () => {
         source: { name: 'My AWS integration' },
       }).applicationTypeIds,
     ).toEqual([]);
+  });
+
+  it('maps OpenShift Cost Management to source_ref and application auth', () => {
+    expect(
+      toCreateSourceInput(
+        {
+          source_type: 'openshift',
+          source: { name: 'cluster-cost', source_ref: 'cluster_1' },
+          application: { application_type_id: '1' },
+          authentication: { authtype: 'token' },
+        },
+        applicationTypes,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        sourceRef: 'cluster_1',
+        endpoint: undefined,
+        authentication: {
+          authtype: 'token',
+          username: undefined,
+          password: undefined,
+        },
+        selectedApplication: {
+          id: '1',
+          name: '/insights/platform/cost-management',
+          extra: undefined,
+        },
+      }),
+    );
+  });
+
+  it('maps Azure tenant ID under authentication.extra.azure', () => {
+    expect(
+      toCreateSourceInput(
+        {
+          source_type: 'azure',
+          source: { name: 'azure-cost' },
+          application: {
+            application_type_id: '1',
+            extra: { subscription_id: 'subscription' },
+          },
+          authentication: {
+            authtype: 'tenant_id_client_id_client_secret',
+            username: 'client',
+            password: 'secret',
+            extra: { azure: { tenant_id: 'tenant' } },
+          },
+        },
+        applicationTypes,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        authentication: expect.objectContaining({
+          extra: { azure: { tenant_id: 'tenant' } },
+        }),
+        selectedApplication: expect.objectContaining({
+          extra: { subscription_id: 'subscription' },
+        }),
+      }),
+    );
+  });
+
+  it('omits the empty Google RHEL credential', () => {
+    expect(
+      toCreateSourceInput(
+        {
+          source_type: 'google',
+          source: { name: 'google-rhel' },
+          application: { application_type_id: '2' },
+          authentication: { authtype: 'empty' },
+        },
+        applicationTypes,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        authentication: undefined,
+        selectedApplication: expect.objectContaining({ id: '2' }),
+      }),
+    );
   });
 });
 

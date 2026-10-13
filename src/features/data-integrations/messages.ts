@@ -155,6 +155,10 @@ export default defineMessages({
     description: 'Title of the source type selection wizard step',
     defaultMessage: 'Select integration type',
   },
+  wizardBundleLabel: {
+    id: 'dataIntegrations.wizard.bundleLabel',
+    defaultMessage: 'Bundle',
+  },
   wizardSourceTypeStepDescription: {
     id: 'dataIntegrations.wizard.sourceType.stepDescription',
     description: 'Introductory text above the source type cards',
@@ -229,6 +233,11 @@ export default defineMessages({
     description: 'What the Cost Management application does',
     defaultMessage:
       'Analyze, forecast, and optimize your Red Hat OpenShift cluster costs in hybrid cloud environments.',
+  },
+  provisioningDescription: {
+    id: 'dataIntegrations.application.provisioning.description',
+    defaultMessage:
+      'Build and launch images with custom content as Virtual Machines in hybrid cloud environments.',
   },
 
   // What the RHEL management bundle includes

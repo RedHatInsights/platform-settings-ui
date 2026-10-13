@@ -1,5 +1,6 @@
 import React from 'react';
 import useFieldApi from '@data-driven-forms/react-form-renderer/use-field-api';
+import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
 import type {
   UseFieldApiConfig,
   UseFieldApiProps,
@@ -43,6 +44,7 @@ interface CardSelectProps extends UseFieldApiProps<SourceTypeName | undefined> {
  * not carried over; nothing in this island selects more than one provider.
  */
 const SourceTypeCardSelect: React.FC<UseFieldApiConfig> = (props) => {
+  const form = useFormApi();
   const { input, meta, label, isRequired, options } = useFieldApi(
     props,
   ) as CardSelectProps;
@@ -51,7 +53,22 @@ const SourceTypeCardSelect: React.FC<UseFieldApiConfig> = (props) => {
   const errorId = `${input.name}-error`;
 
   const select = (value: SourceTypeName) => {
-    input.onChange(value);
+    form.batch(() => {
+      if (input.value !== value) {
+        // Unmounted wizard fields keep their values unless the provider switch clears them.
+        form.change('application', undefined);
+        form.change('applications', undefined);
+        form.change('authentication', undefined);
+        form.change('source.app_creation_workflow', undefined);
+        form.change('source.source_ref', undefined);
+        form.change('endpoint', undefined);
+        form.change('url', undefined);
+        form.change('aws', undefined);
+        form.change('meta', undefined);
+        form.change('lighthouse-clicked', undefined);
+      }
+      form.change(input.name, value);
+    });
     input.onBlur();
   };
 
@@ -79,7 +96,7 @@ const SourceTypeCardSelect: React.FC<UseFieldApiConfig> = (props) => {
             const cardId = `source-type-${value}`;
 
             return (
-              <GridItem sm={6} md={3} key={value}>
+              <GridItem sm={6} md={options.length === 1 ? 4 : 3} key={value}>
                 <Card
                   id={cardId}
                   isSelectable

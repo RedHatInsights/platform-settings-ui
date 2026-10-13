@@ -19,6 +19,48 @@ import { clearAndType, waitForModal } from '../../../shared/interactionHelpers';
 const ACCESS_KEY_ID = 'AKIAIOSFODNN7EXAMPLE';
 const SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY';
 
+async function advance(user: ReturnType<typeof userEvent.setup>) {
+  const modal = within(document.body);
+  await waitFor(() =>
+    expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+  );
+  await user.click(modal.getByRole('button', { name: 'Next' }));
+}
+
+async function selectProviderApplication(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string,
+  application: string,
+) {
+  const modal = within(document.body);
+  await modal.findByRole('heading', { name: 'Name integration' });
+  await clearAndType(
+    user,
+    () => modal.getByRole('textbox', { name: 'Integration name' }),
+    name,
+  );
+  await advance(user);
+  await modal.findByRole('heading', { name: 'Select application' });
+  expect(
+    modal.getByText(
+      'Analyze, forecast, and optimize your Red Hat OpenShift cluster costs in hybrid cloud environments.',
+    ),
+  ).toBeInTheDocument();
+  if (application === 'RHEL management') {
+    expect(modal.getByText('Red Hat gold images')).toBeInTheDocument();
+    expect(modal.getByText('Autoregistration')).toBeInTheDocument();
+    expect(
+      modal.queryByText('High precision subscription watch data'),
+    ).not.toBeInTheDocument();
+  }
+  await user.click(
+    modal.getByRole('radio', {
+      name: application === 'RHEL management' ? /RHEL management/ : application,
+    }),
+  );
+  await advance(user);
+}
+
 /**
  * Walks an AWS wizard that opened pre-selected from naming through to review,
  * taking account authorization and leaving its applications on.
@@ -79,10 +121,8 @@ async function fillAwsDetails(
  * The Add Data Integration wizard, built as a data-driven-forms schema — see
  * `wizard/integrationWizardSchema.ts`.
  *
- * AWS goes all the way through: provider, name, configuration, applications,
- * review, create. The other three providers stop on the authentication step,
- * which has nothing to offer them until RHCLOUD-51317 — which is also why the
- * configuration and application steps are only ever exercised for AWS here.
+ * All four providers can proceed through their source-ui application and
+ * authentication paths. AWS alone offers account authorization.
  *
  * The cards are a radio group, which is why every assertion here reaches for
  * them by `role: 'radio'` — doing so also proves each card carries the
@@ -947,41 +987,399 @@ export const SuccessAddAnother: Story = {
   },
 };
 
-/**
- * A provider with no authentication type yet. It reaches the authentication
- * step and stops there with an explanation — the one thing it must not do is
- * offer a Next, because there is no step mapped behind it.
- */
-export const UnsupportedProviderStopsAtAuthType: Story = {
-  args: { sourceType: 'google' },
-  play: async ({ step }) => {
+export const OpenshiftCostManagement: Story = {
+  args: { sourceType: 'openshift' },
+  play: async () => {
     const user = userEvent.setup();
     const modal = within(document.body);
-
     await modal.findByRole('heading', { name: 'Name integration' });
     await clearAndType(
       user,
       () => modal.getByRole('textbox', { name: 'Integration name' }),
-      'gcp-production',
+      'openshift-cost',
     );
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Select application' });
+    expect(
+      await modal.findByRole('radio', { name: /Hybrid Committed Spend/ }),
+    ).toBeChecked();
+    expect(
+      modal.getByText('Track Red Hat committed spend'),
+    ).toBeInTheDocument();
+    await advance(user);
+    await modal.findByRole('heading', {
+      name: 'Install and configure operator',
+    });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Cluster Identifier' }),
+      'cluster_1',
+    );
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Review details' });
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+    await modal.findByRole('heading', { name: 'Integration added' });
+    const request = bulkCreateRequests[bulkCreateRequests.length - 1];
+    expect(request.sources[0].source_ref).toBe('cluster_1');
+    expect(request.endpoints).toEqual([]);
+    expect(request.authentications[0].resource_type).toBe('application');
+  },
+};
+
+export const AzureCostManagement: Story = {
+  args: { sourceType: 'azure' },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+    await selectProviderApplication(user, 'azure-cost', 'Cost Management');
+    await modal.findByRole('heading', { name: 'Specify cost export scope' });
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Storage account name' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Resource group name' }),
+      'group_1',
+    );
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Storage account name' }),
+      'storage_1',
+    );
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Daily export' });
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Subscription ID' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Subscription ID' }),
+      'subscription_1',
+    );
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Roles' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Tenant (Directory) ID' }),
+      'tenant_1',
+    );
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Client (Application) ID' }),
+      'client_1',
+    );
+    await clearAndType(
+      user,
+      () => modal.getByLabelText(/Client secret/),
+      'secret_1',
+    );
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Review details' });
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+    await modal.findByRole('heading', { name: 'Integration added' });
+    const request = bulkCreateRequests[bulkCreateRequests.length - 1];
+    expect(request.applications[0].extra).toEqual(
+      expect.objectContaining({
+        resource_group: 'group_1',
+        storage_account: 'storage_1',
+        subscription_id: 'subscription_1',
+      }),
+    );
+    expect(request.authentications[0]).toEqual(
+      expect.objectContaining({
+        resource_type: 'application',
+        extra: { azure: { tenant_id: 'tenant_1' } },
+      }),
+    );
+  },
+};
+
+export const AzureCostCustomExport: Story = {
+  args: { sourceType: 'azure' },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+    await selectProviderApplication(user, 'azure-custom', 'Cost Management');
+    await user.click(
+      modal.getByRole('checkbox', {
+        name: 'Manually customize the data set sent to Cost Management',
+      }),
+    );
+    expect(
+      modal.queryByRole('textbox', { name: 'Cost export scope' }),
+    ).not.toBeInTheDocument();
+    await advance(user);
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Resource group name' }),
+      'group_custom',
+    );
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Storage account name' }),
+      'storage_custom',
+    );
+    await advance(user);
+    expect(
+      modal.queryByRole('textbox', { name: 'Cost export name' }),
+    ).not.toBeInTheDocument();
+    await advance(user);
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Subscription ID' }),
+      'subscription_custom',
+    );
+    await advance(user);
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Tenant (Directory) ID' }),
+      'tenant_custom',
+    );
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Client (Application) ID' }),
+      'client_custom',
+    );
+    await clearAndType(
+      user,
+      () => modal.getByLabelText(/Client secret/),
+      'secret_custom',
+    );
+    await advance(user);
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+    await modal.findByRole('heading', { name: 'Integration added' });
+    expect(
+      bulkCreateRequests[bulkCreateRequests.length - 1].applications[0].extra,
+    ).toEqual(
+      expect.objectContaining({
+        storage_only: true,
+      }),
+    );
+  },
+};
+
+export const GoogleCostManagement: Story = {
+  args: { sourceType: 'google' },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+    await selectProviderApplication(user, 'google-cost', 'Cost Management');
+    await modal.findByRole('heading', { name: 'Project' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Project ID' }),
+      'project-1',
+    );
+    await user.click(
+      modal.getByRole('textbox', { name: 'Service Account JSON' }),
+    );
+    await user.paste('{"type":"service_account"}');
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Create IAM role' });
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Assign access' });
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Create dataset' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Dataset ID' }),
+      'billing_dataset',
+    );
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Billing export' });
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Review details' });
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+    await modal.findByRole('heading', { name: 'Integration added' });
+    const request = bulkCreateRequests[bulkCreateRequests.length - 1];
+    expect(request.endpoints).toEqual([]);
+    expect(request.applications[0].extra).toEqual(
+      expect.objectContaining({ dataset: 'billing_dataset' }),
+    );
+    expect(request.authentications[0].resource_type).toBe('application');
+  },
+};
+
+export const GoogleCostCustomExport: Story = {
+  args: { sourceType: 'google' },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+    await selectProviderApplication(user, 'google-custom', 'Cost Management');
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Project ID' }),
+      'project-custom',
+    );
+    await user.click(
+      modal.getByRole('textbox', { name: 'Service Account JSON' }),
+    );
+    await user.paste('{"type":"service_account"}');
+    await user.click(
+      modal.getByRole('checkbox', {
+        name: 'Manually customize the data set sent to Cost Management',
+      }),
+    );
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Create cloud storage bucket' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Cloud storage bucket name' }),
+      'custom-bucket',
+    );
+    await advance(user);
+    await advance(user);
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Create dataset' });
+    expect(
+      modal.queryByRole('textbox', { name: 'Dataset ID' }),
+    ).not.toBeInTheDocument();
+    await advance(user);
+    await advance(user);
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+    await modal.findByRole('heading', { name: 'Integration added' });
+    expect(
+      bulkCreateRequests[bulkCreateRequests.length - 1].applications[0].extra,
+    ).toEqual(
+      expect.objectContaining({
+        bucket: 'custom-bucket',
+        storage_only: true,
+      }),
+    );
+  },
+};
+
+export const GoogleRhelManagement: Story = {
+  args: { sourceType: 'google' },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+    await selectProviderApplication(user, 'google-rhel', 'Cost Management');
+    await modal.findByRole('heading', { name: 'Project' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Project ID' }),
+      'old-project',
+    );
+    await user.click(
+      modal.getByRole('textbox', { name: 'Service Account JSON' }),
+    );
+    await user.paste('{"type":"service_account"}');
+    await user.click(modal.getByRole('button', { name: 'Back' }));
+    await modal.findByRole('heading', { name: 'Select application' });
+    await user.click(modal.getByRole('radio', { name: /RHEL management/ }));
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Obtain offline token' });
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Run Ansible playbook' });
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Review details' });
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+    await modal.findByRole('heading', { name: 'Integration added' });
+    const request = bulkCreateRequests[bulkCreateRequests.length - 1];
+    expect(request.authentications).toEqual([]);
+    expect(request.applications[0].application_type_id).toBe('2');
+    expect(request.applications[0].extra).toBeUndefined();
+  },
+};
+
+export const AzureRhelManagementLegacy: Story = {
+  args: { sourceType: 'azure' },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+    await selectProviderApplication(user, 'azure-rhel', 'RHEL management');
+    await modal.findByRole('heading', { name: 'Obtain offline token' });
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Run Ansible playbook' });
+    await advance(user);
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+    await modal.findByRole('heading', { name: 'Integration added' });
+    expect(
+      bulkCreateRequests[bulkCreateRequests.length - 1].authentications,
+    ).toEqual([]);
+  },
+};
+
+export const AzureRhelManagementLighthouse: Story = {
+  args: { sourceType: 'azure' },
+  parameters: { featureFlags: { 'sources.wizard.lighthouse': true } },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+    await selectProviderApplication(
+      user,
+      'azure-lighthouse',
+      'RHEL management',
+    );
+    await modal.findByRole('heading', { name: 'Configure Azure Lighthouse' });
     await waitFor(() =>
-      expect(modal.queryByRole('button', { name: 'Next' })).toBeEnabled(),
+      expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
     );
-    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await user.click(
+      await modal.findByRole('link', { name: 'Go to Lighthouse' }),
+    );
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Subscription ID' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Subscription ID' }),
+      'subscription-id',
+    );
+    await advance(user);
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+    await modal.findByRole('heading', { name: 'Integration added' });
+    expect(
+      bulkCreateRequests[bulkCreateRequests.length - 1].authentications[0],
+    ).toEqual(
+      expect.objectContaining({
+        authtype: 'lighthouse_subscription_id',
+        resource_type: 'application',
+        username: 'subscription-id',
+      }),
+    );
+  },
+};
 
-    await step('It lands on the authentication step', async () => {
-      await modal.findByRole('heading', { name: 'Select authentication type' });
-      expect(
-        modal.getByText(/Adding this integration type is not supported yet/),
-      ).toBeInTheDocument();
-    });
-
-    await step('There is no way forward, only back', async () => {
-      await waitFor(() =>
-        expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
-      );
-      expect(modal.getByRole('button', { name: 'Back' })).toBeEnabled();
-    });
+export const GoogleSubmitErrorRetry: Story = {
+  args: { sourceType: 'google' },
+  parameters: {
+    msw: {
+      handlers: [
+        ...createFlakyBulkCreateHandler(1),
+        ...createSourcesHandlers(),
+      ],
+    },
+  },
+  play: async () => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+    await selectProviderApplication(user, 'google-retry', 'Cost Management');
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Project ID' }),
+      'retry-project',
+    );
+    await user.click(
+      modal.getByRole('textbox', { name: 'Service Account JSON' }),
+    );
+    await user.paste('{"type":"service_account"}');
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Create IAM role' });
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Assign access' });
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Create dataset' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Dataset ID' }),
+      'retry_dataset',
+    );
+    await advance(user);
+    await modal.findByRole('heading', { name: 'Billing export' });
+    await advance(user);
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+    await modal.findByRole('heading', { name: 'Unable to add integration' });
+    await user.click(modal.getByRole('button', { name: 'Retry' }));
+    await modal.findByRole('heading', { name: 'Integration added' });
   },
 };
 
@@ -991,7 +1389,7 @@ export const UnsupportedProviderStopsAtAuthType: Story = {
  * wizard starts on naming rather than asking the same question twice.
  */
 export const PreSelected: Story = {
-  args: { sourceType: 'azure' },
+  args: { sourceType: 'openshift' },
   play: async ({ step }) => {
     const user = userEvent.setup();
     const modal = within(document.body);
@@ -1000,7 +1398,9 @@ export const PreSelected: Story = {
       await modal.findByRole('heading', { name: 'Name integration' });
 
       expect(
-        modal.getByText('Enter a name for your Microsoft Azure integration.'),
+        modal.getByText(
+          'Enter a name for your OpenShift Container Platform integration.',
+        ),
       ).toBeInTheDocument();
       expect(modal.queryByRole('radio')).not.toBeInTheDocument();
     });
@@ -1008,23 +1408,37 @@ export const PreSelected: Story = {
     await step('Back returns to the provider step, choice intact', async () => {
       await user.click(modal.getByRole('button', { name: 'Back' }));
 
-      const azure = await modal.findByRole('radio', {
-        name: 'Microsoft Azure',
+      const openshift = await modal.findByRole('radio', {
+        name: 'OpenShift Container Platform',
       });
-      expect(azure).toBeChecked();
+      expect(openshift).toBeChecked();
     });
 
     await step('A different provider can be chosen instead', async () => {
       await user.click(
-        modal.getByRole('radio', { name: 'Google Cloud Platform' }),
+        modal.getByRole('radio', { name: 'Amazon Web Services' }),
       );
 
       expect(
-        modal.getByRole('radio', { name: 'Google Cloud Platform' }),
+        modal.getByRole('radio', { name: 'Amazon Web Services' }),
       ).toBeChecked();
       expect(
-        modal.getByRole('radio', { name: 'Microsoft Azure' }),
+        modal.getByRole('radio', { name: 'OpenShift Container Platform' }),
       ).not.toBeChecked();
+      await advance(user);
+      await modal.findByRole('heading', { name: 'Name integration' });
+      expect(
+        modal.getByText(
+          'Enter a name for your Amazon Web Services integration.',
+        ),
+      ).toBeInTheDocument();
+      await clearAndType(
+        user,
+        () => modal.getByRole('textbox', { name: 'Integration name' }),
+        'amazon-after-switch',
+      );
+      await advance(user);
+      await modal.findByRole('heading', { name: 'Select configuration' });
     });
   },
 };

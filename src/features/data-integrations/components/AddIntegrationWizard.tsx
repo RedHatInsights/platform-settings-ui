@@ -12,6 +12,7 @@ import { Spinner } from '@patternfly/react-core/dist/dynamic/components/Spinner'
 import { Bullseye } from '@patternfly/react-core/dist/dynamic/layouts/Bullseye';
 import IntegrationsFormRenderer from './wizard/IntegrationsFormRenderer';
 import {
+  SOURCE_TYPE_FIELD,
   buildSourceTypeOptions,
   createIntegrationWizardSchema,
   createWizardInitialValues,
@@ -25,6 +26,7 @@ import { useSourceTypes } from '../data/queries/useSourceTypes';
 import { useCreateSource } from '../data/queries/useCreateSource';
 import { useAwsRegions } from '../data/queries/useAwsRegions';
 import { useHcsEnrollment } from '../data/queries/useHcsEnrollment';
+import { useAzureLighthouse } from '../../../capabilities/useAzureLighthouse';
 import messages from '../messages';
 import type { SourceTypeName } from '../types';
 
@@ -71,6 +73,7 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
   const { data: awsRegions = EMPTY_AWS_REGIONS, isError: isAwsRegionsError } =
     useAwsRegions(isOpen);
   const { data: hcsEnrolled = false } = useHcsEnrollment(isOpen);
+  const enableLighthouse = useAzureLighthouse();
 
   const isLoading = isLoadingSourceTypes || isLoadingAppTypes;
   const isError = isSourceTypesError || isAppTypesError;
@@ -116,6 +119,7 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
             awsRegions,
             isAwsRegionsError,
             hcsEnrolled,
+            enableLighthouse,
             intl,
             selectedType: sourceType,
           })
@@ -126,6 +130,7 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
       awsRegions,
       isAwsRegionsError,
       hcsEnrolled,
+      enableLighthouse,
       hasProviders,
       intl,
       sourceType,
@@ -231,18 +236,21 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
            * waiting, so the mutation's own state is what that step renders —
            * which is also why nothing here needs to be awaited.
            *
-           * Merged over the initial values because the renderer narrows what
-           * it submits to the fields of steps the user actually visited. A
-           * wizard opened with the provider already chosen skips step one, so
-           * `source_type` would otherwise be missing from the payload — and
-           * the API would be asked to create a source of no type at all.
+           * The renderer submits fields from visited steps only. A wizard
+           * opened from the dropdown skips the provider step, while going Back
+           * can change its answer. Read the current provider from form state
+           * so both paths submit the choice visible in the wizard.
            */
-          onSubmit={(values) =>
+          onSubmit={(values, formApi) =>
             createSource.mutate(
               toCreateSourceInput(
                 {
                   ...initialValues,
                   ...values,
+                  [SOURCE_TYPE_FIELD]:
+                    (formApi.getState().values as IntegrationWizardValues)[
+                      SOURCE_TYPE_FIELD
+                    ] ?? initialValues[SOURCE_TYPE_FIELD],
                 } as IntegrationWizardValues,
                 applicationTypes,
               ),

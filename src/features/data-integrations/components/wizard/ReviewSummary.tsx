@@ -1,5 +1,6 @@
 import React from 'react';
-import { useIntl } from 'react-intl';
+import { defineMessages, useIntl } from 'react-intl';
+import type { MessageDescriptor } from 'react-intl';
 import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
 import {
   DescriptionList,
@@ -18,6 +19,80 @@ import {
   providerLabel,
 } from './integrationWizardSchema';
 import type { IntegrationWizardValues } from './integrationWizardSchema';
+
+const providerReview = defineMessages({
+  clusterId: {
+    id: 'dataIntegrations.review.clusterId',
+    defaultMessage: 'Cluster identifier',
+  },
+  clusterUrl: {
+    id: 'dataIntegrations.review.clusterUrl',
+    defaultMessage: 'Cluster URL',
+  },
+  verifyTls: {
+    id: 'dataIntegrations.review.verifyTls',
+    defaultMessage: 'Verify TLS',
+  },
+  ca: { id: 'dataIntegrations.review.ca', defaultMessage: 'TLS certificate' },
+  tenantId: {
+    id: 'dataIntegrations.review.tenantId',
+    defaultMessage: 'Tenant ID',
+  },
+  credential: {
+    id: 'dataIntegrations.review.credential',
+    defaultMessage: 'Credential',
+  },
+  provided: {
+    id: 'dataIntegrations.review.provided',
+    defaultMessage: 'Provided',
+  },
+  none: { id: 'dataIntegrations.review.none', defaultMessage: 'Not provided' },
+  enabled: { id: 'dataIntegrations.review.enabled', defaultMessage: 'Enabled' },
+  disabled: {
+    id: 'dataIntegrations.review.disabled',
+    defaultMessage: 'Disabled',
+  },
+  projectId: {
+    id: 'dataIntegrations.review.projectId',
+    defaultMessage: 'Project ID',
+  },
+  subscriptionId: {
+    id: 'dataIntegrations.review.subscriptionId',
+    defaultMessage: 'Subscription ID',
+  },
+  clientId: {
+    id: 'dataIntegrations.review.clientId',
+    defaultMessage: 'Client ID',
+  },
+  resourceGroup: {
+    id: 'dataIntegrations.review.resourceGroup',
+    defaultMessage: 'Resource group',
+  },
+  storageAccount: {
+    id: 'dataIntegrations.review.storageAccount',
+    defaultMessage: 'Storage account',
+  },
+  subscription: {
+    id: 'dataIntegrations.review.subscription',
+    defaultMessage: 'Subscription ID',
+  },
+  scope: {
+    id: 'dataIntegrations.review.scope',
+    defaultMessage: 'Cost export scope',
+  },
+  exportName: {
+    id: 'dataIntegrations.review.exportName',
+    defaultMessage: 'Cost export name',
+  },
+  bucket: {
+    id: 'dataIntegrations.review.bucket',
+    defaultMessage: 'Cloud storage bucket',
+  },
+  dataset: {
+    id: 'dataIntegrations.review.dataset',
+    defaultMessage: 'Dataset ID',
+  },
+});
 
 /**
  * Masks an access key id down to its first four characters.
@@ -50,9 +125,8 @@ const ReviewSummary: React.FC = () => {
   const provider = values.source_type;
   const workflow = values.source?.app_creation_workflow;
 
-  const credential = values.authentication?.username;
   const isAccountAuthorization = workflow === 'account_authorization';
-  const { data: hcsEnrolled = false } = useHcsEnrollment(provider === 'amazon');
+  const { data: hcsEnrolled = false } = useHcsEnrollment(Boolean(provider));
 
   /*
    * Already fetched and cached by the wizard host, so this resolves from cache
@@ -67,16 +141,40 @@ const ReviewSummary: React.FC = () => {
         : value === values.application?.application_type_id,
     )
     .map(({ label, name }) =>
-      hcsEnrolled && name === '/insights/platform/cost-management'
+      (hcsEnrolled || provider === 'openshift') &&
+      name === '/insights/platform/cost-management'
         ? intl.formatMessage(messages.wizardAwsHcsName)
         : label,
     );
   const manualAppName = applicationTypes?.find(
     ({ id }) => id === values.application?.application_type_id,
   )?.name;
-  const authType = isAccountAuthorization
-    ? values.authentication?.authtype
-    : manualAwsAuthType(manualAppName);
+  const authType =
+    provider === 'amazon'
+      ? isAccountAuthorization
+        ? values.authentication?.authtype
+        : manualAwsAuthType(manualAppName)
+      : values.authentication?.authtype;
+  const credential =
+    authType === 'empty' ? undefined : values.authentication?.username;
+  const extra = values.application?.extra;
+  const costFields: Array<[string, MessageDescriptor]> =
+    manualAppName === '/insights/platform/cost-management'
+      ? provider === 'azure'
+        ? [
+            ['resource_group', providerReview.resourceGroup],
+            ['storage_account', providerReview.storageAccount],
+            ['subscription_id', providerReview.subscription],
+            ['scope', providerReview.scope],
+            ['export_name', providerReview.exportName],
+          ]
+        : provider === 'google'
+          ? [
+              ['bucket', providerReview.bucket],
+              ['dataset', providerReview.dataset],
+            ]
+          : []
+      : [];
 
   return (
     /*
@@ -119,7 +217,104 @@ const ReviewSummary: React.FC = () => {
           {selectedApplications.join(', ')}
         </DescriptionListDescription>
       </DescriptionListGroup>
-      {credential && (
+      {costFields.map(([key, label]) =>
+        typeof extra?.[key] === 'string' && extra[key] ? (
+          <DescriptionListGroup key={key}>
+            <DescriptionListTerm>
+              {intl.formatMessage(label)}
+            </DescriptionListTerm>
+            <DescriptionListDescription>
+              {String(extra[key])}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+        ) : null,
+      )}
+      {provider === 'openshift' &&
+        manualAppName === '/insights/platform/cost-management' &&
+        values.source?.source_ref && (
+          <DescriptionListGroup>
+            <DescriptionListTerm>
+              {intl.formatMessage(providerReview.clusterId)}
+            </DescriptionListTerm>
+            <DescriptionListDescription>
+              {values.source.source_ref}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+        )}
+      {provider === 'openshift' && !manualAppName && values.url && (
+        <>
+          <DescriptionListGroup>
+            <DescriptionListTerm>
+              {intl.formatMessage(providerReview.clusterUrl)}
+            </DescriptionListTerm>
+            <DescriptionListDescription>
+              {values.url}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+          <DescriptionListGroup>
+            <DescriptionListTerm>
+              {intl.formatMessage(providerReview.verifyTls)}
+            </DescriptionListTerm>
+            <DescriptionListDescription>
+              {intl.formatMessage(
+                values.endpoint?.verify_ssl
+                  ? providerReview.enabled
+                  : providerReview.disabled,
+              )}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+          <DescriptionListGroup>
+            <DescriptionListTerm>
+              {intl.formatMessage(providerReview.ca)}
+            </DescriptionListTerm>
+            <DescriptionListDescription>
+              {intl.formatMessage(
+                values.endpoint?.certificate_authority
+                  ? providerReview.provided
+                  : providerReview.none,
+              )}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+        </>
+      )}
+      {provider === 'azure' &&
+        values.authentication?.extra?.azure?.tenant_id && (
+          <DescriptionListGroup>
+            <DescriptionListTerm>
+              {intl.formatMessage(providerReview.tenantId)}
+            </DescriptionListTerm>
+            <DescriptionListDescription>
+              {values.authentication.extra.azure.tenant_id}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+        )}
+      {provider !== 'amazon' && credential && (
+        <DescriptionListGroup>
+          <DescriptionListTerm>
+            {intl.formatMessage(
+              provider === 'google'
+                ? providerReview.projectId
+                : authType === 'lighthouse_subscription_id'
+                  ? providerReview.subscriptionId
+                  : providerReview.clientId,
+            )}
+          </DescriptionListTerm>
+          <DescriptionListDescription>{credential}</DescriptionListDescription>
+        </DescriptionListGroup>
+      )}
+      {provider !== 'amazon' &&
+        authType !== 'empty' &&
+        values.authentication?.password && (
+          <DescriptionListGroup>
+            <DescriptionListTerm>
+              {intl.formatMessage(providerReview.credential)}
+            </DescriptionListTerm>
+            <DescriptionListDescription>
+              {intl.formatMessage(messages.wizardReviewSecretMasked)}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+        )}
+      {provider === 'amazon' && credential && (
         <>
           <DescriptionListGroup>
             <DescriptionListTerm>

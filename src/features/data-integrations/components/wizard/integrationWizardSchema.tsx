@@ -1068,6 +1068,7 @@ function reviewStep(intl: IntlShape) {
         component: componentTypes.PLAIN_TEXT,
         name: 'review-step-description',
         label: intl.formatMessage(messages.wizardReviewStepDescription),
+        TextContentProps: { className: 'pf-v6-u-mb-md' },
       },
       {
         component: REVIEW_SUMMARY_COMPONENT,

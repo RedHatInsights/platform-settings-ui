@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
+import { useAzureLighthouse } from '../../../capabilities/useAzureLighthouse';
 import AddIntegrationWizard from './AddIntegrationWizard';
 import { useApplicationTypes } from '../data/queries/useApplicationTypes';
 import { useAwsRegions } from '../data/queries/useAwsRegions';
@@ -23,6 +24,9 @@ jest.mock('../data/queries/useHcsEnrollment', () => ({
 jest.mock('../data/queries/useSourceTypes', () => ({
   useSourceTypes: jest.fn(),
 }));
+jest.mock('../../../capabilities/useAzureLighthouse', () => ({
+  useAzureLighthouse: jest.fn(),
+}));
 jest.mock('./wizard/IntegrationsFormRenderer', () => {
   const React = jest.requireActual<typeof import('react')>('react');
   const { WizardSubmissionContext } = jest.requireActual<{
@@ -35,7 +39,10 @@ jest.mock('./wizard/IntegrationsFormRenderer', () => {
       onSubmit,
       onCancel,
     }: {
-      onSubmit: (values: Record<string, unknown>) => void;
+      onSubmit: (
+        values: Record<string, unknown>,
+        formApi: { getState: () => { values: Record<string, unknown> } },
+      ) => void;
       onCancel: () => void;
     }) => {
       const { onAddAnother } = React.useContext(WizardSubmissionContext);
@@ -44,7 +51,13 @@ jest.mock('./wizard/IntegrationsFormRenderer', () => {
         null,
         React.createElement(
           'button',
-          { onClick: () => onSubmit({ source: { name: 'test-source' } }) },
+          {
+            onClick: () =>
+              onSubmit(
+                { source: { name: 'test-source' } },
+                { getState: () => ({ values: { source_type: 'google' } }) },
+              ),
+          },
           'Submit form',
         ),
         React.createElement(
@@ -85,6 +98,7 @@ function renderWizard(onClose = jest.fn()) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(useAzureLighthouse).mockReturnValue(false);
   jest.mocked(useSourceTypes).mockReturnValue({
     data: sourceTypes,
     isLoading: false,

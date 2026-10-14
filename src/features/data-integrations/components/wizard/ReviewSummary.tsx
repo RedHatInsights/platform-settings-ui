@@ -2,6 +2,7 @@ import React from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 import type { MessageDescriptor } from 'react-intl';
 import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
+import { Alert } from '@patternfly/react-core/dist/dynamic/components/Alert';
 import {
   DescriptionList,
   DescriptionListDescription,
@@ -176,7 +177,7 @@ const ReviewSummary: React.FC = () => {
           : []
       : [];
 
-  return (
+  const summary = (
     /*
       `tabIndex` because this is the only step with no inputs, and PatternFly's
       wizard body is a scrollable region: with nothing focusable inside it, a
@@ -351,6 +352,21 @@ const ReviewSummary: React.FC = () => {
         </>
       )}
     </DescriptionList>
+  );
+
+  return (
+    <>
+      {summary}
+      {provider === 'openshift' && (
+        <Alert
+          isInline
+          className="pf-v6-u-mt-md pf-v6-u-w-100"
+          title={intl.formatMessage(messages.wizardReviewPermissionsTitle)}
+        >
+          {intl.formatMessage(messages.wizardReviewPermissionsDescription)}
+        </Alert>
+      )}
+    </>
   );
 };
 

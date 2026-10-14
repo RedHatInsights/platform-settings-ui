@@ -1017,6 +1017,15 @@ export const OpenshiftCostManagement: Story = {
     );
     await advance(user);
     await modal.findByRole('heading', { name: 'Review details' });
+    expect(modal.getByText('Name', { exact: true })).toBeInTheDocument();
+    expect(
+      modal.getByText('Manage permissions in User Access'),
+    ).toBeInTheDocument();
+    expect(
+      modal.getByText(
+        'Make sure to manage permissions for this integration in custom roles that contain permissions for Cost Management.',
+      ),
+    ).toBeInTheDocument();
     await user.click(modal.getByRole('button', { name: 'Add' }));
     await modal.findByRole('heading', { name: 'Integration added' });
     const request = bulkCreateRequests[bulkCreateRequests.length - 1];

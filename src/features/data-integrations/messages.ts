@@ -637,7 +637,18 @@ export default defineMessages({
   wizardReviewName: {
     id: 'dataIntegrations.wizard.review.name',
     description: 'Review row label for the integration name',
-    defaultMessage: 'Integration name',
+    defaultMessage: 'Name',
+  },
+  wizardReviewPermissionsTitle: {
+    id: 'dataIntegrations.wizard.review.permissions.title',
+    description: 'OpenShift review permissions alert title',
+    defaultMessage: 'Manage permissions in User Access',
+  },
+  wizardReviewPermissionsDescription: {
+    id: 'dataIntegrations.wizard.review.permissions.description',
+    description: 'OpenShift review permissions alert description',
+    defaultMessage:
+      'Make sure to manage permissions for this integration in custom roles that contain permissions for Cost Management.',
   },
   wizardReviewSecretMasked: {
     id: 'dataIntegrations.wizard.review.secretMasked',

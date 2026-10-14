@@ -58,7 +58,15 @@ function getNotifierIcon(
   if (type === 'camel' && subType) {
     const src = CAMEL_ICONS[subType];
     if (src) {
-      return <img src={src} alt={label} width={14} height={14} />;
+      return (
+        <img
+          src={src}
+          alt={label}
+          width={14}
+          height={14}
+          className="pf-v6-u-mt-xs"
+        />
+      );
     }
   }
 

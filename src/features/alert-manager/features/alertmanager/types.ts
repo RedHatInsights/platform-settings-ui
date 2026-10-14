@@ -39,6 +39,11 @@ export interface EndpointInfo {
   sub_type?: string;
   name: string;
   enabled: boolean;
+  event_types_group_by_bundles_and_applications?: {
+    applications?: {
+      event_types?: { id: string }[];
+    }[];
+  }[];
 }
 
 export interface NotifierSummary {

@@ -108,7 +108,7 @@ export default defineMessages({
     id: 'alertManager.table.myNotifiersTooltip',
     description: 'Tooltip explaining what notifiers are',
     defaultMessage:
-      'Notifiers are the communication channels configured to alert you when events fire, such as email, Slack, or webhooks.',
+      'Notifiers are the communication channels configured to alert you when events fire.',
   },
   noNotifiers: {
     id: 'alertManager.table.noNotifiers',

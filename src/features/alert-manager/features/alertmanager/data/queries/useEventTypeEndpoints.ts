@@ -1,18 +1,17 @@
-import { useQueries } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useAppServices } from '../../../../../../shared/ServiceContext';
 import type { NotifierSummary } from '../../types';
 import {
-  extractNotifiers,
-  fetchEventTypeEndpoints,
+  extractNotifiersByEventType,
+  fetchEndpoints,
 } from '../api/eventTypeEndpoints';
 
 const STALE_TIME = 5 * 60 * 1000;
 
-export const eventTypeEndpointsQueryKey = (eventTypeId: string) => [
+export const eventTypeEndpointsQueryKey = [
   'alertManager',
   'eventTypeEndpoints',
-  eventTypeId,
-];
+] as const;
 
 export interface EventTypeNotifierState {
   status: 'pending' | 'error' | 'success';
@@ -20,34 +19,27 @@ export interface EventTypeNotifierState {
 }
 
 /**
- * Fetches behavior groups for each event type ID and extracts a
- * `Map<eventTypeId, EventTypeNotifierState>` of configured notifiers,
- * preserving each query's loading/error status.
+ * Fetches enabled endpoints once and extracts a
+ * `Map<eventTypeId, EventTypeNotifierState>` of configured notifiers.
  */
 export const useEventTypeNotifiers = (eventTypeIds: string[]) => {
   const { axios } = useAppServices();
 
-  const queries = useQueries({
-    queries: eventTypeIds.map((id) => ({
-      queryKey: eventTypeEndpointsQueryKey(id),
-      queryFn: async (): Promise<NotifierSummary[]> => {
-        const endpoints = await fetchEventTypeEndpoints(axios, id);
-        return extractNotifiers(endpoints);
-      },
-      staleTime: STALE_TIME,
-      enabled: eventTypeIds.length > 0,
-    })),
+  const query = useQuery({
+    queryKey: eventTypeEndpointsQueryKey,
+    queryFn: () => fetchEndpoints(axios),
+    staleTime: STALE_TIME,
+    enabled: eventTypeIds.length > 0,
   });
 
+  const notifiersByEventType = extractNotifiersByEventType(query.data ?? []);
   const notifiersMap = new Map<string, EventTypeNotifierState>();
-  queries.forEach((query, index) => {
-    notifiersMap.set(eventTypeIds[index], {
+  eventTypeIds.forEach((eventTypeId) => {
+    notifiersMap.set(eventTypeId, {
       status: query.isError ? 'error' : query.isPending ? 'pending' : 'success',
-      notifiers: query.data ?? [],
+      notifiers: notifiersByEventType.get(eventTypeId) ?? [],
     });
   });
 
-  const isLoading = queries.some((q) => q.isLoading);
-
-  return { notifiersMap, isLoading };
+  return { notifiersMap, isLoading: query.isLoading };
 };

@@ -1,11 +1,10 @@
 import { HttpResponse, http, delay as mswDelay } from 'msw';
 import type { EndpointInfo } from '../../types';
 
-const API_BASE = '/api/notifications/v3';
+const API_BASE = '/api/integrations/v3.0';
 
 /**
  * Mock endpoints keyed by event type ID.
- * Each entry is a flat array of endpoints linked to that event type.
  */
 export const mockEndpointsByEventType: Record<string, EndpointInfo[]> = {
   '1': [
@@ -124,39 +123,43 @@ export const mockEndpointsByEventType: Record<string, EndpointInfo[]> = {
 
 export const eventTypeEndpointsHandlers = {
   /**
-   * Returns endpoints from the mock map for each event type.
+   * Returns all enabled endpoints with their linked event types.
    */
   success: () =>
-    http.get(
-      `${API_BASE}/notifications/eventTypes/:eventTypeId/endpoints`,
-      ({ params }) => {
-        const { eventTypeId } = params;
-        const endpoints = mockEndpointsByEventType[eventTypeId as string] ?? [];
-        return HttpResponse.json(endpoints);
-      },
-    ),
+    http.get(`${API_BASE}/endpoints`, () => {
+      const endpoints = Object.entries(mockEndpointsByEventType).flatMap(
+        ([eventTypeId, eventTypeEndpoints]) =>
+          eventTypeEndpoints.map((endpoint) => ({
+            ...endpoint,
+            event_types_group_by_bundles_and_applications: [
+              {
+                applications: [{ event_types: [{ id: eventTypeId }] }],
+              },
+            ],
+          })),
+      );
+      return HttpResponse.json({
+        data: endpoints,
+        links: {},
+        meta: { count: endpoints.length },
+      });
+    }),
 
   /** All event types return empty (no notifiers configured). */
   empty: () =>
-    http.get(
-      `${API_BASE}/notifications/eventTypes/:eventTypeId/endpoints`,
-      () => HttpResponse.json([]),
+    http.get(`${API_BASE}/endpoints`, () =>
+      HttpResponse.json({ data: [], links: {}, meta: { count: 0 } }),
     ),
 
   /** Simulate loading delay. */
   loading: () =>
-    http.get(
-      `${API_BASE}/notifications/eventTypes/:eventTypeId/endpoints`,
-      async () => {
-        await mswDelay('infinite');
-      },
-    ),
+    http.get(`${API_BASE}/endpoints`, async () => {
+      await mswDelay('infinite');
+    }),
 
   /** Simulate API error. */
   error: () =>
-    http.get(
-      `${API_BASE}/notifications/eventTypes/:eventTypeId/endpoints`,
-      () =>
-        HttpResponse.json({ error: 'Internal server error' }, { status: 500 }),
+    http.get(`${API_BASE}/endpoints`, () =>
+      HttpResponse.json({ error: 'Internal server error' }, { status: 500 }),
     ),
 };

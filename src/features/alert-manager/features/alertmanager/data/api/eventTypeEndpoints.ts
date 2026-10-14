@@ -1,35 +1,76 @@
+import { endpointResourceV3GetEndpoints } from '@redhat-cloud-services/integrations-client/v3';
+import { APIFactory } from '@redhat-cloud-services/javascript-clients-shared/utils';
 import type { AxiosInstance } from 'axios';
 import type { EndpointInfo, NotifierSummary } from '../../types';
 
-const API_BASE = '/api/notifications/v3';
+const API_BASE = '/api/integrations/v3.0';
+const ENDPOINT_PAGE_SIZE = 200;
+const endpoints = { endpointResourceV3GetEndpoints };
 
-export const fetchEventTypeEndpoints = async (
+export const fetchEndpoints = async (
   axios: AxiosInstance,
-  eventTypeId: string,
 ): Promise<EndpointInfo[]> => {
-  const response = await axios.get<EndpointInfo[]>(
-    `${API_BASE}/notifications/eventTypes/${eventTypeId}/endpoints`,
-  );
-  return response.data;
+  const api = APIFactory(API_BASE, endpoints, { axios });
+  const allEndpoints: EndpointInfo[] = [];
+  let offset = 0;
+
+  while (true) {
+    const response = await api.endpointResourceV3GetEndpoints({
+      limit: ENDPOINT_PAGE_SIZE,
+      offset,
+      active: true,
+    });
+    const pageEndpoints = response.data.data as EndpointInfo[];
+    allEndpoints.push(...pageEndpoints);
+
+    if (
+      pageEndpoints.length === 0 ||
+      allEndpoints.length >= response.data.meta.count
+    ) {
+      return allEndpoints;
+    }
+
+    offset += pageEndpoints.length;
+  }
 };
 
-/**
- * Extract unique notifier summaries from endpoints.
- * Groups by endpoint type + sub_type to produce distinct notifier labels.
- */
-export function extractNotifiers(endpoints: EndpointInfo[]): NotifierSummary[] {
-  const seen = new Map<string, NotifierSummary>();
+export function extractNotifiersByEventType(
+  endpoints: EndpointInfo[],
+): Map<string, NotifierSummary[]> {
+  const notifiersByEventType = new Map<string, NotifierSummary[]>();
 
   for (const endpoint of endpoints) {
-    const { type, sub_type, enabled } = endpoint;
-    if (!enabled) continue;
+    if (!endpoint.enabled) continue;
 
-    const key = type === 'camel' && sub_type ? `${type}:${sub_type}` : type;
+    const notifier = { type: endpoint.type, subType: endpoint.sub_type };
+    const eventTypeIds =
+      endpoint.event_types_group_by_bundles_and_applications?.flatMap(
+        (bundle) =>
+          bundle.applications?.flatMap(
+            (application) => application.event_types?.map(({ id }) => id) ?? [],
+          ) ?? [],
+      ) ?? [];
 
-    if (!seen.has(key)) {
-      seen.set(key, { type, subType: sub_type });
+    for (const eventTypeId of eventTypeIds) {
+      const notifiers = notifiersByEventType.get(eventTypeId) ?? [];
+      const key = notifier.subType
+        ? `${notifier.type}:${notifier.subType}`
+        : notifier.type;
+
+      if (
+        !notifiers.some((item) => {
+          const itemKey = item.subType
+            ? `${item.type}:${item.subType}`
+            : item.type;
+          return itemKey === key;
+        })
+      ) {
+        notifiers.push(notifier);
+      }
+
+      notifiersByEventType.set(eventTypeId, notifiers);
     }
   }
 
-  return Array.from(seen.values());
+  return notifiersByEventType;
 }

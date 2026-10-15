@@ -5,6 +5,7 @@ import { Spinner } from '@patternfly/react-core/dist/dynamic/components/Spinner'
 import NotificationsProvider from '@redhat-cloud-services/frontend-components-notifications/NotificationsProvider';
 import { useAddNotification } from '@redhat-cloud-services/frontend-components-notifications/hooks';
 import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome';
+import { useChromeLocale } from './shared/i18n';
 
 import ErrorBoundary from './Components/ErrorBoundary';
 import Routing from './Routing';
@@ -58,13 +59,14 @@ const AppWithServices = () => {
 
 const App = () => {
   const { updateDocumentTitle } = useChrome();
+  const locale = useChromeLocale();
 
   useEffect(() => {
     updateDocumentTitle('Platform Settings');
   }, []);
 
   return (
-    <IntlProvider locale="en" defaultLocale="en">
+    <IntlProvider locale={locale} defaultLocale="en">
       <NotificationsProvider>
         <AppWithServices />
       </NotificationsProvider>

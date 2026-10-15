@@ -204,4 +204,9 @@ export default defineMessages({
     defaultMessage:
       'An error occurred while loading the data integration. Please try again.',
   },
+  loadingSourceDetails: {
+    id: 'dataIntegrations.sourceDetail.loadingAria',
+    description: 'Loading source details spinner aria-label',
+    defaultMessage: 'Loading source details',
+  },
 });

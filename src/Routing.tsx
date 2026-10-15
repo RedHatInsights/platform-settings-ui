@@ -1,3 +1,4 @@
+import { defineMessages, useIntl } from 'react-intl';
 import { Suspense, lazy, useMemo } from 'react';
 import type { ComponentType } from 'react';
 import { Route as RouterRoute, Routes as RouterRoutes } from 'react-router-dom';
@@ -52,11 +53,21 @@ const SourceDetailPage = lazy(
 // AboutTab is rendered directly by DataIntegrationsPage (not lazy loaded via routing)
 // to support query param-based tab switching (?tab=about)
 
-const LandingPage = () => (
-  <Bullseye>
-    <p>Platform Settings</p>
-  </Bullseye>
-);
+const landingMessages = defineMessages({
+  title: {
+    id: 'platformSettings.landing.title',
+    defaultMessage: 'Platform Settings',
+  },
+});
+
+const LandingPage = () => {
+  const intl = useIntl();
+  return (
+    <Bullseye>
+      <p>{intl.formatMessage(landingMessages.title)}</p>
+    </Bullseye>
+  );
+};
 
 const routes = [
   {

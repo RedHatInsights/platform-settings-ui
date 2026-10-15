@@ -30,6 +30,9 @@ import {
 import PauseIcon from '@patternfly/react-icons/dist/dynamic/icons/pause-icon';
 import TrashIcon from '@patternfly/react-icons/dist/dynamic/icons/trash-icon';
 import { useIntl } from 'react-intl';
+
+const COLON_SPACE = ': ';
+
 import DateFormat from '@redhat-cloud-services/frontend-components/DateFormat';
 import messages from '../messages';
 import SourceStatusLabel from '../../../components/SourceStatusLabel';
@@ -89,7 +92,10 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
     <Stack>
       <StackItem>
         <div>
-          <strong>{intl.formatMessage(messages.lastModified)}:</strong>{' '}
+          <strong>
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {intl.formatMessage(messages.lastModified)}:{COLON_SPACE}
+          </strong>
           {/*
             A source that has never been edited has no `updated_at`, so fall
             back to its creation time rather than claiming "Just now".
@@ -99,7 +105,10 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
       </StackItem>
       <StackItem>
         <div>
-          <strong>{intl.formatMessage(messages.lastAvailabilityCheck)}:</strong>{' '}
+          <strong>
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {intl.formatMessage(messages.lastAvailabilityCheck)}:{COLON_SPACE}
+          </strong>
           {source.last_checked_at ? (
             intl.formatMessage(messages.checkedAgo, {
               time: <DateFormat date={source.last_checked_at} />,

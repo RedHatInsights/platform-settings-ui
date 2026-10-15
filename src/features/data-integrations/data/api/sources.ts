@@ -285,11 +285,9 @@ export function createSourcesApi(axios: AxiosInstance) {
     async isSourceNameTaken(name: string): Promise<boolean> {
       const response = await api.postGraphQL({
         graphQLRequest: {
-          query:
-            'query SourceName($filter: [Filter]) { sources(filter: $filter) { id, name } }',
-          variables: {
-            filter: [{ name: 'name', operation: 'eq', value: [name] }],
-          },
+          query: `{ sources(filter: {name: "name", value: ${JSON.stringify(name)}})
+        { id, name }
+    }`,
         },
       });
 

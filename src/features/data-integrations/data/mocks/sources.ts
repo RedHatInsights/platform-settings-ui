@@ -21,10 +21,9 @@ export const sourcesDb = createResettableCollection(seedSources);
 export const bulkCreateRequests: BulkCreatePayload[] = [];
 
 /**
- * The api layer sends arguments as GraphQL variables rather than interpolating
- * them into the query, so the handlers read a typed object instead of parsing
- * a query string. These mirror the `Filter` and `SortBy` inputs in
- * `graph/schema.graphqls`.
+ * These mirror the `Filter` and `SortBy` inputs in `graph/schema.graphqls`.
+ * List calls use variables, while the name validator intentionally mirrors
+ * sources-ui's raw GraphQL query.
  */
 interface GraphQLFilter {
   name: string;
@@ -45,6 +44,22 @@ interface SourcesRequestBody {
     sortBy?: GraphQLSortBy[];
     filter?: GraphQLFilter[];
   };
+}
+
+function nameFilterFromQuery(query: string): GraphQLFilter[] | undefined {
+  const match = query.match(
+    /filter:\s*\{\s*name:\s*"name",\s*value:\s*("(?:\\.|[^"\\])*")/,
+  );
+
+  if (!match) {
+    return undefined;
+  }
+
+  try {
+    return [{ name: 'name', value: [JSON.parse(match[1])] }];
+  } catch {
+    return undefined;
+  }
 }
 
 /** Only the columns a story sorts on; the real API allows more. */
@@ -399,12 +414,14 @@ export function createSourcesHandlers(
     ),
 
     http.post(`${baseUrl}/graphql`, async ({ request }) => {
-      const { variables } = (await request.json()) as SourcesRequestBody;
+      const body = (await request.json()) as SourcesRequestBody;
+      const { variables } = body;
       const limit = variables?.limit ?? DEFAULT_LIMIT;
       const offset = variables?.offset ?? 0;
+      const filter = variables?.filter ?? nameFilterFromQuery(body.query);
 
       const matched = sortSources(
-        filterSources(sourcesDb.findAll(), variables?.filter),
+        filterSources(sourcesDb.findAll(), filter),
         variables?.sortBy,
       );
 

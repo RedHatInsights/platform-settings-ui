@@ -63,11 +63,9 @@ describe('createSourcesApi', () => {
     await expect(api.isSourceNameTaken('existing')).resolves.toBe(true);
     expect(mockApi.postGraphQL).toHaveBeenCalledWith({
       graphQLRequest: {
-        query:
-          'query SourceName($filter: [Filter]) { sources(filter: $filter) { id, name } }',
-        variables: {
-          filter: [{ name: 'name', operation: 'eq', value: ['existing'] }],
-        },
+        query: `{ sources(filter: {name: "name", value: "existing"})
+        { id, name }
+    }`,
       },
     });
   });

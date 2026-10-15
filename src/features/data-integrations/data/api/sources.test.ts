@@ -17,13 +17,41 @@ describe('createSourcesApi', () => {
   });
 
   it('reads HCS enrollment from billing', async () => {
-    const get = jest.fn().mockResolvedValue({ data: { hcsDeal: true } });
+    const get = jest
+      .fn()
+      .mockResolvedValue({ status: 200, data: { hcsDeal: true } });
     const api = createSourcesApi({ get } as unknown as AxiosInstance);
 
     await expect(api.getHcsEnrollment()).resolves.toBe(true);
     expect(get).toHaveBeenCalledWith(
-      '/api/billing/v1/authorization/hcsEnrollment',
+      'https://console.stage.redhat.com/api/billing/v1/authorization/hcsEnrollment',
     );
+  });
+
+  it('uses the production console for HCS enrollment', async () => {
+    const get = jest
+      .fn()
+      .mockResolvedValue({ status: 200, data: { hcsDeal: false } });
+    const api = createSourcesApi({ get } as unknown as AxiosInstance);
+
+    await expect(api.getHcsEnrollment(true)).resolves.toBe(false);
+    expect(get).toHaveBeenCalledWith(
+      'https://console.redhat.com/api/billing/v1/authorization/hcsEnrollment',
+    );
+  });
+
+  it('treats an unavailable enrollment response as not enrolled', async () => {
+    const get = jest.fn().mockResolvedValue({ status: 503 });
+    const api = createSourcesApi({ get } as unknown as AxiosInstance);
+
+    await expect(api.getHcsEnrollment()).resolves.toBe(false);
+  });
+
+  it('treats an enrollment request failure as not enrolled', async () => {
+    const get = jest.fn().mockRejectedValue(new Error('billing unavailable'));
+    const api = createSourcesApi({ get } as unknown as AxiosInstance);
+
+    await expect(api.getHcsEnrollment()).resolves.toBe(false);
   });
 
   describe('createSource', () => {
@@ -254,6 +282,43 @@ describe('createSourcesApi', () => {
       ]);
     });
 
+    it('links endpoint authentication to the selected application', async () => {
+      const created = { id: 'src-1', name: 'azure-cost' };
+      const post = jest
+        .fn()
+        .mockResolvedValueOnce({
+          data: {
+            sources: [created],
+            applications: [{ id: 'app-1', application_type_id: '1' }],
+            authentications: [{ id: 'auth-1' }],
+          },
+        })
+        .mockResolvedValue({ data: {} });
+
+      await createSourcesApi({ post } as unknown as AxiosInstance).createSource(
+        {
+          name: 'azure-cost',
+          sourceTypeName: 'azure',
+          endpoint: { url: 'https://management.azure.com' },
+          selectedApplication: {
+            id: '1',
+            name: '/insights/platform/cost-management',
+          },
+          authentication: {
+            authtype: 'tenant_id_client_id_client_secret',
+            username: 'client',
+            password: 'secret',
+          },
+        },
+      );
+
+      expect(post).toHaveBeenNthCalledWith(
+        2,
+        '/api/sources/v3.1/application_authentications',
+        { application_id: 'app-1', authentication_id: 'auth-1' },
+      );
+    });
+
     it('creates OpenShift Cost Management without an endpoint', async () => {
       const post = jest
         .fn()
@@ -319,6 +384,23 @@ describe('createSourcesApi', () => {
         authentication: { authtype: 'empty' },
       });
       expect(post.mock.calls[2][1].authentications).toEqual([]);
+    });
+
+    it('selects the billing-export Google service account metadata', async () => {
+      const get = jest.fn().mockResolvedValue({
+        data: {
+          data: [
+            { payload: 'provisioning@example.iam.gserviceaccount.com' },
+            { payload: 'billing-export@example.iam.gserviceaccount.com' },
+          ],
+        },
+      });
+
+      await expect(
+        createSourcesApi({
+          get,
+        } as unknown as AxiosInstance).getGoogleBillingAccount(),
+      ).resolves.toBe('billing-export@example.iam.gserviceaccount.com');
     });
 
     it('rejects an incomplete manual payload before posting', async () => {

@@ -66,7 +66,7 @@ interface BundlePoint {
  * provider seeing another provider's cloud named in the gold-images line is
  * the mistake this table exists to avoid.
  */
-function bundlePoints(
+export function bundlePoints(
   provider: SourceTypeName | undefined,
   intl: IntlShape,
 ): BundlePoint[] {
@@ -295,7 +295,9 @@ const ApplicationSwitchGroup: React.FC<UseFieldApiConfig> = (props) => {
                           />
                         </FlexItem>
                         <FlexItem>
-                          <Content component="p">{point.title}</Content>
+                          <Content component="p" className="pf-v6-u-mb-xs">
+                            {point.title}
+                          </Content>
                           <Content component="p">{point.description}</Content>
                         </FlexItem>
                       </Flex>

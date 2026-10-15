@@ -19,6 +19,7 @@ import {
   OpenShiftOperatorInstructions,
 } from './OpenShiftInstructions';
 import ManualAwsApplicationSelect from './ManualAwsApplicationSelect';
+import ProviderNameDescription from './ProviderNameDescription';
 import SourceTypeCardSelect from './SourceTypeCardSelect';
 import ReviewSummary from './ReviewSummary';
 import SubmissionResult from './SubmissionResult';
@@ -54,6 +55,7 @@ export const mapperExtension = {
   [AWS_EXTERNAL_ID_COMPONENT]: AwsExternalId,
   [AWS_REGION_SELECT_COMPONENT]: AwsRegionSelect,
   [MANUAL_AWS_APPLICATION_SELECT_COMPONENT]: ManualAwsApplicationSelect,
+  'provider-name-description': ProviderNameDescription,
   [REVIEW_SUMMARY_COMPONENT]: ReviewSummary,
   [SUBMISSION_RESULT_COMPONENT]: SubmissionResult,
 };

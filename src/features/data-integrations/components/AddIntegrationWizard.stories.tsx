@@ -520,6 +520,21 @@ export const AmazonManualConfiguration: Story = {
 
       await modal.findByRole('heading', { name: 'Select application' });
       expect(
+        modal.getByRole('link', { name: 'Learn more' }),
+      ).toBeInTheDocument();
+      expect(
+        modal.getByText(
+          'Analyze, forecast, and optimize your Red Hat OpenShift cluster costs in hybrid cloud environments.',
+        ),
+      ).toBeInTheDocument();
+      expect(modal.getByText('RHEL management')).toBeInTheDocument();
+      expect(modal.getByText('Bundle')).toBeInTheDocument();
+      expect(modal.getByText('Red Hat gold images')).toBeInTheDocument();
+      expect(
+        modal.getByText('High precision subscription watch data'),
+      ).toBeInTheDocument();
+      expect(modal.getByText('Autoregistration')).toBeInTheDocument();
+      expect(
         modal.queryByRole('heading', { name: 'Enter credentials' }),
       ).not.toBeInTheDocument();
     });
@@ -527,26 +542,33 @@ export const AmazonManualConfiguration: Story = {
     await step('Cost Management collects its AWS details', async () => {
       await user.click(modal.getByRole('radio', { name: 'Cost Management' }));
       await user.click(modal.getByRole('button', { name: 'Next' }));
-      await modal.findByRole('heading', { name: 'Configure AWS access' });
+      await modal.findByRole('heading', { name: 'Create storage' });
+      expect(
+        modal.getByText(
+          'To store the data export (previously called a cost and usage report) for cost management, create an Amazon S3 bucket.',
+        ),
+      ).toBeInTheDocument();
+      expect(modal.getByRole('link', { name: 'Learn more' })).toHaveAttribute(
+        'href',
+        'https://docs.redhat.com/en/documentation/cost_management_service/1-latest/integrate-adding_filtered_aws_int#creating-an-aws-s3-bucket-hcs-n',
+      );
       await clearAndType(
         user,
         () => modal.getByRole('textbox', { name: 'S3 bucket name' }),
         'my-cost-bucket',
       );
-      await user.selectOptions(
-        modal.getByRole('combobox', { name: 'AWS region' }),
-        'us-east-1',
-      );
+      await user.click(modal.getByRole('button', { name: 'AWS region' }));
+      await user.click(modal.getByRole('option', { name: 'us-east-1' }));
       await user.click(modal.getByRole('button', { name: 'Next' }));
       await modal.findByRole('heading', {
         name: 'Create cost and usage report',
       });
       expect(
-        modal.getByText(/Legacy CUR export named koku/),
+        modal.getByText('Export type: Legacy CUR export'),
       ).toBeInTheDocument();
       await user.click(modal.getByRole('button', { name: 'Next' }));
       await modal.findByRole('heading', {
-        name: 'Tags, aliases and organizational units',
+        name: 'Tag aliases and organizational units',
       });
       await user.click(modal.getByRole('button', { name: 'Next' }));
       await modal.findByRole('heading', { name: 'Create IAM policy' });
@@ -561,10 +583,6 @@ export const AmazonManualConfiguration: Story = {
       const externalId = (
         modal.getByRole('textbox', { name: 'External ID' }) as HTMLInputElement
       ).value;
-      await user.click(modal.getByRole('button', { name: 'Next' }));
-      await modal.findByRole('heading', { name: 'Enter ARN' });
-      await user.click(modal.getByRole('button', { name: 'Back' }));
-      await modal.findByRole('heading', { name: 'Create IAM role' });
       expect(modal.getByRole('textbox', { name: 'External ID' })).toHaveValue(
         externalId,
       );
@@ -647,9 +665,11 @@ export const AmazonManualHcsEnrollment: Story = {
       modal.getByRole('radio', { name: 'Hybrid Committed Spend' }),
     );
     await user.click(modal.getByRole('button', { name: 'Next' }));
-    await modal.findByRole('heading', { name: 'Configure AWS access' });
+    await modal.findByRole('heading', { name: 'Create storage' });
     expect(
-      modal.getByText(/Create an S3 bucket for Hybrid Committed Spend/),
+      modal.getByText(
+        'To store the data export (previously called a cost and usage report) for cost management, create an Amazon S3 bucket.',
+      ),
     ).toBeInTheDocument();
     expect(
       modal.queryByRole('link', { name: 'AWS setup instructions' }),
@@ -676,9 +696,7 @@ export const AmazonManualSwitchApplication: Story = {
     );
     await user.click(modal.getByRole('button', { name: 'Next' }));
     await modal.findByRole('heading', { name: 'Select application' });
-    await user.click(modal.getByRole('radio', { name: 'RHEL management' }));
-    await user.click(modal.getByRole('button', { name: 'Next' }));
-    await modal.findByRole('heading', { name: 'Configure AWS access' });
+    await user.click(modal.getByRole('radio', { name: /RHEL management/ }));
     await user.click(modal.getByRole('button', { name: 'Next' }));
     await modal.findByRole('heading', { name: 'Create IAM policy' });
     await user.click(modal.getByRole('button', { name: 'Next' }));
@@ -690,19 +708,15 @@ export const AmazonManualSwitchApplication: Story = {
       () => modal.getByRole('textbox', { name: 'IAM role ARN' }),
       'arn:aws:iam::123456789:role/SubscriptionWatch',
     );
-    for (const heading of [
-      'Create IAM role',
-      'Create IAM policy',
-      'Configure AWS access',
-      'Select application',
-    ]) {
-      await user.click(modal.getByRole('button', { name: 'Back' }));
-      await modal.findByRole('heading', { name: heading });
-    }
+    await user.click(modal.getByRole('button', { name: 'Back' }));
+    await modal.findByRole('heading', { name: 'Create IAM role' });
+    await user.click(modal.getByRole('button', { name: 'Back' }));
+    await modal.findByRole('heading', { name: 'Create IAM policy' });
+    await user.click(modal.getByRole('button', { name: 'Back' }));
     await modal.findByRole('heading', { name: 'Select application' });
     await user.click(modal.getByRole('radio', { name: 'Cost Management' }));
     await user.click(modal.getByRole('button', { name: 'Next' }));
-    await modal.findByRole('heading', { name: 'Configure AWS access' });
+    await modal.findByRole('heading', { name: 'Create storage' });
     expect(modal.getByRole('textbox', { name: 'S3 bucket name' })).toHaveValue(
       '',
     );
@@ -711,13 +725,11 @@ export const AmazonManualSwitchApplication: Story = {
       () => modal.getByRole('textbox', { name: 'S3 bucket name' }),
       'new-bucket',
     );
-    await user.selectOptions(
-      modal.getByRole('combobox', { name: 'AWS region' }),
-      'us-east-1',
-    );
+    await user.click(modal.getByRole('button', { name: 'AWS region' }));
+    await user.click(modal.getByRole('option', { name: 'us-east-1' }));
     for (const heading of [
       'Create cost and usage report',
-      'Tags, aliases and organizational units',
+      'Tag aliases and organizational units',
       'Create IAM policy',
       'Create IAM role',
       'Enter ARN',
@@ -749,16 +761,13 @@ export const AmazonManualRhelManagement: Story = {
     );
     await user.click(modal.getByRole('button', { name: 'Next' }));
     await modal.findByRole('heading', { name: 'Select application' });
-    await user.click(modal.getByRole('radio', { name: 'RHEL management' }));
-    for (const heading of [
-      'Configure AWS access',
-      'Create IAM policy',
-      'Create IAM role',
-      'Enter ARN',
-    ]) {
-      await user.click(modal.getByRole('button', { name: 'Next' }));
-      await modal.findByRole('heading', { name: heading });
-    }
+    await user.click(modal.getByRole('radio', { name: /RHEL management/ }));
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Create IAM policy' });
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Create IAM role' });
+    await user.click(modal.getByRole('button', { name: 'Next' }));
+    await modal.findByRole('heading', { name: 'Enter ARN' });
     await clearAndType(
       user,
       () => modal.getByRole('textbox', { name: 'IAM role ARN' }),
@@ -804,10 +813,10 @@ export const AmazonManualLaunchImages: Story = {
     await modal.findByRole('heading', { name: 'Select application' });
     await user.click(modal.getByRole('radio', { name: 'Launch images' }));
     await user.click(modal.getByRole('button', { name: 'Next' }));
-    await modal.findByRole('heading', { name: 'Configure AWS access' });
+    await modal.findByRole('heading', { name: 'AWS Account Number' });
     await clearAndType(
       user,
-      () => modal.getByRole('textbox', { name: 'AWS account number' }),
+      () => modal.getByRole('textbox', { name: 'Account number' }),
       '123456789012',
     );
     await user.click(modal.getByRole('button', { name: 'Next' }));
@@ -1043,7 +1052,9 @@ export const AzureCostManagement: Story = {
     await selectProviderApplication(user, 'azure-cost', 'Cost Management');
     await modal.findByRole('heading', { name: 'Specify cost export scope' });
     await advance(user);
-    await modal.findByRole('heading', { name: 'Storage account name' });
+    await modal.findByRole('heading', {
+      name: 'Resource group and storage account',
+    });
     await clearAndType(
       user,
       () => modal.getByRole('textbox', { name: 'Resource group name' }),
@@ -1108,8 +1119,8 @@ export const AzureCostCustomExport: Story = {
     const modal = within(document.body);
     await selectProviderApplication(user, 'azure-custom', 'Cost Management');
     await user.click(
-      modal.getByRole('checkbox', {
-        name: 'Manually customize the data set sent to Cost Management',
+      modal.getByRole('radio', {
+        name: 'I wish to manually customize the data set sent to Cost Management',
       }),
     );
     expect(
@@ -1223,8 +1234,8 @@ export const GoogleCostCustomExport: Story = {
     );
     await user.paste('{"type":"service_account"}');
     await user.click(
-      modal.getByRole('checkbox', {
-        name: 'Manually customize the data set sent to Cost Management',
+      modal.getByRole('radio', {
+        name: 'I wish to manually customize the dataset sent to Cost Management',
       }),
     );
     await advance(user);
@@ -1286,7 +1297,7 @@ export const GoogleRhelManagement: Story = {
     const request = bulkCreateRequests[bulkCreateRequests.length - 1];
     expect(request.authentications).toEqual([]);
     expect(request.applications[0].application_type_id).toBe('2');
-    expect(request.applications[0].extra).toBeUndefined();
+    expect(request.applications[0].extra).toEqual({ hcs: false });
   },
 };
 
@@ -1327,7 +1338,7 @@ export const AzureRhelManagementLighthouse: Story = {
       await modal.findByRole('link', { name: 'Go to Lighthouse' }),
     );
     await advance(user);
-    await modal.findByRole('heading', { name: 'Subscription ID' });
+    await modal.findByRole('heading', { name: 'Set subscription ID' });
     await clearAndType(
       user,
       () => modal.getByRole('textbox', { name: 'Subscription ID' }),

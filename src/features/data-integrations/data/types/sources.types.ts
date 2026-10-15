@@ -29,6 +29,7 @@ export type SourceAvailabilityStatus =
 export interface SourceApplication {
   id: string;
   application_type_id: string;
+  extra?: Record<string, unknown>;
   availability_status?: SourceAvailabilityStatus;
   availability_status_error?: string;
   paused_at?: string;
@@ -220,6 +221,7 @@ export interface BulkCreatePayload {
 export interface BulkCreateResponse {
   sources?: Source[];
   applications?: SourceApplication[];
+  authentications?: Array<{ id: string }>;
 }
 
 /**
@@ -263,6 +265,8 @@ export interface CreateSourceInput {
     name: string;
     extra?: Record<string, unknown>;
   };
+  /** Whether the application is backed by a Hybrid Committed Spend deal. */
+  hcsEnrolled?: boolean;
 }
 
 export interface CollectionLinks {

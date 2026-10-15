@@ -253,10 +253,13 @@ function buildCreatedSource(payload: BulkCreatePayload): Source {
     source_ref: requested.source_ref,
     source_type_id: sourceType?.id ?? '0',
     created_at: new Date().toISOString(),
-    applications: payload.applications.map(({ application_type_id }) => ({
-      id: `app-${Date.now()}-${nextId++}`,
-      application_type_id,
-    })),
+    applications: payload.applications.map(
+      ({ application_type_id, extra }) => ({
+        id: `app-${Date.now()}-${nextId++}`,
+        application_type_id,
+        extra,
+      }),
+    ),
   };
 }
 
@@ -269,13 +272,22 @@ export function createBulkCreateHandler(baseUrl = SOURCES_API_BASE) {
       const created = sourcesDb.create(buildCreatedSource(payload));
 
       return HttpResponse.json(
-        { sources: [created], applications: created.applications },
+        {
+          sources: [created],
+          applications: created.applications,
+          authentications: payload.authentications.map((_, index) => ({
+            id: `auth-${Date.now()}-${index}`,
+          })),
+        },
         { status: 201 },
       );
     }),
     http.post(
       `${baseUrl}/sources/:id/check_availability`,
       () => new HttpResponse(null, { status: 204 }),
+    ),
+    http.post(`${baseUrl}/application_authentications`, () =>
+      HttpResponse.json({}, { status: 201 }),
     ),
     http.get(`${baseUrl}/applications/:id`, ({ params }) =>
       HttpResponse.json({ id: params.id, availability_status: 'available' }),
@@ -358,6 +370,14 @@ export function createSourcesHandlers(
     ),
     http.get('/api/billing/v1/authorization/hcsEnrollment', () =>
       HttpResponse.json({ hcsDeal: hcsEnrolled }),
+    ),
+    http.get(
+      'https://console.stage.redhat.com/api/billing/v1/authorization/hcsEnrollment',
+      () => HttpResponse.json({ hcsDeal: hcsEnrolled }),
+    ),
+    http.get(
+      'https://console.redhat.com/api/billing/v1/authorization/hcsEnrollment',
+      () => HttpResponse.json({ hcsDeal: hcsEnrolled }),
     ),
     http.get(`${baseUrl}/app_meta_data`, ({ request }) =>
       HttpResponse.json({

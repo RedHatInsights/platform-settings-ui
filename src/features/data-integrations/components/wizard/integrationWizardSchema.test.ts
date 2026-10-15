@@ -70,13 +70,13 @@ const applicationTypes: ApplicationType[] = [
     id: '1',
     name: '/insights/platform/cost-management',
     display_name: 'Cost Management',
-    supported_source_types: ['amazon', 'google', 'azure'],
+    supported_source_types: ['amazon', 'google', 'azure', 'openshift'],
   },
   {
     id: '2',
     name: '/insights/platform/cloud-meter',
     display_name: 'RHEL management',
-    supported_source_types: ['openshift'],
+    supported_source_types: ['amazon', 'google', 'azure'],
   },
   {
     id: '3',
@@ -112,10 +112,17 @@ const configurationStep = () => step(WizardStepId.Configuration);
 const credentialsStep = () => step(WizardStepId.AuthCredentials);
 const appStep = () => step(WizardStepId.ApplicationSelection);
 const manualAppStep = () => step(WizardStepId.ManualApplicationSelection);
-const manualAwsStep = () => step(WizardStepId.ManualAwsConfiguration);
-const manualPolicyStep = () => step(WizardStepId.ManualAwsPolicy);
-const manualRoleStep = () => step(WizardStepId.ManualAwsRole);
-const manualArnStep = () => step(WizardStepId.ManualAwsArn);
+const manualAwsStorageStep = () => step(WizardStepId.ManualAwsCostStorage);
+const manualAwsProvisioningStep = () =>
+  step(WizardStepId.ManualAwsProvisioningConfiguration);
+const manualAwsPolicyStep = () =>
+  step(WizardStepId.ManualAwsAccountAccessPolicy);
+const manualAwsRoleStep = () => step(WizardStepId.ManualAwsAccountAccessRole);
+const manualAwsArnStep = () => step(WizardStepId.ManualAwsAccountAccessArn);
+const manualAwsProvisioningRoleStep = () =>
+  step(WizardStepId.ManualAwsProvisioningRole);
+const manualAwsProvisioningArnStep = () =>
+  step(WizardStepId.ManualAwsProvisioningArn);
 const reviewStep = () => step(WizardStepId.Review);
 const resultStep = () => step(WizardStepId.SubmissionResult);
 
@@ -195,6 +202,7 @@ describe('createIntegrationWizardSchema', () => {
       SOURCE_TYPE_FIELD,
       APP_CREATION_WORKFLOW_FIELD,
       MANUAL_APPLICATION_FIELD,
+      'application.extra.storage_only',
     ]);
   });
 
@@ -221,12 +229,15 @@ describe('createIntegrationWizardSchema', () => {
       WizardStepId.AuthCredentials,
       WizardStepId.ApplicationSelection,
       WizardStepId.ManualApplicationSelection,
-      WizardStepId.ManualAwsConfiguration,
+      WizardStepId.ManualAwsCostStorage,
       WizardStepId.ManualAwsCostUsage,
       WizardStepId.ManualAwsCostTags,
-      WizardStepId.ManualAwsPolicy,
-      WizardStepId.ManualAwsRole,
-      WizardStepId.ManualAwsArn,
+      WizardStepId.ManualAwsProvisioningConfiguration,
+      WizardStepId.ManualAwsAccountAccessPolicy,
+      WizardStepId.ManualAwsAccountAccessRole,
+      WizardStepId.ManualAwsAccountAccessArn,
+      WizardStepId.ManualAwsProvisioningRole,
+      WizardStepId.ManualAwsProvisioningArn,
       WizardStepId.AzureApplication,
       WizardStepId.GoogleApplication,
       'openshift-application',
@@ -338,7 +349,7 @@ describe('createIntegrationWizardSchema', () => {
       expect(app.fields[1].selectionMode).toBe('single');
       expect(
         app.fields[1].options.map(({ value }: { value: string }) => value),
-      ).toEqual(['1', '2', '3']);
+      ).toEqual(['1', '2']);
       for (const target of Object.values(app.nextStep.stepMapper)) {
         expect(names).toContain(target);
       }
@@ -430,21 +441,38 @@ describe('createIntegrationWizardSchema', () => {
         ({ value }: { value: string }) => value,
       ),
     ).toEqual(['1', '2', '3']);
-    expect(manualAwsStep().nextStep.stepMapper).toEqual({
-      '1': WizardStepId.ManualAwsCostUsage,
-      '2': WizardStepId.ManualAwsPolicy,
-      '3': WizardStepId.ManualAwsRole,
+    expect(manualAppStep().nextStep.stepMapper).toEqual({
+      '1': WizardStepId.ManualAwsCostStorage,
+      '2': WizardStepId.ManualAwsAccountAccessPolicy,
+      '3': WizardStepId.ManualAwsProvisioningConfiguration,
     });
-    expect(manualAwsStep().fields).toHaveLength(3);
+    expect(manualAwsStorageStep().fields).toHaveLength(1);
+    expect(manualAwsStorageStep().title).toBe('Create storage');
     expect(step(WizardStepId.ManualAwsCostUsage).nextStep).toBe(
       WizardStepId.ManualAwsCostTags,
     );
     expect(step(WizardStepId.ManualAwsCostTags).nextStep).toBe(
-      WizardStepId.ManualAwsPolicy,
+      WizardStepId.ManualAwsAccountAccessPolicy,
     );
-    expect(manualPolicyStep().nextStep).toBe(WizardStepId.ManualAwsRole);
-    expect(manualRoleStep().nextStep).toBe(WizardStepId.ManualAwsArn);
-    expect(manualArnStep().nextStep).toBe(WizardStepId.Review);
+    expect(manualAwsProvisioningStep().nextStep).toBe(
+      WizardStepId.ManualAwsProvisioningRole,
+    );
+    expect(manualAwsPolicyStep().title).toBe('Create IAM policy');
+    expect(manualAwsPolicyStep().nextStep).toBe(
+      WizardStepId.ManualAwsAccountAccessRole,
+    );
+    expect(manualAwsRoleStep().title).toBe('Create IAM role');
+    expect(manualAwsRoleStep().nextStep).toBe(
+      WizardStepId.ManualAwsAccountAccessArn,
+    );
+    expect(manualAwsArnStep().title).toBe('Enter ARN');
+    expect(manualAwsArnStep().nextStep).toBe(WizardStepId.Review);
+    expect(manualAwsProvisioningRoleStep().title).toBe('Create IAM role');
+    expect(manualAwsProvisioningRoleStep().nextStep).toBe(
+      WizardStepId.ManualAwsProvisioningArn,
+    );
+    expect(manualAwsProvisioningArnStep().title).toBe('Enter ARN');
+    expect(manualAwsProvisioningArnStep().nextStep).toBe(WizardStepId.Review);
   });
 
   it('labels the AWS cost application for HCS-enrolled accounts', () => {
@@ -497,15 +525,9 @@ describe('createIntegrationWizardSchema', () => {
   it('requires a name, and describes the provider it is for', () => {
     const [firstDescription] = nameStep().fields;
 
-    expect(firstDescription.condition).toEqual({
-      when: SOURCE_TYPE_FIELD,
-      is: 'openshift',
-    });
-    expect(firstDescription.label).toBe(
-      'Enter a name for your OpenShift Container Platform integration.',
-    );
+    expect(firstDescription.component).toBe('provider-name-description');
 
-    const nameField = nameStep().fields[sourceTypes.length];
+    const nameField = nameStep().fields[1];
 
     expect(nameField.name).toBe(SOURCE_NAME_FIELD);
     expect(nameField.isRequired).toBe(true);
@@ -585,6 +607,7 @@ describe('toCreateSourceInput', () => {
           },
         },
         applicationTypes,
+        true,
       ),
     ).toEqual({
       name: 'aws-manual',
@@ -598,11 +621,18 @@ describe('toCreateSourceInput', () => {
       },
       applicationTypeIds: [],
       availabilityWaitApplicationTypeIds: ['1', '2'],
+      sourceRef: undefined,
+      endpoint: undefined,
       manualApplication: {
         id: '1',
         name: '/insights/platform/cost-management',
-        extra: { bucket: 'cost-bucket', bucket_region: 'us-east-1' },
+        extra: {
+          bucket: 'cost-bucket',
+          bucket_region: 'us-east-1',
+          hcs: true,
+        },
       },
+      selectedApplication: undefined,
     });
   });
 
@@ -638,7 +668,7 @@ describe('toCreateSourceInput', () => {
         selectedApplication: {
           id: '1',
           name: '/insights/platform/cost-management',
-          extra: undefined,
+          extra: { hcs: false },
         },
       }),
     );
@@ -669,7 +699,7 @@ describe('toCreateSourceInput', () => {
           extra: { azure: { tenant_id: 'tenant' } },
         }),
         selectedApplication: expect.objectContaining({
-          extra: { subscription_id: 'subscription' },
+          extra: { subscription_id: 'subscription', hcs: false },
         }),
       }),
     );
@@ -803,7 +833,9 @@ describe('review step', () => {
   it('renders the review summary component', () => {
     const [description, summary] = reviewStep().fields;
 
-    expect(description.label).toMatch(/Review the details below/);
+    expect(description.label).toBe(
+      'Review the information below and click Add to add your integration. To edit details in previous steps, click Back.',
+    );
     expect(summary.component).toBe(REVIEW_SUMMARY_COMPONENT);
     expect(summary.name).toBe('review-summary');
   });

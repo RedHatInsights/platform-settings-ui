@@ -4,10 +4,12 @@ import FormSpy from '@data-driven-forms/react-form-renderer/form-spy';
 import { Alert } from '@patternfly/react-core/dist/dynamic/components/Alert';
 import { ClipboardCopy } from '@patternfly/react-core/dist/dynamic/components/ClipboardCopy';
 import { Content } from '@patternfly/react-core/dist/dynamic/components/Content';
+import { MenuToggle } from '@patternfly/react-core/dist/dynamic/components/MenuToggle';
 import {
-  FormSelect,
-  FormSelectOption,
-} from '@patternfly/react-core/dist/dynamic/components/FormSelect';
+  Select,
+  SelectList,
+  SelectOption,
+} from '@patternfly/react-core/dist/dynamic/components/Select';
 import { useHcsEnrollment } from '../../data/queries/useHcsEnrollment';
 import type { IntegrationWizardValues } from './integrationWizardSchema';
 
@@ -26,7 +28,7 @@ const copy = defineMessages({
   scopeIntro: {
     id: 'dataIntegrations.azureCost.scopeIntro',
     defaultMessage:
-      'From the Azure portal, select the scope for the new cost export. To customize the data sent to Red Hat, select the manually customize option and follow the additional instructions.',
+      'From the Azure portal, select the scope for the new cost export. If there is a need to further customize the data you want to send to Red Hat, select the manually customize option to follow the special instructions on how to.',
   },
   scopeAlert: {
     id: 'dataIntegrations.azureCost.scopeAlert',
@@ -44,12 +46,12 @@ const copy = defineMessages({
   },
   scopeCustomTitle: {
     id: 'dataIntegrations.azureCost.scopeCustomTitle',
-    defaultMessage: 'Skip this step and proceed to the next step',
+    defaultMessage: 'Skip this step and proceed to next step',
   },
   scopeCustom: {
     id: 'dataIntegrations.azureCost.scopeCustom',
     defaultMessage:
-      'Since you chose to manually customize the data set sent to Cost Management, you do not need to specify an export scope now.',
+      'Since you have chosen to manually customize the data set you want to send to Cost Management, you do not need to specify an export scope at this point and time.',
   },
   storageIntro: {
     id: 'dataIntegrations.azureCost.storageIntro',
@@ -59,7 +61,7 @@ const copy = defineMessages({
   storageAfter: {
     id: 'dataIntegrations.azureCost.storageAfter',
     defaultMessage:
-      'After configuring a resource group and storage account in the Azure portal, enter their names below.',
+      'After configuring a resource group and storage account in the Azure portal, enter the following:',
   },
   exportIntro: {
     id: 'dataIntegrations.azureCost.exportIntro',
@@ -154,6 +156,7 @@ const AzureCostContent: React.FC<{
 }> = ({ stage, values }) => {
   const intl = useIntl();
   const [scopeType, setScopeType] = useState('Subscription');
+  const [isScopeOpen, setIsScopeOpen] = useState(false);
   const { data: hcsEnrolled = false } = useHcsEnrollment(true);
   const extra = values.application?.extra;
   const custom = Boolean(extra?.storage_only);
@@ -184,15 +187,45 @@ const AzureCostContent: React.FC<{
             <label htmlFor="azure-cost-scope-type">
               {intl.formatMessage(copy.scopeLabel)}
             </label>
-            <FormSelect
-              id="azure-cost-scope-type"
-              value={scopeType}
-              onChange={(_event, value) => setScopeType(value)}
+            <Select
+              aria-label={intl.formatMessage(copy.scopeLabel)}
+              selected={scopeType}
+              isOpen={isScopeOpen}
+              onOpenChange={setIsScopeOpen}
+              onSelect={(_event, selection) => {
+                if (typeof selection === 'string') {
+                  setScopeType(selection);
+                }
+                setIsScopeOpen(false);
+              }}
+              maxMenuHeight="12rem"
+              isScrollable
+              popperProps={{
+                appendTo: 'inline',
+                enableFlip: true,
+                preventOverflow: true,
+                width: 'trigger',
+              }}
+              toggle={(toggleRef) => (
+                <MenuToggle
+                  ref={toggleRef}
+                  id="azure-cost-scope-type"
+                  isExpanded={isScopeOpen}
+                  isFullWidth
+                  onClick={() => setIsScopeOpen((open) => !open)}
+                >
+                  {scopeType}
+                </MenuToggle>
+              )}
             >
-              {Object.keys(SCOPE_COMMANDS).map((option) => (
-                <FormSelectOption key={option} value={option} label={option} />
-              ))}
-            </FormSelect>
+              <SelectList>
+                {Object.keys(SCOPE_COMMANDS).map((option) => (
+                  <SelectOption key={option} value={option}>
+                    {option}
+                  </SelectOption>
+                ))}
+              </SelectList>
+            </Select>
             <p>{intl.formatMessage(copy.scopeCommand)}</p>
             <ClipboardCopy isReadOnly>
               {SCOPE_COMMANDS[scopeType]}

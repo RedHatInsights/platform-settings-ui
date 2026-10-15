@@ -1,5 +1,5 @@
 import React from 'react';
-import { defineMessages, useIntl } from 'react-intl';
+import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
 import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
 import { ClipboardCopy } from '@patternfly/react-core/dist/dynamic/components/ClipboardCopy';
 import { Content } from '@patternfly/react-core/dist/dynamic/components/Content';
@@ -35,12 +35,12 @@ const copy = defineMessages({
   bucket: {
     id: 'dataIntegrations.googleCost.bucket',
     defaultMessage:
-      'Create a cloud storage bucket that will contain the customized billing reports.',
+      'You will need to create a cloud storage bucket that will contain the customized billing reports.',
   },
   bucketName: {
     id: 'dataIntegrations.googleCost.bucketName',
     defaultMessage:
-      'After creating the cloud storage bucket, enter its name below.',
+      'After creating the cloud storage bucket, enter its name in the following:',
   },
   iamIntro: {
     id: 'dataIntegrations.googleCost.iamIntro',
@@ -49,7 +49,8 @@ const copy = defineMessages({
   },
   iamOpen: {
     id: 'dataIntegrations.googleCost.iamOpen',
-    defaultMessage: 'From the GCP console, navigate to IAM & Admin > Roles.',
+    defaultMessage:
+      'From the GCP console, navigate to <b>IAM & Admin > Roles.</b>',
   },
   iamCreate: {
     id: 'dataIntegrations.googleCost.iamCreate',
@@ -61,7 +62,7 @@ const copy = defineMessages({
   },
   iamFinish: {
     id: 'dataIntegrations.googleCost.iamFinish',
-    defaultMessage: 'Click Create role.',
+    defaultMessage: 'Click <b>Create role.</b>',
   },
   accessIntro: {
     id: 'dataIntegrations.googleCost.accessIntro',
@@ -70,11 +71,13 @@ const copy = defineMessages({
   },
   accessOpen: {
     id: 'dataIntegrations.googleCost.accessOpen',
-    defaultMessage: 'In IAM & Admin, navigate to IAM and click Add.',
+    defaultMessage:
+      'In your IAM & Admin console, navigate to <b>IAM</b> and click <b>Add</b> to add a new member.',
   },
   accessPaste: {
     id: 'dataIntegrations.googleCost.accessPaste',
-    defaultMessage: 'Paste the following value into the New members field:',
+    defaultMessage:
+      'Paste the following value into the <b>New members</b> field:',
   },
   accessRole: {
     id: 'dataIntegrations.googleCost.accessRole',
@@ -101,15 +104,16 @@ const copy = defineMessages({
   datasetProject: {
     id: 'dataIntegrations.googleCost.datasetProject',
     defaultMessage:
-      'In the BigQuery console, select your project ({projectId}) from the navigation menu.',
+      'In the BigQuery console, select your project (<b>{projectId}</b>) from the navigation menu.',
   },
   datasetCreate: {
     id: 'dataIntegrations.googleCost.datasetCreate',
-    defaultMessage: 'Click Create dataset.',
+    defaultMessage: 'Click <b>Create dataset.</b>',
   },
   datasetName: {
     id: 'dataIntegrations.googleCost.datasetName',
-    defaultMessage: 'In the Dataset ID field, enter a name for your dataset.',
+    defaultMessage:
+      'In the <b>Dataset ID</b> field, enter a name for your dataset.',
   },
   billingIntro: {
     id: 'dataIntegrations.googleCost.billingIntro',
@@ -118,15 +122,16 @@ const copy = defineMessages({
   },
   billingOpen: {
     id: 'dataIntegrations.googleCost.billingOpen',
-    defaultMessage: 'In the Billing console, click Billing export.',
+    defaultMessage: 'In the Billing console, click <b>Billing export.</b>',
   },
   billingTab: {
     id: 'dataIntegrations.googleCost.billingTab',
-    defaultMessage: 'Click the BigQuery export tab.',
+    defaultMessage: 'Click the <b>BigQuery export</b> tab.',
   },
   billingEdit: {
     id: 'dataIntegrations.googleCost.billingEdit',
-    defaultMessage: 'In Detailed usage cost, click Edit settings.',
+    defaultMessage:
+      'In the <b>Detailed usage cost</b> section, click <b>Edit settings.</b>',
   },
   billingSelect: {
     id: 'dataIntegrations.googleCost.billingSelect',
@@ -135,7 +140,7 @@ const copy = defineMessages({
   },
   billingSave: {
     id: 'dataIntegrations.googleCost.billingSave',
-    defaultMessage: 'Click Save.',
+    defaultMessage: 'Click <b>Save.</b>',
   },
 });
 
@@ -144,13 +149,18 @@ type Stage = 'project' | 'bucket' | 'iam' | 'access' | 'dataset' | 'billing';
 const GoogleAccessInstructions: React.FC = () => {
   const intl = useIntl();
   const account = useGoogleBillingAccount();
+  const bold = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
 
   return (
     <Content>
       <p>{intl.formatMessage(copy.accessIntro)}</p>
       <ol>
-        <li>{intl.formatMessage(copy.accessOpen)}</li>
-        <li>{intl.formatMessage(copy.accessPaste)}</li>
+        <li>
+          <FormattedMessage {...copy.accessOpen} values={{ b: bold }} />
+        </li>
+        <li>
+          <FormattedMessage {...copy.accessPaste} values={{ b: bold }} />
+        </li>
       </ol>
       {account.isError ? (
         <p role="alert">{intl.formatMessage(copy.accountError)}</p>
@@ -161,7 +171,9 @@ const GoogleAccessInstructions: React.FC = () => {
       )}
       <ol start={3}>
         <li>{intl.formatMessage(copy.accessRole)}</li>
-        <li>{intl.formatMessage(copy.accessSave)}</li>
+        <li>
+          <FormattedMessage {...copy.accessSave} values={{ b: bold }} />
+        </li>
       </ol>
     </Content>
   );
@@ -173,12 +185,13 @@ const GoogleCostInstructions: React.FC<{ stage: Stage }> = ({ stage }) => {
   const values = getState().values as IntegrationWizardValues;
   const { data: hcsEnrolled = false } = useHcsEnrollment(true);
   const custom = Boolean(values.application?.extra?.storage_only);
-  const docs = (
-    <a
-      href={custom ? CUSTOM_DOCS : COST_DOCS}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
+  const projectDocs = (
+    <a href={COST_DOCS} target="_blank" rel="noopener noreferrer">
+      {intl.formatMessage(copy.learnMore)}
+    </a>
+  );
+  const bucketDocs = (
+    <a href={CUSTOM_DOCS} target="_blank" rel="noopener noreferrer">
       {intl.formatMessage(copy.learnMore)}
     </a>
   );
@@ -188,8 +201,8 @@ const GoogleCostInstructions: React.FC<{ stage: Stage }> = ({ stage }) => {
   if (stage === 'project') {
     return (
       <Content>
-        <p>
-          {intl.formatMessage(copy.project)} {!hcsEnrolled && docs}
+        <p className="pf-v6-u-mb-lg">
+          {intl.formatMessage(copy.project)} {!hcsEnrolled && projectDocs}
         </p>
         <p>{intl.formatMessage(copy.projectId)}</p>
         <p>{intl.formatMessage(copy.customize)}</p>
@@ -200,7 +213,7 @@ const GoogleCostInstructions: React.FC<{ stage: Stage }> = ({ stage }) => {
     return (
       <Content>
         <p>
-          {intl.formatMessage(copy.bucket)} {docs}
+          {intl.formatMessage(copy.bucket)} {bucketDocs}
         </p>
         <p>{intl.formatMessage(copy.bucketName)}</p>
       </Content>
@@ -215,11 +228,14 @@ const GoogleCostInstructions: React.FC<{ stage: Stage }> = ({ stage }) => {
           'bigquery.tables.get',
           'bigquery.tables.list',
         ];
+    const bold = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
     return (
       <Content>
         <p>{intl.formatMessage(copy.iamIntro)}</p>
         <ol>
-          <li>{intl.formatMessage(copy.iamOpen)}</li>
+          <li>
+            <FormattedMessage {...copy.iamOpen} values={{ b: bold }} />
+          </li>
           <li>{intl.formatMessage(copy.iamCreate)}</li>
           <li>
             {intl.formatMessage(copy.iamPermissions)}
@@ -231,12 +247,15 @@ const GoogleCostInstructions: React.FC<{ stage: Stage }> = ({ stage }) => {
               ))}
             </ul>
           </li>
-          <li>{intl.formatMessage(copy.iamFinish)}</li>
+          <li>
+            <FormattedMessage {...copy.iamFinish} values={{ b: bold }} />
+          </li>
         </ol>
       </Content>
     );
   }
   if (stage === 'dataset') {
+    const bold = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
     return (
       <Content>
         <p>
@@ -248,27 +267,45 @@ const GoogleCostInstructions: React.FC<{ stage: Stage }> = ({ stage }) => {
         </p>
         <ol>
           <li>
-            {intl.formatMessage(copy.datasetProject, {
-              projectId: values.authentication?.username ?? '',
-            })}
+            <FormattedMessage
+              {...copy.datasetProject}
+              values={{
+                b: bold,
+                projectId: values.authentication?.username ?? '',
+              }}
+            />
           </li>
-          <li>{intl.formatMessage(copy.datasetCreate)}</li>
-          <li>{intl.formatMessage(copy.datasetName)}</li>
-          <li>{intl.formatMessage(copy.datasetCreate)}</li>
+          <li>
+            <FormattedMessage {...copy.datasetCreate} values={{ b: bold }} />
+          </li>
+          <li>
+            <FormattedMessage {...copy.datasetName} values={{ b: bold }} />
+          </li>
+          <li>
+            <FormattedMessage {...copy.datasetCreate} values={{ b: bold }} />
+          </li>
         </ol>
-        {custom && docs}
       </Content>
     );
   }
+  const bold = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
   return (
     <Content>
       <p>{intl.formatMessage(copy.billingIntro)}</p>
       <ol>
-        <li>{intl.formatMessage(copy.billingOpen)}</li>
-        <li>{intl.formatMessage(copy.billingTab)}</li>
-        <li>{intl.formatMessage(copy.billingEdit)}</li>
+        <li>
+          <FormattedMessage {...copy.billingOpen} values={{ b: bold }} />
+        </li>
+        <li>
+          <FormattedMessage {...copy.billingTab} values={{ b: bold }} />
+        </li>
+        <li>
+          <FormattedMessage {...copy.billingEdit} values={{ b: bold }} />
+        </li>
         <li>{intl.formatMessage(copy.billingSelect)}</li>
-        <li>{intl.formatMessage(copy.billingSave)}</li>
+        <li>
+          <FormattedMessage {...copy.billingSave} values={{ b: bold }} />
+        </li>
       </ol>
     </Content>
   );

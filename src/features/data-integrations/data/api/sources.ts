@@ -278,8 +278,9 @@ export function createSourcesApi(axios: AxiosInstance) {
     },
 
     /**
-     * Creates a source, its authentication and its applications in one
-     * transaction.
+     * Creates a source, its authentication and its applications in one bulk
+     * request, then links endpoint authentication to the application when
+     * both resources are present.
      *
      * Goes over raw axios rather than `api`: the generated client ships
      * `CreateSource`, `CreateAuthentication` and friends but no `BulkCreate`,
@@ -372,6 +373,20 @@ export function createSourcesApi(axios: AxiosInstance) {
         throw new Error('Sources bulk create returned no source');
       }
 
+      const createdApplication = response.data?.applications?.[0];
+      const createdAuthentication = response.data?.authentications?.[0];
+      if (
+        input.endpoint &&
+        selectedApplication &&
+        createdApplication &&
+        createdAuthentication
+      ) {
+        await axios.post(`${SOURCES_API_BASE}/application_authentications`, {
+          application_id: createdApplication.id,
+          authentication_id: createdAuthentication.id,
+        });
+      }
+
       try {
         await axios.post(
           `${SOURCES_API_BASE}/sources/${created.id}/check_availability`,
@@ -421,11 +436,16 @@ export function createSourcesApi(axios: AxiosInstance) {
       return response.data.data;
     },
 
-    async getHcsEnrollment(): Promise<boolean> {
-      const response = await axios.get<{ hcsDeal: boolean }>(
-        '/api/billing/v1/authorization/hcsEnrollment',
-      );
-      return response.data.hcsDeal;
+    async getHcsEnrollment(isProd = false): Promise<boolean> {
+      const consoleUrl = `https://console.${isProd ? '' : 'stage.'}redhat.com`;
+      try {
+        const response = await axios.get<{ hcsDeal: boolean }>(
+          `${consoleUrl}/api/billing/v1/authorization/hcsEnrollment`,
+        );
+        return response.status === 200 ? response.data.hcsDeal : false;
+      } catch {
+        return false;
+      }
     },
 
     async getAwsProvisioningAccount(
@@ -452,7 +472,9 @@ export function createSourcesApi(axios: AxiosInstance) {
       const response = await axios.get<{
         data: Array<{ payload: string }>;
       }>(`${SOURCES_API_BASE}/app_meta_data?filter[name]=gcp_service_account`);
-      const account = response.data.data?.[0]?.payload;
+      const account = response.data.data?.find(({ payload }) =>
+        payload.includes('billing-export'),
+      )?.payload;
       if (!account) throw new Error('Google billing account is unavailable');
       return account;
     },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { defineMessages, useIntl } from 'react-intl';
+import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
 import { Content } from '@patternfly/react-core/dist/dynamic/components/Content';
 import {
   Flex,
@@ -36,7 +36,7 @@ const copy = defineMessages({
   operator: {
     id: 'dataIntegrations.openshift.operator',
     defaultMessage:
-      'For Red Hat OpenShift Container Platform 4.6 and later, install the costmanagement-metrics-operator from the OpenShift Container Platform web console.',
+      'For Red Hat OpenShift Container Platform 4.6 and later, install the {operator} from the OpenShift Container Platform web console.',
   },
   learnMore: {
     id: 'dataIntegrations.openshift.learnMore',
@@ -45,7 +45,7 @@ const copy = defineMessages({
   stop: {
     id: 'dataIntegrations.openshift.operatorStop',
     defaultMessage:
-      'If you configured the operator to create an integration (create_source: true), STOP here and CANCEL out of this flow.',
+      'If you configured the operator to create an integration (create_source: true), {stop} here and {cancel} out of this flow.',
   },
   clusterId: {
     id: 'dataIntegrations.openshift.operatorClusterId',
@@ -90,13 +90,28 @@ export const OpenShiftOperatorInstructions: React.FC = () => {
 
   return (
     <Content>
-      <p>{intl.formatMessage(copy.operator)}</p>
+      <p>
+        <FormattedMessage
+          {...copy.operator}
+          values={{
+            operator: (chunks) => <strong>{chunks}</strong>,
+          }}
+        />
+      </p>
       <p>
         <a href={OPERATOR_DOCS} target="_blank" rel="noopener noreferrer">
           {intl.formatMessage(copy.learnMore)}
         </a>
       </p>
-      <p>{intl.formatMessage(copy.stop)}</p>
+      <p>
+        <FormattedMessage
+          {...copy.stop}
+          values={{
+            stop: (chunks) => <strong>{chunks}</strong>,
+            cancel: (chunks) => <strong>{chunks}</strong>,
+          }}
+        />
+      </p>
       <p>{intl.formatMessage(copy.clusterId)}</p>
     </Content>
   );

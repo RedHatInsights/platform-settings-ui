@@ -253,6 +253,7 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
                     ] ?? initialValues[SOURCE_TYPE_FIELD],
                 } as IntegrationWizardValues,
                 applicationTypes,
+                hcsEnrolled,
               ),
             )
           }

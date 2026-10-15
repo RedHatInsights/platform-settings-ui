@@ -77,6 +77,10 @@ const copy = defineMessages({
     id: 'dataIntegrations.provider.subscriptionId',
     defaultMessage: 'Subscription ID',
   },
+  setSubscriptionId: {
+    id: 'dataIntegrations.provider.setSubscriptionId',
+    defaultMessage: 'Set subscription ID',
+  },
   lighthouse: {
     id: 'dataIntegrations.provider.lighthouse',
     defaultMessage: 'Configure Azure Lighthouse',
@@ -92,7 +96,17 @@ const copy = defineMessages({
   },
   storageOnly: {
     id: 'dataIntegrations.provider.storageOnly',
-    defaultMessage: 'Manually customize the data set sent to Cost Management',
+    defaultMessage: 'Customize the data sent to Cost Management',
+  },
+  defaultCostExport: {
+    id: 'dataIntegrations.provider.defaultCostExport',
+    defaultMessage:
+      'I am OK with sending the default data set to Cost Management',
+  },
+  customCostExport: {
+    id: 'dataIntegrations.provider.customCostExport',
+    defaultMessage:
+      'I wish to manually customize the data set sent to Cost Management',
   },
   metered: {
     id: 'dataIntegrations.provider.metered',
@@ -109,6 +123,10 @@ const copy = defineMessages({
   storageAccount: {
     id: 'dataIntegrations.provider.storageAccount',
     defaultMessage: 'Storage account name',
+  },
+  storageStep: {
+    id: 'dataIntegrations.provider.storageStep',
+    defaultMessage: 'Resource group and storage account',
   },
   storageGuide: {
     id: 'dataIntegrations.provider.storageGuide',
@@ -147,6 +165,10 @@ const copy = defineMessages({
     id: 'dataIntegrations.provider.projectId',
     defaultMessage: 'Project ID',
   },
+  projectIdStep: {
+    id: 'dataIntegrations.provider.projectIdStep',
+    defaultMessage: 'Enter Project ID',
+  },
   serviceJson: {
     id: 'dataIntegrations.provider.serviceJson',
     defaultMessage: 'Service Account JSON',
@@ -176,6 +198,10 @@ const copy = defineMessages({
   access: {
     id: 'dataIntegrations.provider.access',
     defaultMessage: 'Assign access',
+  },
+  accountAccess: {
+    id: 'dataIntegrations.provider.accountAccess',
+    defaultMessage: 'Enable account access',
   },
   accessGuide: {
     id: 'dataIntegrations.provider.accessGuide',
@@ -254,88 +280,104 @@ export function providerWizardSteps(
   const t = (message: (typeof copy)[keyof typeof copy]) =>
     intl.formatMessage(message);
   const appId = (name: string) => apps.find((app) => app.name === name)?.id;
-  const appStep = (provider: 'openshift' | 'azure' | 'google') => ({
-    name: `${provider}-application`,
-    title: t(copy.application),
-    nextStep: {
-      when: APP,
-      stepMapper: Object.fromEntries([
-        ...(appId(COST) ? [[appId(COST), `${provider}-cost`]] : []),
-        ...(provider !== 'openshift' && appId(RHEL)
-          ? [[appId(RHEL), `${provider}-rhel`]]
-          : []),
-        ...(provider !== 'openshift' && appId(PROVISIONING)
-          ? [[appId(PROVISIONING), `${provider}-provisioning`]]
-          : []),
-      ]),
-    },
-    fields: [
-      ...(provider !== 'openshift'
-        ? [
-            {
-              component: componentTypes.PLAIN_TEXT,
-              name: `${provider}-application-intro`,
-              label: (
-                <>
-                  {t(copy.applicationIntro)}{' '}
-                  <a
-                    href="https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html/configuring_cloud_integrations_for_red_hat_services/assembly-adding-cloud-integrations_crc-cloud-integrations"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {t(copy.learnMore)}
-                  </a>
-                </>
-              ),
-            },
-          ]
-        : []),
-      {
-        component:
-          provider === 'openshift'
-            ? componentTypes.RADIO
-            : 'application-switch-group',
-        name: APP,
-        label: t(copy.applicationField),
-        isRequired: true,
-        ...(provider !== 'openshift' ? { selectionMode: 'single' } : {}),
-        ...(provider === 'openshift' && appId(COST)
-          ? { initialValue: appId(COST), initializeOnMount: true }
-          : {}),
-        options: apps
-          .filter(
-            (app) =>
-              app.name === COST ||
-              (provider !== 'openshift' &&
-                (app.name === RHEL || app.name === PROVISIONING)),
-          )
-          .map((app) => ({
-            value: app.id,
-            name: app.name,
-            label:
-              provider === 'openshift' && app.name === COST ? (
-                <>
-                  {intl.formatMessage(messages.wizardAwsHcsName)}{' '}
-                  <Label color="purple">
-                    {intl.formatMessage(messages.wizardBundleLabel)}
-                  </Label>
-                </>
-              ) : (
-                app.display_name
-              ),
-          })),
-        validate: required,
+  const appStep = (provider: 'openshift' | 'azure' | 'google') => {
+    const providerApps = apps.filter(
+      (app) =>
+        !app.supported_source_types ||
+        app.supported_source_types.includes(provider),
+    );
+    const providerAppId = (name: string) =>
+      providerApps.find((app) => app.name === name)?.id;
+
+    return {
+      name: `${provider}-application`,
+      title: t(copy.application),
+      nextStep: {
+        when: APP,
+        stepMapper: Object.fromEntries([
+          ...(providerAppId(COST)
+            ? [[providerAppId(COST), `${provider}-cost`]]
+            : []),
+          ...(provider !== 'openshift' && providerAppId(RHEL)
+            ? [[providerAppId(RHEL), `${provider}-rhel`]]
+            : []),
+          ...(provider !== 'openshift' && providerAppId(PROVISIONING)
+            ? [[providerAppId(PROVISIONING), `${provider}-provisioning`]]
+            : []),
+        ]),
       },
-      ...(provider === 'openshift'
-        ? [
-            {
-              component: 'openshift-application-description',
-              name: 'openshift-application-description',
-            },
-          ]
-        : []),
-    ],
-  });
+      fields: [
+        ...(provider !== 'openshift'
+          ? [
+              {
+                component: componentTypes.PLAIN_TEXT,
+                name: `${provider}-application-intro`,
+                label: (
+                  <>
+                    {t(copy.applicationIntro)}{' '}
+                    <a
+                      href="https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html/configuring_cloud_integrations_for_red_hat_services/assembly-adding-cloud-integrations_crc-cloud-integrations"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {t(copy.learnMore)}
+                    </a>
+                  </>
+                ),
+              },
+            ]
+          : []),
+        {
+          component:
+            provider === 'openshift'
+              ? componentTypes.RADIO
+              : 'application-switch-group',
+          name: APP,
+          label: t(copy.applicationField),
+          isRequired: true,
+          ...(provider !== 'openshift' ? { selectionMode: 'single' } : {}),
+          ...(provider === 'openshift' && providerAppId(COST)
+            ? {
+                initialValue: providerAppId(COST),
+                initializeOnMount: true,
+              }
+            : {}),
+          options: providerApps
+            .filter(
+              (app) =>
+                app.name === COST ||
+                (provider !== 'openshift' &&
+                  (app.name === RHEL || app.name === PROVISIONING)),
+            )
+            .map((app) => ({
+              value: app.id,
+              name: app.name,
+              supportedSourceTypes: app.supported_source_types,
+              label:
+                provider === 'openshift' && app.name === COST ? (
+                  <>
+                    {intl.formatMessage(messages.wizardAwsHcsName)}{' '}
+                    <Label color="purple">
+                      {intl.formatMessage(messages.wizardBundleLabel)}
+                    </Label>
+                  </>
+                ) : (
+                  app.display_name
+                ),
+            })),
+          validate: required,
+        },
+        ...(provider === 'openshift'
+          ? [
+              {
+                component: 'openshift-application-description',
+                name: 'openshift-application-description',
+              },
+            ]
+          : []),
+      ],
+    };
+  };
   const azureGuide = (name: string, stage: string) => ({
     component: 'azure-cost-instructions',
     name,
@@ -416,7 +458,7 @@ export function providerWizardSteps(
     },
     {
       name: 'azure-provisioning-subscription',
-      title: t(copy.subscriptionId),
+      title: t(copy.setSubscriptionId),
       nextStep: 'review',
       fields: [
         {
@@ -457,6 +499,14 @@ export function providerWizardSteps(
       nextStep: enableLighthouse
         ? 'azure-rhel-subscription'
         : 'azure-rhel-playbook',
+      ...(enableLighthouse
+        ? {}
+        : {
+            substepOf: {
+              name: 'azure-rhel-access',
+              title: t(copy.accountAccess),
+            },
+          }),
       fields: [
         enableLighthouse
           ? {
@@ -486,6 +536,7 @@ export function providerWizardSteps(
       name: 'azure-rhel-playbook',
       title: t(copy.playbook),
       nextStep: 'review',
+      ...(enableLighthouse ? {} : { substepOf: 'azure-rhel-access' }),
       fields: [
         {
           component: 'rhel-management-instructions',
@@ -497,7 +548,7 @@ export function providerWizardSteps(
     },
     {
       name: 'azure-rhel-subscription',
-      title: t(copy.subscriptionId),
+      title: t(copy.setSubscriptionId),
       nextStep: 'review',
       fields: [
         {
@@ -515,10 +566,14 @@ export function providerWizardSteps(
       fields: [
         azureGuide('azure-scope-guide', 'scope'),
         {
-          component: componentTypes.CHECKBOX,
+          component: componentTypes.RADIO,
           name: 'application.extra.storage_only',
-          label: t(copy.storageOnly),
+          options: [
+            { value: false, label: t(copy.defaultCostExport) },
+            { value: true, label: t(copy.customCostExport) },
+          ],
           initialValue: false,
+          hideInReview: true,
         },
         {
           component: componentTypes.CHECKBOX,
@@ -538,7 +593,7 @@ export function providerWizardSteps(
     },
     {
       name: 'azure-cost-storage',
-      title: t(copy.storageAccount),
+      title: t(copy.storageStep),
       nextStep: {
         when: 'application.extra.storage_only',
         stepMapper: {
@@ -567,16 +622,19 @@ export function providerWizardSteps(
       nextStep: 'azure-cost-subscription',
       fields: [
         azureGuide('azure-export-guide', 'export'),
-        input('application.extra.export_name', t(copy.exportName), [
-          identifierPattern,
-        ]),
+        {
+          ...input('application.extra.export_name', t(copy.exportName), [
+            identifierPattern,
+          ]),
+          condition: { when: 'application.extra.storage_only', is: false },
+        },
       ],
     },
     {
       name: 'azure-cost-export-custom',
       title: t(copy.export),
       nextStep: 'azure-cost-subscription',
-      fields: [azureGuide('azure-custom-export-guide', 'export')],
+      fields: [azureGuide('azure-export-custom-guide', 'export')],
     },
     {
       name: 'azure-cost-subscription',
@@ -607,8 +665,12 @@ export function providerWizardSteps(
     },
     {
       name: 'google-provisioning',
-      title: t(copy.projectId),
+      title: t(copy.projectIdStep),
       nextStep: 'google-provisioning-role',
+      substepOf: {
+        name: 'google-provisioning-access',
+        title: t(copy.accountAccess),
+      },
       fields: [
         {
           component: 'google-provisioning-instructions',
@@ -623,6 +685,7 @@ export function providerWizardSteps(
       name: 'google-provisioning-role',
       title: t(copy.projectRole),
       nextStep: 'review',
+      substepOf: 'google-provisioning-access',
       fields: [
         {
           component: 'google-provisioning-instructions',
@@ -652,6 +715,10 @@ export function providerWizardSteps(
       name: 'google-rhel',
       title: t(copy.offlineToken),
       nextStep: 'google-rhel-playbook',
+      substepOf: {
+        name: 'google-rhel-access',
+        title: t(copy.accountAccess),
+      },
       fields: [
         {
           component: 'rhel-management-instructions',
@@ -666,6 +733,7 @@ export function providerWizardSteps(
       name: 'google-rhel-playbook',
       title: t(copy.playbook),
       nextStep: 'review',
+      substepOf: 'google-rhel-access',
       fields: [
         {
           component: 'rhel-management-instructions',
@@ -693,10 +761,20 @@ export function providerWizardSteps(
           componentTypes.TEXTAREA,
         ),
         {
-          component: componentTypes.CHECKBOX,
+          component: componentTypes.RADIO,
           name: 'application.extra.storage_only',
-          label: t(copy.storageOnly),
+          options: [
+            {
+              value: false,
+              label: intl.formatMessage(messages.wizardGoogleDefaultExport),
+            },
+            {
+              value: true,
+              label: intl.formatMessage(messages.wizardGoogleCustomExport),
+            },
+          ],
           initialValue: false,
+          hideInReview: true,
         },
       ],
     },
@@ -713,6 +791,10 @@ export function providerWizardSteps(
       name: 'google-cost-iam',
       title: t(copy.iam),
       nextStep: 'google-cost-access',
+      substepOf: {
+        name: 'google-cost-access-group',
+        title: t(copy.accountAccess),
+      },
       fields: [googleGuide('google-iam-guide', 'iam')],
     },
     {
@@ -725,6 +807,7 @@ export function providerWizardSteps(
           false: 'google-cost-dataset',
         },
       },
+      substepOf: 'google-cost-access-group',
       fields: [googleGuide('google-access-guide', 'access')],
     },
     {

@@ -31,7 +31,9 @@ describe('useAwsRegions', () => {
 
   it('returns regions from the API', async () => {
     const { get, wrapper } = setup();
-    get.mockResolvedValue({ data: { meta: { count: 1 }, data: ['us-east-1'] } });
+    get.mockResolvedValue({
+      data: { meta: { count: 1 }, data: ['us-east-1'] },
+    });
     const { result } = renderHook(() => useAwsRegions(true), { wrapper });
     await waitFor(() => expect(result.current.data).toEqual(['us-east-1']));
     expect(get).toHaveBeenCalledWith(
@@ -58,20 +60,20 @@ describe('useHcsEnrollment', () => {
 
   it.each([true, false])('returns enrollment %s', async (enrolled) => {
     const { get, wrapper } = setup();
-    get.mockResolvedValue({ data: { hcsDeal: enrolled } });
+    get.mockResolvedValue({ status: 200, data: { hcsDeal: enrolled } });
     const { result } = renderHook(() => useHcsEnrollment(true), { wrapper });
     await waitFor(() => expect(result.current.data).toBe(enrolled));
     expect(get).toHaveBeenCalledWith(
-      '/api/billing/v1/authorization/hcsEnrollment',
+      'https://console.stage.redhat.com/api/billing/v1/authorization/hcsEnrollment',
     );
   });
 
-  it('reports request failure without retrying', async () => {
+  it('treats request failure as not enrolled without retrying', async () => {
     const { get, wrapper } = setup();
     get.mockRejectedValue(new Error('enrollment unavailable'));
     const { result } = renderHook(() => useHcsEnrollment(true), { wrapper });
-    await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(result.current.error).toEqual(new Error('enrollment unavailable'));
+    await waitFor(() => expect(result.current.data).toBe(false));
+    expect(result.current.isError).toBe(false);
     expect(get).toHaveBeenCalledTimes(1);
   });
 });

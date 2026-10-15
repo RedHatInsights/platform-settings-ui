@@ -131,7 +131,10 @@ const SourceDetailPage: React.FC = () => {
     return (
       <Main>
         <Bullseye>
-          <Spinner size="lg" aria-label="Loading source details" />
+          <Spinner
+            size="lg"
+            aria-label={intl.formatMessage(messages.loadingSourceDetails)}
+          />
         </Bullseye>
       </Main>
     );

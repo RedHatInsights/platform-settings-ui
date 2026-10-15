@@ -1,0 +1,1249 @@
+{
+  "alertManager.emptyState.noEventTypes.description": {
+    "defaultMessage": "No event types are currently available.",
+    "description": "No event types available description"
+  },
+  "alertManager.emptyState.noEventTypes.title": {
+    "defaultMessage": "No event types",
+    "description": "No event types available title"
+  },
+  "alertManager.emptyState.noMatches.description": {
+    "defaultMessage": "No event types match the current search criteria. Try adjusting your filters.",
+    "description": "No matching event types description"
+  },
+  "alertManager.emptyState.noMatches.title": {
+    "defaultMessage": "No matching event types",
+    "description": "No matching event types title"
+  },
+  "alertManager.error.description": {
+    "defaultMessage": "There was a problem loading event types. Please try again later.",
+    "description": "Error loading event types description"
+  },
+  "alertManager.error.title": {
+    "defaultMessage": "Unable to load event types",
+    "description": "Error loading event types title"
+  },
+  "alertManager.filters.clear": {
+    "defaultMessage": "Clear filters",
+    "description": "Clear all filters button text"
+  },
+  "alertManager.filters.eventType": {
+    "defaultMessage": "Filter by event type",
+    "description": "Filter by event type placeholder"
+  },
+  "alertManager.loading": {
+    "defaultMessage": "Loading event types...",
+    "description": "Loading event types message"
+  },
+  "alertManager.notifier.ansible": {
+    "defaultMessage": "Ansible",
+    "description": "Ansible notifier label"
+  },
+  "alertManager.notifier.drawer": {
+    "defaultMessage": "Drawer",
+    "description": "Drawer notifier label"
+  },
+  "alertManager.notifier.email": {
+    "defaultMessage": "Email",
+    "description": "Email notifier label"
+  },
+  "alertManager.notifier.googleChat": {
+    "defaultMessage": "Google Chat",
+    "description": "Google Chat notifier label"
+  },
+  "alertManager.notifier.integration": {
+    "defaultMessage": "Integration",
+    "description": "Generic camel integration notifier label"
+  },
+  "alertManager.notifier.pagerduty": {
+    "defaultMessage": "PagerDuty",
+    "description": "PagerDuty notifier label"
+  },
+  "alertManager.notifier.servicenow": {
+    "defaultMessage": "ServiceNow",
+    "description": "ServiceNow notifier label"
+  },
+  "alertManager.notifier.slack": {
+    "defaultMessage": "Slack",
+    "description": "Slack notifier label"
+  },
+  "alertManager.notifier.splunk": {
+    "defaultMessage": "Splunk",
+    "description": "Splunk notifier label"
+  },
+  "alertManager.notifier.teams": {
+    "defaultMessage": "Teams",
+    "description": "Microsoft Teams notifier label"
+  },
+  "alertManager.notifier.webhook": {
+    "defaultMessage": "Webhook",
+    "description": "Webhook notifier label"
+  },
+  "alertManager.page.description": {
+    "defaultMessage": "Manage your alert default settings for your Organization and configure how fired events should alert users and groups through various communication channels.",
+    "description": "Alert Manager page description"
+  },
+  "alertManager.page.learnMore": {
+    "defaultMessage": "Learn more",
+    "description": "Learn more link text"
+  },
+  "alertManager.page.title": {
+    "defaultMessage": "Alert Manager",
+    "description": "Alert Manager page title"
+  },
+  "alertManager.pagination.itemsPerPage": {
+    "defaultMessage": "{count} per page",
+    "description": "Items per page label"
+  },
+  "alertManager.pagination.title": {
+    "defaultMessage": "Event types pagination",
+    "description": "Pagination navigation aria label"
+  },
+  "alertManager.table.ariaLabel": {
+    "defaultMessage": "Alert Manager event types table",
+    "description": "Table aria label"
+  },
+  "alertManager.table.eventTypeColumn": {
+    "defaultMessage": "Event type",
+    "description": "Event type column header"
+  },
+  "alertManager.table.myNotifiersColumn": {
+    "defaultMessage": "My notifiers",
+    "description": "My notifiers column header"
+  },
+  "alertManager.table.myNotifiersTooltip": {
+    "defaultMessage": "Notifiers are the communication channels configured to alert you when events fire.",
+    "description": "Tooltip explaining what notifiers are"
+  },
+  "alertManager.table.noNotifiers": {
+    "defaultMessage": "No notifiers",
+    "description": "Label shown when no notifiers are configured"
+  },
+  "alertManager.table.notifiersError": {
+    "defaultMessage": "Unable to load notifiers",
+    "description": "Label shown when notifiers failed to load"
+  },
+  "alertManager.table.serviceColumn": {
+    "defaultMessage": "Service",
+    "description": "Service column header"
+  },
+  "dataIntegrations.about.footer.learningResources": {
+    "defaultMessage": "View all Settings learning resources",
+    "description": "Footer link to the Settings learning resources page"
+  },
+  "dataIntegrations.about.hero.description": {
+    "defaultMessage": "Sync data from cloud providers, including OpenShift Container Platform, Microsoft Azure, Amazon Web Services (AWS), and Google Cloud Platform (GCP).",
+    "description": "About tab hero body copy"
+  },
+  "dataIntegrations.about.hero.primaryActionPlaceholder": {
+    "defaultMessage": "Main getting started action",
+    "description": "Placeholder label for the primary hero call to action (RHCLOUD-51526)"
+  },
+  "dataIntegrations.about.hero.secondaryActionPlaceholder": {
+    "defaultMessage": "Optional secondary action",
+    "description": "Placeholder label for the secondary hero call to action (RHCLOUD-51526)"
+  },
+  "dataIntegrations.about.hero.title": {
+    "defaultMessage": "Get started with Data Integration",
+    "description": "About tab hero heading"
+  },
+  "dataIntegrations.about.provider.amazonShort": {
+    "defaultMessage": "AWS",
+    "description": "Short form of Amazon Web Services, used in sentence copy"
+  },
+  "dataIntegrations.about.provider.azureShort": {
+    "defaultMessage": "Azure",
+    "description": "Short form of Microsoft Azure, used in sentence copy"
+  },
+  "dataIntegrations.about.provider.googleShort": {
+    "defaultMessage": "GCP",
+    "description": "Short form of Google Cloud Platform, used in sentence copy"
+  },
+  "dataIntegrations.about.recommended.body": {
+    "defaultMessage": "Cloud integrations provide a way for services to collect data outside of the Red Hat Hybrid Cloud Console through either a direct connection to the integration or indirectly.",
+    "description": "Summary of the recommended documentation guide"
+  },
+  "dataIntegrations.about.recommended.readDocumentation": {
+    "defaultMessage": "Read documentation",
+    "description": "Button opening the recommended documentation guide"
+  },
+  "dataIntegrations.about.recommended.subtitle": {
+    "defaultMessage": "Configuring cloud integrations for Red Hat services",
+    "description": "Title of the recommended documentation guide"
+  },
+  "dataIntegrations.about.recommended.title": {
+    "defaultMessage": "Recommended content",
+    "description": "Recommended content section heading"
+  },
+  "dataIntegrations.about.useCases.addIntegration": {
+    "defaultMessage": "Add integration",
+    "description": "Add integration action on a use-case card"
+  },
+  "dataIntegrations.about.useCases.addIntegrationDisabledTooltip": {
+    "defaultMessage": "You do not have permission to add data integrations. Contact your organization administrator.",
+    "description": "Tooltip explaining why the add action is disabled for a non-admin"
+  },
+  "dataIntegrations.about.useCases.addIntegrationForProvider": {
+    "defaultMessage": "Add {provider} integration",
+    "description": "Accessible name for a use-case card action, naming the provider"
+  },
+  "dataIntegrations.about.useCases.amazonTitle": {
+    "defaultMessage": "Amazon Web Services (AWS)",
+    "description": "Amazon Web Services use-case card title"
+  },
+  "dataIntegrations.about.useCases.azureTitle": {
+    "defaultMessage": "Microsoft Azure",
+    "description": "Microsoft Azure use-case card title"
+  },
+  "dataIntegrations.about.useCases.description": {
+    "defaultMessage": "Connect your {provider} account so that you can use your {provider} data with Hybrid Cloud Console services.",
+    "description": "Body copy on a use-case card, naming the provider it connects"
+  },
+  "dataIntegrations.about.useCases.descriptionOpenshift": {
+    "defaultMessage": "Connect your OpenShift environment so that you can use your OpenShift data with Hybrid Cloud Console services.",
+    "description": "Body copy on the OpenShift use-case card"
+  },
+  "dataIntegrations.about.useCases.googleTitle": {
+    "defaultMessage": "Google Cloud Platform (GCP)",
+    "description": "Google Cloud Platform use-case card title"
+  },
+  "dataIntegrations.about.useCases.learnMore": {
+    "defaultMessage": "Learn more.",
+    "description": "Inline documentation link at the end of a use-case card"
+  },
+  "dataIntegrations.about.useCases.learnMoreLabel": {
+    "defaultMessage": "Learn more about {provider} integrations",
+    "description": "Accessible name for a use-case card documentation link, naming the provider"
+  },
+  "dataIntegrations.about.useCases.openshiftTitle": {
+    "defaultMessage": "Red Hat OpenShift Container Platform",
+    "description": "OpenShift use-case card title"
+  },
+  "dataIntegrations.about.useCases.title": {
+    "defaultMessage": "Use cases",
+    "description": "Use cases section heading"
+  },
+  "dataIntegrations.add.group.otherCloudProviders": {
+    "defaultMessage": "Other cloud providers",
+    "description": "Other cloud providers dropdown group heading"
+  },
+  "dataIntegrations.add.group.redHat": {
+    "defaultMessage": "Red Hat integrations",
+    "description": "Red Hat integrations dropdown group heading"
+  },
+  "dataIntegrations.add.toggle": {
+    "defaultMessage": "Add data integration",
+    "description": "Add data integration dropdown toggle label"
+  },
+  "dataIntegrations.application.costManagement.description": {
+    "defaultMessage": "Analyze, forecast, and optimize your Red Hat OpenShift cluster costs in hybrid cloud environments.",
+    "description": "What the Cost Management application does"
+  },
+  "dataIntegrations.myDataIntegrations.placeholder": {
+    "defaultMessage": "The data integrations table is coming soon.",
+    "description": "Placeholder text for the not-yet-built integrations table"
+  },
+  "dataIntegrations.page.description": {
+    "defaultMessage": "Manage your sourcing and sharing with popular cloud providers.",
+    "description": "Data Integrations page subtitle"
+  },
+  "dataIntegrations.page.learnMore": {
+    "defaultMessage": "Learn more",
+    "description": "Learn more link text"
+  },
+  "dataIntegrations.page.title": {
+    "defaultMessage": "Data Integrations",
+    "description": "Data Integrations page title"
+  },
+  "dataIntegrations.provider.amazon": {
+    "defaultMessage": "Amazon Web Services",
+    "description": "Amazon Web Services provider name"
+  },
+  "dataIntegrations.provider.azure": {
+    "defaultMessage": "Microsoft Azure",
+    "description": "Microsoft Azure provider name"
+  },
+  "dataIntegrations.provider.google": {
+    "defaultMessage": "Google Cloud Platform",
+    "description": "Google Cloud Platform provider name"
+  },
+  "dataIntegrations.provider.openshift": {
+    "defaultMessage": "OpenShift Container Platform",
+    "description": "OpenShift Container Platform provider name"
+  },
+  "dataIntegrations.rhelBundle.autoregistration.description": {
+    "defaultMessage": "Cloud instances automatically connect to console.redhat.com when provisioned.",
+    "description": "What autoregistration gives"
+  },
+  "dataIntegrations.rhelBundle.autoregistration.title": {
+    "defaultMessage": "Autoregistration",
+    "description": "Title of the autoregistration capability"
+  },
+  "dataIntegrations.rhelBundle.goldImages.aws": {
+    "defaultMessage": "Unlock cloud images in AWS and bring your own subscription instead of paying hourly.",
+    "description": "What gold images gives an AWS integration"
+  },
+  "dataIntegrations.rhelBundle.goldImages.azure": {
+    "defaultMessage": "Unlock cloud images in Microsoft Azure and bring your own subscription instead of paying hourly.",
+    "description": "What gold images gives an Azure integration"
+  },
+  "dataIntegrations.rhelBundle.goldImages.google": {
+    "defaultMessage": "Unlock cloud images in Google Cloud and bring your own subscription instead of paying hourly.",
+    "description": "What gold images gives a Google Cloud integration"
+  },
+  "dataIntegrations.rhelBundle.goldImages.title": {
+    "defaultMessage": "Red Hat gold images",
+    "description": "Title of the gold images capability"
+  },
+  "dataIntegrations.rhelBundle.subWatch.description": {
+    "defaultMessage": "View precise public cloud usage data in subscription watch.",
+    "description": "What high precision subscription watch data gives"
+  },
+  "dataIntegrations.rhelBundle.subWatch.title": {
+    "defaultMessage": "High precision subscription watch data",
+    "description": "Title of the subscription watch capability"
+  },
+  "dataIntegrations.sourceDetail.actions.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Cancel button text"
+  },
+  "dataIntegrations.sourceDetail.actions.delete": {
+    "defaultMessage": "Delete",
+    "description": "Delete action in dropdown"
+  },
+  "dataIntegrations.sourceDetail.actions.deleteDescription": {
+    "defaultMessage": "Permanently delete this integration and all collected data",
+    "description": "Description for delete action"
+  },
+  "dataIntegrations.sourceDetail.actions.label": {
+    "defaultMessage": "Actions",
+    "description": "Actions dropdown aria label"
+  },
+  "dataIntegrations.sourceDetail.actions.okButton": {
+    "defaultMessage": "OK",
+    "description": "OK button text for modals"
+  },
+  "dataIntegrations.sourceDetail.actions.pause": {
+    "defaultMessage": "Pause",
+    "description": "Pause action in dropdown"
+  },
+  "dataIntegrations.sourceDetail.actions.pauseDescription": {
+    "defaultMessage": "Temporarily disable data connection",
+    "description": "Description for pause action"
+  },
+  "dataIntegrations.sourceDetail.actions.pauseDisabledDescription": {
+    "defaultMessage": "Cannot pause while availability check is in progress",
+    "description": "Description for disabled pause action during availability check"
+  },
+  "dataIntegrations.sourceDetail.actions.pauseModalTitle": {
+    "defaultMessage": "Pause data integration",
+    "description": "Title for pause data integration modal"
+  },
+  "dataIntegrations.sourceDetail.actions.resume": {
+    "defaultMessage": "Resume",
+    "description": "Resume action in dropdown"
+  },
+  "dataIntegrations.sourceDetail.actions.resumeModalTitle": {
+    "defaultMessage": "Resume data integration",
+    "description": "Title for resume data integration modal"
+  },
+  "dataIntegrations.sourceDetail.actions.save": {
+    "defaultMessage": "Save",
+    "description": "Save button text"
+  },
+  "dataIntegrations.sourceDetail.configMode.accountAuth": {
+    "defaultMessage": "Account authorization",
+    "description": "Account authorization mode"
+  },
+  "dataIntegrations.sourceDetail.configMode.manual": {
+    "defaultMessage": "Manual configuration",
+    "description": "Manual configuration mode"
+  },
+  "dataIntegrations.sourceDetail.configMode.unknown": {
+    "defaultMessage": "Unknown",
+    "description": "Unknown configuration mode"
+  },
+  "dataIntegrations.sourceDetail.connectedApps.none": {
+    "defaultMessage": "No applications connected",
+    "description": "Message when no applications are connected"
+  },
+  "dataIntegrations.sourceDetail.connectedApps.title": {
+    "defaultMessage": "Connected applications",
+    "description": "Connected applications section title"
+  },
+  "dataIntegrations.sourceDetail.deleteConfirm.title": {
+    "defaultMessage": "Delete data integration?",
+    "description": "Delete confirmation dialog title"
+  },
+  "dataIntegrations.sourceDetail.error.backToList": {
+    "defaultMessage": "Back to data integrations",
+    "description": "Link to go back to data integrations list"
+  },
+  "dataIntegrations.sourceDetail.error.loadFailed.message": {
+    "defaultMessage": "An error occurred while loading the data integration. Please try again.",
+    "description": "Error message when source fails to load"
+  },
+  "dataIntegrations.sourceDetail.error.loadFailed.title": {
+    "defaultMessage": "Failed to load data integration",
+    "description": "Error title when source fails to load"
+  },
+  "dataIntegrations.sourceDetail.error.notFound.message": {
+    "defaultMessage": "The data integration you are looking for does not exist or has been deleted.",
+    "description": "Error message when source is not found"
+  },
+  "dataIntegrations.sourceDetail.error.notFound.title": {
+    "defaultMessage": "Source not found",
+    "description": "Error title when source is not found"
+  },
+  "dataIntegrations.sourceDetail.fallbackIconAlt": {
+    "defaultMessage": "Source type {id}",
+    "description": "Fallback alt text for source type icon when name is unavailable"
+  },
+  "dataIntegrations.sourceDetail.form.configurationMode": {
+    "defaultMessage": "Configuration mode",
+    "description": "Label for configuration mode field"
+  },
+  "dataIntegrations.sourceDetail.form.dateAdded": {
+    "defaultMessage": "Date added",
+    "description": "Label for date added field"
+  },
+  "dataIntegrations.sourceDetail.form.integrationType": {
+    "defaultMessage": "Integration type",
+    "description": "Label for integration type field"
+  },
+  "dataIntegrations.sourceDetail.form.name": {
+    "defaultMessage": "Name",
+    "description": "Label for source name field"
+  },
+  "dataIntegrations.sourceDetail.loadingAria": {
+    "defaultMessage": "Loading source details",
+    "description": "Loading source details spinner aria-label"
+  },
+  "dataIntegrations.sourceDetail.metadata.checkedAgo": {
+    "defaultMessage": "Checked {time}",
+    "description": "Checked timestamp with relative time"
+  },
+  "dataIntegrations.sourceDetail.metadata.checkingAvailabilityAriaLabel": {
+    "defaultMessage": "Checking availability",
+    "description": "Aria label for spinner when checking availability"
+  },
+  "dataIntegrations.sourceDetail.metadata.lastAvailabilityCheck": {
+    "defaultMessage": "Last availability check",
+    "description": "Label for last availability check"
+  },
+  "dataIntegrations.sourceDetail.metadata.lastModified": {
+    "defaultMessage": "Last modified",
+    "description": "Label for last modified timestamp"
+  },
+  "dataIntegrations.sourceDetail.metadata.waitingForUpdate": {
+    "defaultMessage": "Waiting for update",
+    "description": "Status when availability checker has not run yet"
+  },
+  "dataIntegrations.sourceDetail.toast.deleteComingSoon": {
+    "defaultMessage": "Delete functionality coming soon",
+    "description": "Toast message for delete functionality coming soon"
+  },
+  "dataIntegrations.sourceDetail.toast.pauseComingSoon": {
+    "defaultMessage": "Pause functionality coming soon",
+    "description": "Toast message for pause functionality coming soon"
+  },
+  "dataIntegrations.sourceDetail.toast.saveComingSoon": {
+    "defaultMessage": "Save functionality coming soon",
+    "description": "Toast message for save functionality coming soon"
+  },
+  "dataIntegrations.sourcesTable.columns.connectedApplications": {
+    "defaultMessage": "Connected applications",
+    "description": "Connected applications column header"
+  },
+  "dataIntegrations.sourcesTable.columns.dateAdded": {
+    "defaultMessage": "Date added",
+    "description": "Date added column header"
+  },
+  "dataIntegrations.sourcesTable.columns.name": {
+    "defaultMessage": "Name",
+    "description": "Name column header"
+  },
+  "dataIntegrations.sourcesTable.columns.status": {
+    "defaultMessage": "Status",
+    "description": "Status column header"
+  },
+  "dataIntegrations.sourcesTable.columns.type": {
+    "defaultMessage": "Type",
+    "description": "Type column header"
+  },
+  "dataIntegrations.sourcesTable.connectedApplications.none": {
+    "defaultMessage": "None",
+    "description": "Text shown when a source has no connected applications"
+  },
+  "dataIntegrations.sourcesTable.emptyState.body": {
+    "defaultMessage": "Get started by adding your first data integration or learn more on the About tab.",
+    "description": "Empty state body when no sources exist"
+  },
+  "dataIntegrations.sourcesTable.emptyState.title": {
+    "defaultMessage": "No data integrations",
+    "description": "Empty state title when no sources exist"
+  },
+  "dataIntegrations.sourcesTable.filteredEmptyState.body": {
+    "defaultMessage": "No data integrations match the current filters. Try adjusting your filters.",
+    "description": "Empty state body when filters return no results"
+  },
+  "dataIntegrations.sourcesTable.filteredEmptyState.title": {
+    "defaultMessage": "No results found",
+    "description": "Empty state title when filters return no results"
+  },
+  "dataIntegrations.sourcesTable.filters.appliedCount": {
+    "defaultMessage": "{count, plural, one {# filter applied} other {# filters applied}}",
+    "description": "Number of filters applied (shown as \"{count} filters applied\")"
+  },
+  "dataIntegrations.sourcesTable.filters.clearAll": {
+    "defaultMessage": "Clear all",
+    "description": "Clear all filters button label"
+  },
+  "dataIntegrations.sourcesTable.filters.integrationType": {
+    "defaultMessage": "Integration type",
+    "description": "Integration type filter chip label prefix"
+  },
+  "dataIntegrations.sourcesTable.toolbar.addIntegration": {
+    "defaultMessage": "Add integration",
+    "description": "Add integration button label"
+  },
+  "dataIntegrations.sourcesTable.toolbar.filter": {
+    "defaultMessage": "Filter",
+    "description": "Filter dropdown label"
+  },
+  "dataIntegrations.sourcesTable.toolbar.findByName": {
+    "defaultMessage": "Find by name",
+    "description": "Find by name search input placeholder"
+  },
+  "dataIntegrations.status.available": {
+    "defaultMessage": "Available",
+    "description": "Status badge label for a healthy source"
+  },
+  "dataIntegrations.status.inProgress": {
+    "defaultMessage": "In progress",
+    "description": "Status badge label while the availability check runs"
+  },
+  "dataIntegrations.status.partiallyAvailable": {
+    "defaultMessage": "Partially available",
+    "description": "Status badge label when some applications are unhealthy"
+  },
+  "dataIntegrations.status.paused": {
+    "defaultMessage": "Paused",
+    "description": "Status badge label for a paused source"
+  },
+  "dataIntegrations.status.unavailable": {
+    "defaultMessage": "Unavailable",
+    "description": "Status badge label for a failing source"
+  },
+  "dataIntegrations.status.unknown": {
+    "defaultMessage": "Unknown",
+    "description": "Status badge label when the availability checker has not run yet"
+  },
+  "dataIntegrations.tabs.about": {
+    "defaultMessage": "About",
+    "description": "About tab label"
+  },
+  "dataIntegrations.tabs.ariaLabel": {
+    "defaultMessage": "Data Integrations tabs",
+    "description": "Aria label for the Data Integrations tab navigation"
+  },
+  "dataIntegrations.tabs.myDataIntegrations": {
+    "defaultMessage": "My data integrations",
+    "description": "My data integrations tab label"
+  },
+  "dataIntegrations.wizard.add": {
+    "defaultMessage": "Add",
+    "description": "Wizard submit button, shown on the review step"
+  },
+  "dataIntegrations.wizard.application.bundle": {
+    "defaultMessage": "Bundle",
+    "description": "Chip marking an application that bundles several capabilities"
+  },
+  "dataIntegrations.wizard.application.label": {
+    "defaultMessage": "Available applications",
+    "description": "Label for the application switch group, read as the group name"
+  },
+  "dataIntegrations.wizard.application.stepDescription": {
+    "defaultMessage": "Configuring your cloud integrations provides additional capabilities included with your subscription. You can turn these features on or off at any time after integration creation.",
+    "description": "Introductory text above the application switches"
+  },
+  "dataIntegrations.wizard.application.stepTitle": {
+    "defaultMessage": "Select applications",
+    "description": "Title of the application selection wizard step"
+  },
+  "dataIntegrations.wizard.authType.accessKey": {
+    "defaultMessage": "Access key",
+    "description": "Label for the AWS access key authentication type"
+  },
+  "dataIntegrations.wizard.authType.label": {
+    "defaultMessage": "Authentication type",
+    "description": "Label for the authentication type card group, read as the radio group name"
+  },
+  "dataIntegrations.wizard.authType.required": {
+    "defaultMessage": "Select an authentication type to continue.",
+    "description": "Validation message when no authentication type is selected"
+  },
+  "dataIntegrations.wizard.authType.stepDescription": {
+    "defaultMessage": "Select how you want to authenticate with your provider. The credentials you enter next depend on this choice.",
+    "description": "Introductory text above the authentication type cards"
+  },
+  "dataIntegrations.wizard.authType.stepTitle": {
+    "defaultMessage": "Select authentication type",
+    "description": "Title of the authentication type wizard step"
+  },
+  "dataIntegrations.wizard.authType.unavailable": {
+    "defaultMessage": "Adding this integration type is not supported yet. Go back and select a different integration type.",
+    "description": "Shown on the authentication step for providers with no supported authentication yet"
+  },
+  "dataIntegrations.wizard.back": {
+    "defaultMessage": "Back",
+    "description": "Wizard Back button"
+  },
+  "dataIntegrations.wizard.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Wizard Cancel button"
+  },
+  "dataIntegrations.wizard.cancelConfirm.body": {
+    "defaultMessage": "Are you sure you want to cancel? Your integration will not be created and any progress will be lost.",
+    "description": "Body of the confirmation shown when cancelling the wizard"
+  },
+  "dataIntegrations.wizard.cancelConfirm.confirm": {
+    "defaultMessage": "Exit",
+    "description": "Button that confirms exiting the wizard"
+  },
+  "dataIntegrations.wizard.cancelConfirm.dismiss": {
+    "defaultMessage": "Stay",
+    "description": "Button that returns to the wizard instead of exiting"
+  },
+  "dataIntegrations.wizard.cancelConfirm.title": {
+    "defaultMessage": "Exit integration creation?",
+    "description": "Title of the confirmation shown when cancelling the wizard"
+  },
+  "dataIntegrations.wizard.close": {
+    "defaultMessage": "Close wizard",
+    "description": "Aria label for the wizard header close button"
+  },
+  "dataIntegrations.wizard.configuration.accountAuthorization": {
+    "defaultMessage": "Account authorization",
+    "description": "Label of the account authorization configuration mode"
+  },
+  "dataIntegrations.wizard.configuration.accountAuthorizationDescription": {
+    "defaultMessage": "A new automated integration configuration method. Provide your AWS account credentials and let Red Hat configure and manage your integration for you.",
+    "description": "Description of the account authorization configuration mode"
+  },
+  "dataIntegrations.wizard.configuration.manual": {
+    "defaultMessage": "Manual configuration",
+    "description": "Label of the manual configuration mode"
+  },
+  "dataIntegrations.wizard.configuration.manualDescription": {
+    "defaultMessage": "Configure and manage your integration manually if you do not wish to provide account authorization credentials. You will set up integrations the same way you do today.",
+    "description": "Description of the manual configuration mode"
+  },
+  "dataIntegrations.wizard.configuration.modeLabel": {
+    "defaultMessage": "Select a configuration mode",
+    "description": "Label for the configuration mode radio group, read as the group name"
+  },
+  "dataIntegrations.wizard.configuration.modeRequired": {
+    "defaultMessage": "Select a configuration mode to continue.",
+    "description": "Validation message when no configuration mode is selected"
+  },
+  "dataIntegrations.wizard.configuration.recommended": {
+    "defaultMessage": "Recommended",
+    "description": "Chip marking account authorization as the recommended configuration mode"
+  },
+  "dataIntegrations.wizard.configuration.stepDescription": {
+    "defaultMessage": "Configure your integration manually or let us manage all necessary credentials by selecting account authorization configuration.",
+    "description": "Introductory text above the configuration mode options"
+  },
+  "dataIntegrations.wizard.configuration.stepTitle": {
+    "defaultMessage": "Select configuration",
+    "description": "Title of the configuration mode wizard step"
+  },
+  "dataIntegrations.wizard.createFailure.body": {
+    "defaultMessage": "Try again or close the wizard.",
+    "description": "Toast body when integration creation fails entirely"
+  },
+  "dataIntegrations.wizard.createFailure.title": {
+    "defaultMessage": "Failed to create integration",
+    "description": "Toast title when integration creation fails entirely"
+  },
+  "dataIntegrations.wizard.credentials.accessKeyId": {
+    "defaultMessage": "Access key ID",
+    "description": "Label for the AWS access key ID field"
+  },
+  "dataIntegrations.wizard.credentials.accessKeyIdRequired": {
+    "defaultMessage": "Enter your AWS access key ID.",
+    "description": "Validation message when the AWS access key ID is empty"
+  },
+  "dataIntegrations.wizard.credentials.secretAccessKey": {
+    "defaultMessage": "Secret access key",
+    "description": "Label for the AWS secret access key field"
+  },
+  "dataIntegrations.wizard.credentials.secretAccessKeyRequired": {
+    "defaultMessage": "Enter your AWS secret access key.",
+    "description": "Validation message when the AWS secret access key is empty"
+  },
+  "dataIntegrations.wizard.credentials.stepDescription": {
+    "defaultMessage": "Create an access key in your AWS user account and enter the details below.",
+    "description": "Introductory text above the AWS access key fields"
+  },
+  "dataIntegrations.wizard.credentials.stepTitle": {
+    "defaultMessage": "Enter credentials",
+    "description": "Title of the credentials wizard step"
+  },
+  "dataIntegrations.wizard.description": {
+    "defaultMessage": "Configure an integration to start importing data from your provider.",
+    "description": "Add data integration wizard subtitle"
+  },
+  "dataIntegrations.wizard.error.body": {
+    "defaultMessage": "The list of integration types could not be retrieved. Close the wizard and try again.",
+    "description": "Body shown when the provider catalogue fails to load"
+  },
+  "dataIntegrations.wizard.error.close": {
+    "defaultMessage": "Close",
+    "description": "Button that dismisses the wizard from its error state"
+  },
+  "dataIntegrations.wizard.error.title": {
+    "defaultMessage": "Unable to load integration types",
+    "description": "Title shown when the provider catalogue fails to load"
+  },
+  "dataIntegrations.wizard.loading": {
+    "defaultMessage": "Loading integration types",
+    "description": "Accessible label for the spinner shown while providers load"
+  },
+  "dataIntegrations.wizard.manual.applicationDescription": {
+    "defaultMessage": "Select one application to connect to your integration. You can connect additional applications after integration creation."
+  },
+  "dataIntegrations.wizard.manual.applicationLabel": {
+    "defaultMessage": "Select an application"
+  },
+  "dataIntegrations.wizard.manual.applicationTitle": {
+    "defaultMessage": "Select application"
+  },
+  "dataIntegrations.wizard.manual.awsAccountInstructions": {
+    "defaultMessage": "Sign in to AWS and enter your account number below."
+  },
+  "dataIntegrations.wizard.manual.awsAccountNumber": {
+    "defaultMessage": "AWS account number"
+  },
+  "dataIntegrations.wizard.manual.awsAliases": {
+    "defaultMessage": "Include AWS account aliases"
+  },
+  "dataIntegrations.wizard.manual.awsArnAuth": {
+    "defaultMessage": "AWS IAM role"
+  },
+  "dataIntegrations.wizard.manual.awsArnInstructions": {
+    "defaultMessage": "Copy the ARN of the role you created and enter it below."
+  },
+  "dataIntegrations.wizard.manual.awsArnTitle": {
+    "defaultMessage": "Enter ARN"
+  },
+  "dataIntegrations.wizard.manual.awsBucket": {
+    "defaultMessage": "S3 bucket name"
+  },
+  "dataIntegrations.wizard.manual.awsBucketPattern": {
+    "defaultMessage": "S3 bucket names must use lowercase letters, numbers, dots, and hyphens."
+  },
+  "dataIntegrations.wizard.manual.awsConfigurationTitle": {
+    "defaultMessage": "Configure AWS access"
+  },
+  "dataIntegrations.wizard.manual.awsConnectCloudFormation": {
+    "defaultMessage": "Connect AWS with CloudFormation"
+  },
+  "dataIntegrations.wizard.manual.awsCostExportCustom": {
+    "defaultMessage": "Skip creating the default data export. Follow the additional configuration steps for a customized export."
+  },
+  "dataIntegrations.wizard.manual.awsCostExportDefault": {
+    "defaultMessage": "In AWS, create a Legacy CUR export named koku. Include resource IDs, enable automatic refresh, select hourly data, enable Redshift and QuickSight, disable Athena, use GZIP compression, and set the report path prefix to cost."
+  },
+  "dataIntegrations.wizard.manual.awsCostInstructions": {
+    "defaultMessage": "Create an S3 bucket for {application}, then follow the data export, IAM policy, and role steps."
+  },
+  "dataIntegrations.wizard.manual.awsCostManagementName": {
+    "defaultMessage": "Cost Management"
+  },
+  "dataIntegrations.wizard.manual.awsCostTagsInstructions": {
+    "defaultMessage": "In AWS Billing and Cost Management, open Cost Allocation Tags and activate the tags you want {application} to import."
+  },
+  "dataIntegrations.wizard.manual.awsCostTagsTitle": {
+    "defaultMessage": "Tags, aliases and organizational units"
+  },
+  "dataIntegrations.wizard.manual.awsCostUsageInstructions": {
+    "defaultMessage": "Choose whether to send the default AWS data export to {application} or customize it manually."
+  },
+  "dataIntegrations.wizard.manual.awsCostUsageTitle": {
+    "defaultMessage": "Create cost and usage report"
+  },
+  "dataIntegrations.wizard.manual.awsCreateRoleInstructions": {
+    "defaultMessage": "Create an IAM role and attach the policy you just created."
+  },
+  "dataIntegrations.wizard.manual.awsCustomExport": {
+    "defaultMessage": "Customize the data export manually"
+  },
+  "dataIntegrations.wizard.manual.awsDefaultExport": {
+    "defaultMessage": "Send the default data export to Cost Management"
+  },
+  "dataIntegrations.wizard.manual.awsExportMode": {
+    "defaultMessage": "Cost and usage report"
+  },
+  "dataIntegrations.wizard.manual.awsExternalId": {
+    "defaultMessage": "Enable the external ID requirement and use this value:"
+  },
+  "dataIntegrations.wizard.manual.awsExternalIdLabel": {
+    "defaultMessage": "External ID"
+  },
+  "dataIntegrations.wizard.manual.awsFinishRole": {
+    "defaultMessage": "Attach your IAM policy to the role, then copy its ARN into the field below."
+  },
+  "dataIntegrations.wizard.manual.awsHcsName": {
+    "defaultMessage": "Hybrid Committed Spend"
+  },
+  "dataIntegrations.wizard.manual.awsMetered": {
+    "defaultMessage": "Include RHEL usage"
+  },
+  "dataIntegrations.wizard.manual.awsOrgUnits": {
+    "defaultMessage": "Include AWS organizational units"
+  },
+  "dataIntegrations.wizard.manual.awsPolicyInstructions": {
+    "defaultMessage": "In AWS IAM, create a policy using this JSON:"
+  },
+  "dataIntegrations.wizard.manual.awsPolicyTitle": {
+    "defaultMessage": "Create IAM policy"
+  },
+  "dataIntegrations.wizard.manual.awsProvisioningError": {
+    "defaultMessage": "Unable to load the provisioning account. Return to this step to try again."
+  },
+  "dataIntegrations.wizard.manual.awsProvisioningInstructions": {
+    "defaultMessage": "Create the provisioning IAM role in your AWS account, then enter its ARN below."
+  },
+  "dataIntegrations.wizard.manual.awsRegion": {
+    "defaultMessage": "AWS region"
+  },
+  "dataIntegrations.wizard.manual.awsRegionsError": {
+    "defaultMessage": "AWS regions could not be loaded. Try closing and reopening the wizard."
+  },
+  "dataIntegrations.wizard.manual.awsRhelInstructions": {
+    "defaultMessage": "Create an IAM policy granting sts:GetCallerIdentity, then create an IAM role for RHEL management."
+  },
+  "dataIntegrations.wizard.manual.awsRoleArn": {
+    "defaultMessage": "IAM role ARN"
+  },
+  "dataIntegrations.wizard.manual.awsRoleArnPattern": {
+    "defaultMessage": "ARN must start with arn:aws:"
+  },
+  "dataIntegrations.wizard.manual.awsRoleTitle": {
+    "defaultMessage": "Create IAM role"
+  },
+  "dataIntegrations.wizard.manual.awsSelectRegion": {
+    "defaultMessage": "Select a region"
+  },
+  "dataIntegrations.wizard.manual.awsSetupInstructions": {
+    "defaultMessage": "AWS setup instructions"
+  },
+  "dataIntegrations.wizard.manual.awsTrustAccount": {
+    "defaultMessage": "In the AWS IAM role trust settings, choose another AWS account and use this account ID:"
+  },
+  "dataIntegrations.wizard.manual.provisioningArnAuth": {
+    "defaultMessage": "Launch images IAM role"
+  },
+  "dataIntegrations.wizard.manual.rhelArnAuth": {
+    "defaultMessage": "RHEL management IAM role"
+  },
+  "dataIntegrations.wizard.name.label": {
+    "defaultMessage": "Integration name",
+    "description": "Label for the integration name field"
+  },
+  "dataIntegrations.wizard.name.placeholder": {
+    "defaultMessage": "integration_name",
+    "description": "Placeholder shown in the empty integration name field"
+  },
+  "dataIntegrations.wizard.name.required": {
+    "defaultMessage": "Enter a name for your integration.",
+    "description": "Validation message when the integration name is empty"
+  },
+  "dataIntegrations.wizard.name.stepDescription": {
+    "defaultMessage": "Enter a name for your {provider} integration.",
+    "description": "Introductory text above the integration name field"
+  },
+  "dataIntegrations.wizard.name.stepTitle": {
+    "defaultMessage": "Name integration",
+    "description": "Title of the integration naming wizard step"
+  },
+  "dataIntegrations.wizard.next": {
+    "defaultMessage": "Next",
+    "description": "Wizard Next button"
+  },
+  "dataIntegrations.wizard.result.addAnother": {
+    "defaultMessage": "Add another integration",
+    "description": "Button that restarts the wizard to add another integration"
+  },
+  "dataIntegrations.wizard.result.edit": {
+    "defaultMessage": "Edit details",
+    "description": "Button that returns to the review step after a failure"
+  },
+  "dataIntegrations.wizard.result.errorBody": {
+    "defaultMessage": "Your integration was not created. Check your connection and try again.",
+    "description": "Body shown when the failure gave no reason, such as a network error"
+  },
+  "dataIntegrations.wizard.result.errorTitle": {
+    "defaultMessage": "Unable to add integration",
+    "description": "Title shown when the integration could not be created"
+  },
+  "dataIntegrations.wizard.result.retry": {
+    "defaultMessage": "Retry",
+    "description": "Button that submits the integration again after a failure"
+  },
+  "dataIntegrations.wizard.result.stepTitle": {
+    "defaultMessage": "Add integration",
+    "description": "Title of the wizard step shown after submitting"
+  },
+  "dataIntegrations.wizard.result.submitting": {
+    "defaultMessage": "Adding your integration",
+    "description": "Shown while the integration is being created"
+  },
+  "dataIntegrations.wizard.result.successBody": {
+    "defaultMessage": "{name} was created. It may take a few minutes before data starts arriving.",
+    "description": "Body shown when the integration was created"
+  },
+  "dataIntegrations.wizard.result.successTitle": {
+    "defaultMessage": "Integration added",
+    "description": "Title shown when the integration was created"
+  },
+  "dataIntegrations.wizard.result.viewIntegration": {
+    "defaultMessage": "View integration",
+    "description": "Button that opens the newly created integration"
+  },
+  "dataIntegrations.wizard.review.applications": {
+    "defaultMessage": "Applications",
+    "description": "Label for the applications field in the review step"
+  },
+  "dataIntegrations.wizard.review.authType": {
+    "defaultMessage": "Authentication type",
+    "description": "Review row label for the authentication type"
+  },
+  "dataIntegrations.wizard.review.configurationMode": {
+    "defaultMessage": "Configuration mode",
+    "description": "Review row label for the chosen configuration mode"
+  },
+  "dataIntegrations.wizard.review.name": {
+    "defaultMessage": "Integration name",
+    "description": "Review row label for the integration name"
+  },
+  "dataIntegrations.wizard.review.secretMasked": {
+    "defaultMessage": "Hidden",
+    "description": "Stands in for the secret access key on the review step, which is never displayed"
+  },
+  "dataIntegrations.wizard.review.stepDescription": {
+    "defaultMessage": "Review the details below, then add your integration. Credentials are hidden for security.",
+    "description": "Introductory text above the review summary"
+  },
+  "dataIntegrations.wizard.review.stepTitle": {
+    "defaultMessage": "Review details",
+    "description": "Title of the review wizard step"
+  },
+  "dataIntegrations.wizard.review.type": {
+    "defaultMessage": "Integration type",
+    "description": "Review row label for the integration type"
+  },
+  "dataIntegrations.wizard.sourceType.label": {
+    "defaultMessage": "Integration type",
+    "description": "Label for the source type card group, read as the radio group name"
+  },
+  "dataIntegrations.wizard.sourceType.required": {
+    "defaultMessage": "Select an integration type to continue.",
+    "description": "Validation message when no source type card is selected"
+  },
+  "dataIntegrations.wizard.sourceType.stepDescription": {
+    "defaultMessage": "To import data for an application, you need to configure an integration. Start by selecting the type of integration you want to add.",
+    "description": "Introductory text above the source type cards"
+  },
+  "dataIntegrations.wizard.sourceType.stepTitle": {
+    "defaultMessage": "Select integration type",
+    "description": "Title of the source type selection wizard step"
+  },
+  "dataIntegrations.wizard.success.body": {
+    "defaultMessage": "{name} was successfully created.",
+    "description": "Toast body when integration creation succeeds"
+  },
+  "dataIntegrations.wizard.title": {
+    "defaultMessage": "Add data integration",
+    "description": "Add data integration wizard title"
+  },
+  "dataIntegrationsWidget.addButton": {
+    "defaultMessage": "Add",
+    "description": "Add button label"
+  },
+  "dataIntegrationsWidget.error": {
+    "defaultMessage": "Unable to load integration counts",
+    "description": "Error loading integrations message"
+  },
+  "dataIntegrationsWidget.integrationCount": {
+    "defaultMessage": "{count, plural, =0 {0 integrations} one {1 integration} other {{count} integrations}}",
+    "description": "Number of integrations for a provider"
+  },
+  "dataIntegrationsWidget.loading": {
+    "defaultMessage": "Loading integrations...",
+    "description": "Loading state message"
+  },
+  "dataIntegrationsWidget.manageIntegrations": {
+    "defaultMessage": "Manage integrations",
+    "description": "Manage integrations link text"
+  },
+  "dataIntegrationsWidget.provider.aws": {
+    "defaultMessage": "Amazon Web Services",
+    "description": "Amazon Web Services provider name"
+  },
+  "dataIntegrationsWidget.provider.azure": {
+    "defaultMessage": "Microsoft Azure",
+    "description": "Microsoft Azure provider name"
+  },
+  "dataIntegrationsWidget.provider.googleCloud": {
+    "defaultMessage": "Google Cloud Platform",
+    "description": "Google Cloud Platform provider name"
+  },
+  "dataIntegrationsWidget.provider.openshift": {
+    "defaultMessage": "OpenShift Container Platform",
+    "description": "OpenShift Container Platform provider name"
+  },
+  "dataIntegrationsWidget.title": {
+    "defaultMessage": "Data integrations",
+    "description": "Data Integrations widget title"
+  },
+  "eventLog.breadcrumb.eventLog": {
+    "defaultMessage": "Event Log"
+  },
+  "eventLog.breadcrumb.settings": {
+    "defaultMessage": "Settings"
+  },
+  "eventLog.column.dateTimeFired": {
+    "defaultMessage": "Date and time fired"
+  },
+  "eventLog.column.eventType": {
+    "defaultMessage": "Event type"
+  },
+  "eventLog.column.notifiers": {
+    "defaultMessage": "Notifiers triggered"
+  },
+  "eventLog.column.service": {
+    "defaultMessage": "Service"
+  },
+  "eventLog.column.severity": {
+    "defaultMessage": "Severity"
+  },
+  "eventLog.date.last14": {
+    "defaultMessage": "Last 14 days"
+  },
+  "eventLog.date.last7": {
+    "defaultMessage": "Last 7 days"
+  },
+  "eventLog.date.today": {
+    "defaultMessage": "Today"
+  },
+  "eventLog.date.yesterday": {
+    "defaultMessage": "Yesterday"
+  },
+  "eventLog.emptyState.noResults.body": {
+    "defaultMessage": "No events match your current filters. Try adjusting your filters or date range."
+  },
+  "eventLog.emptyState.noResults.title": {
+    "defaultMessage": "No events found"
+  },
+  "eventLog.endpoint.ansible": {
+    "defaultMessage": "Ansible"
+  },
+  "eventLog.endpoint.drawer": {
+    "defaultMessage": "Drawer"
+  },
+  "eventLog.endpoint.email": {
+    "defaultMessage": "Email"
+  },
+  "eventLog.endpoint.integration": {
+    "defaultMessage": "Integration"
+  },
+  "eventLog.endpoint.pagerduty": {
+    "defaultMessage": "PagerDuty"
+  },
+  "eventLog.endpoint.webhook": {
+    "defaultMessage": "Webhook"
+  },
+  "eventLog.filter.event": {
+    "defaultMessage": "Event"
+  },
+  "eventLog.filter.event.placeholder": {
+    "defaultMessage": "Filter by event name"
+  },
+  "eventLog.filter.service": {
+    "defaultMessage": "Service"
+  },
+  "eventLog.filter.service.placeholder": {
+    "defaultMessage": "Filter by service"
+  },
+  "eventLog.filter.severity": {
+    "defaultMessage": "Severity"
+  },
+  "eventLog.noNotifiers": {
+    "defaultMessage": "No notifiers"
+  },
+  "eventLog.orgAdminRequired": {
+    "defaultMessage": "Org admin access required to view all organization events"
+  },
+  "eventLog.pageSubtitle": {
+    "defaultMessage": "View events firing in your organization."
+  },
+  "eventLog.pageTitle": {
+    "defaultMessage": "Event log"
+  },
+  "eventLog.rowAction.orgSettings": {
+    "defaultMessage": "Manage organization default settings"
+  },
+  "eventLog.rowAction.preferences": {
+    "defaultMessage": "Manage my own alert preferences"
+  },
+  "eventLog.rowActions.label": {
+    "defaultMessage": "Row actions"
+  },
+  "eventLog.severity.critical": {
+    "defaultMessage": "Critical"
+  },
+  "eventLog.severity.important": {
+    "defaultMessage": "Important"
+  },
+  "eventLog.severity.low": {
+    "defaultMessage": "Low"
+  },
+  "eventLog.severity.moderate": {
+    "defaultMessage": "Moderate"
+  },
+  "eventLog.severity.none": {
+    "defaultMessage": "None"
+  },
+  "eventLog.severity.undefined": {
+    "defaultMessage": "Undefined"
+  },
+  "eventLog.status.failed": {
+    "defaultMessage": "Failed"
+  },
+  "eventLog.status.processing": {
+    "defaultMessage": "Processing"
+  },
+  "eventLog.status.sent": {
+    "defaultMessage": "Sent"
+  },
+  "eventLog.status.success": {
+    "defaultMessage": "Success"
+  },
+  "eventLog.table.ariaLabel": {
+    "defaultMessage": "Event log"
+  },
+  "platformSettings.landing.title": {
+    "defaultMessage": "Platform Settings"
+  },
+  "settingsOverview.about.alertManager.button": {
+    "defaultMessage": "Manage alerts",
+    "description": "Alert Manager card button text"
+  },
+  "settingsOverview.about.alertManager.description": {
+    "defaultMessage": "Set up, modify, and view how fired events are being surfaced to you and your team. Our native alert notifiers are designed to fit into your existing communication channels and workflows, with easy configuration of email alerts, in-console notification drawer alerts, and third-party tools including Slack, Google Chat, Microsoft Teams, ServiceNow, Splunk, PagerDuty, Event-Driven Ansible, and direct webhooks.",
+    "description": "Alert Manager card description"
+  },
+  "settingsOverview.about.alertManager.title": {
+    "defaultMessage": "Alert Manager",
+    "description": "Alert Manager card title"
+  },
+  "settingsOverview.about.dataIntegrations.button": {
+    "defaultMessage": "Manage data integrations",
+    "description": "Data Integrations card button text"
+  },
+  "settingsOverview.about.dataIntegrations.description": {
+    "defaultMessage": "Connect your cloud provider accounts to establish data sharing between the Red Hat Hybrid Cloud Cloud Console and Amazon Web Services (AWS), Microsoft Azure, Google Cloud Platform (GCP), and OpenShift Container Platform (OCP).",
+    "description": "Data Integrations card description"
+  },
+  "settingsOverview.about.dataIntegrations.title": {
+    "defaultMessage": "Data Integrations",
+    "description": "Data Integrations card title"
+  },
+  "settingsOverview.about.page.description": {
+    "defaultMessage": "Manage all things related to eventing, alerting, and data sourcing.",
+    "description": "Settings Overview page description"
+  },
+  "settingsOverview.about.page.learnMore": {
+    "defaultMessage": "Learn more",
+    "description": "Learn more link text"
+  },
+  "settingsOverview.about.page.title": {
+    "defaultMessage": "Settings overview",
+    "description": "Settings Overview page title"
+  },
+  "settingsOverview.about.recommendedContent.item1": {
+    "defaultMessage": "Getting started with Alert Manager",
+    "description": "Recommended content item 1"
+  },
+  "settingsOverview.about.recommendedContent.item2": {
+    "defaultMessage": "Data Integrations best practices",
+    "description": "Recommended content item 2"
+  },
+  "settingsOverview.about.recommendedContent.item3": {
+    "defaultMessage": "Settings documentation",
+    "description": "Recommended content item 3"
+  },
+  "settingsOverview.about.recommendedContent.title": {
+    "defaultMessage": "Recommended content",
+    "description": "Recommended content card title"
+  },
+  "settingsOverview.about.sectionHeading": {
+    "defaultMessage": "Get started with Hybrid Cloud Console Settings",
+    "description": "Get started section heading"
+  },
+  "settingsOverview.about.useCases.title": {
+    "defaultMessage": "Use cases",
+    "description": "Use cases card title"
+  },
+  "settingsOverview.about.useCases.useCase1.button": {
+    "defaultMessage": "Manage my notifiers",
+    "description": "Use case 1 button text"
+  },
+  "settingsOverview.about.useCases.useCase1.description": {
+    "defaultMessage": "Determine how you, as an individual user, would like to be made aware of events firing in your Organization. The degree at which a user can customize alert notifiers depends on the roles and permissions determined by Organization admins.",
+    "description": "Use case 1 description"
+  },
+  "settingsOverview.about.useCases.useCase1.title": {
+    "defaultMessage": "Customize your own alert notifiers",
+    "description": "Use case 1 title"
+  },
+  "settingsOverview.about.useCases.useCase2.button": {
+    "defaultMessage": "Manage Organization notifiers",
+    "description": "Use case 2 button text"
+  },
+  "settingsOverview.about.useCases.useCase2.description": {
+    "defaultMessage": "Configure alert notifications for your entire Organization. Determine which events trigger notifications, how they are delivered, and who receives them across all users.",
+    "description": "Use case 2 description"
+  },
+  "settingsOverview.about.useCases.useCase2.title": {
+    "defaultMessage": "Manage the default alert settings for your Organization",
+    "description": "Use case 2 title"
+  },
+  "settingsOverview.about.useCases.useCase3.button": {
+    "defaultMessage": "View event log",
+    "description": "Use case 3 button text"
+  },
+  "settingsOverview.about.useCases.useCase3.description": {
+    "defaultMessage": "View a log of all fired events across your Organization, regardless of the alert notifiers you've enabled.",
+    "description": "Use case 3 description"
+  },
+  "settingsOverview.about.useCases.useCase3.title": {
+    "defaultMessage": "View all fired events in your Organization",
+    "description": "Use case 3 title"
+  },
+  "settingsOverview.about.useCases.useCase4.button": {
+    "defaultMessage": "Manage data integrations",
+    "description": "Use case 4 button text"
+  },
+  "settingsOverview.about.useCases.useCase4.description": {
+    "defaultMessage": "Sync up your data sources from other popular cloud providers including OpenShift Container Platform, Microsoft Azure, Amazon Web Services (AWS), Google Cloud Platform (GCP), IBM Cloud, and Oracle Cloud Infrastructure.",
+    "description": "Use case 4 description"
+  },
+  "settingsOverview.about.useCases.useCase4.title": {
+    "defaultMessage": "Integrate data from popular cloud providers",
+    "description": "Use case 4 title"
+  }
+}

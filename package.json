@@ -23,7 +23,9 @@
     "test-storybook:ci": "test-storybook --ci --testTimeout=60000",
     "test:storybook": "storybook build && start-server-and-test 'http-server storybook-static -p 6007 -s' http://127.0.0.1:6007 'test-storybook --ci --testTimeout=60000 --url http://127.0.0.1:6007'",
     "postinstall": "ts-patch install && rimraf .cache",
-    "verify": "npm-run-all build lint test"
+    "verify": "npm-run-all build lint test",
+    "translations:extract": "formatjs extract 'src/**/*.ts*' --out-file locales/translation-template.json",
+    "lint:translations": "npm run translations:extract && git diff --exit-code locales/translation-template.json"
   },
   "dependencies": {
     "@data-driven-forms/pf4-component-mapper": "^4.2.0",
@@ -53,6 +55,7 @@
   "devDependencies": {
     "@babel/preset-env": "^7.29.7",
     "@babel/preset-react": "^7.28.5",
+    "@formatjs/cli": "^6.16.34",
     "@playwright/test": "^1.59.1",
     "@redhat-cloud-services/eslint-config-redhat-cloud-services": "^3.1.1",
     "@redhat-cloud-services/frontend-components-config": "^6.10.0",
@@ -65,6 +68,7 @@
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "@typescript-eslint/parser": "^8.59.2",
+    "eslint-plugin-i18next": "^6.1.5",
     "experience-ui-governance": "github:RedHatInsights/experience-ui-governance",
     "http-server": "^14.1.1",
     "identity-obj-proxy": "^3.0.0",

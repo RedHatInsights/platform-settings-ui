@@ -620,11 +620,24 @@ function nameIntegrationStep(
               return undefined;
             }
 
+            const nameTakenMessage = intl.formatMessage(
+              messages.wizardNameTaken,
+            );
+
             try {
-              return (await isSourceNameTaken(value))
-                ? intl.formatMessage(messages.wizardNameTaken)
-                : undefined;
-            } catch {
+              if (await isSourceNameTaken(value)) {
+                // DDF's async validator composer preserves rejected validator
+                // results, while it discards a resolved error before running
+                // the next validator. This matches sources-ui's validator.
+                throw nameTakenMessage;
+              }
+
+              return undefined;
+            } catch (error) {
+              if (error === nameTakenMessage) {
+                throw error;
+              }
+
               // Match sources-ui: an unavailable lookup must not block creation.
               return undefined;
             }

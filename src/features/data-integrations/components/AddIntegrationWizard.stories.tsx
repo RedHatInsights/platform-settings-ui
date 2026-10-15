@@ -264,6 +264,38 @@ export const Default: Story = {
 };
 
 /**
+ * A name returned by Sources must make the current step invalid, not merely
+ * decorate the text field with an error.
+ */
+export const DuplicateName: Story = {
+  args: { sourceType: 'amazon' },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await modal.findByRole('heading', { name: 'Name integration' });
+    await clearAndType(
+      user,
+      () => modal.getByRole('textbox', { name: 'Integration name' }),
+      'AWS production account',
+    );
+    await user.tab();
+
+    await step('Duplicate names block the wizard', async () => {
+      await waitFor(() =>
+        expect(modal.queryByRole('button', { name: 'Next' })).toBeDisabled(),
+      );
+      expect(
+        modal.getByRole('heading', { name: 'Name integration' }),
+      ).toBeInTheDocument();
+      expect(
+        modal.getByRole('textbox', { name: 'Integration name' }),
+      ).toHaveAttribute('aria-invalid', 'true');
+    });
+  },
+};
+
+/**
  * The whole AWS path, ending in a created source.
  */
 export const AmazonHappyPath: Story = {

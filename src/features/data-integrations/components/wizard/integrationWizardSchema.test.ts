@@ -554,7 +554,7 @@ describe('createIntegrationWizardSchema', () => {
       value: string,
     ) => Promise<string | undefined>;
 
-    await expect(validateName('existing-integration')).resolves.toBe(
+    await expect(validateName('existing-integration')).rejects.toBe(
       'That name is taken. Try another.',
     );
   });

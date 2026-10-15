@@ -239,6 +239,8 @@ export interface IntegrationWizardSchemaOptions {
   isAwsRegionsError?: boolean;
   hcsEnrolled?: boolean;
   enableLighthouse?: boolean;
+  /** Exact-name lookup used to prevent duplicate integrations. */
+  isSourceNameTaken?: (name: string) => Promise<boolean>;
   intl: IntlShape;
   /**
    * Provider the wizard was opened with, if any. Its only effect on the schema
@@ -303,6 +305,7 @@ export function createIntegrationWizardSchema({
   isAwsRegionsError = false,
   hcsEnrolled = false,
   enableLighthouse = false,
+  isSourceNameTaken,
   intl,
   selectedType,
 }: IntegrationWizardSchemaOptions): LegacySchemaType {
@@ -358,7 +361,7 @@ export function createIntegrationWizardSchema({
           : undefined,
         fields: [
           sourceTypeStep(sourceTypes, intl),
-          nameIntegrationStep(sourceTypes, intl),
+          nameIntegrationStep(sourceTypes, intl, isSourceNameTaken),
           configurationStep(intl),
           authCredentialsStep(intl),
           applicationSelectionStep(applicationTypes, intl),
@@ -591,7 +594,11 @@ function configurationStep(intl: IntlShape) {
  * by the renderer against live form state, which gets the same result without
  * a custom component.
  */
-function nameIntegrationStep(sourceTypes: SourceType[], intl: IntlShape) {
+function nameIntegrationStep(
+  sourceTypes: SourceType[],
+  intl: IntlShape,
+  isSourceNameTaken?: (name: string) => Promise<boolean>,
+) {
   return {
     name: WizardStepId.NameIntegration,
     title: intl.formatMessage(messages.wizardNameStepTitle),
@@ -608,6 +615,20 @@ function nameIntegrationStep(sourceTypes: SourceType[], intl: IntlShape) {
         placeholder: intl.formatMessage(messages.wizardNamePlaceholder),
         isRequired: true,
         validate: [
+          async (value: string | undefined) => {
+            if (!value || !isSourceNameTaken) {
+              return undefined;
+            }
+
+            try {
+              return (await isSourceNameTaken(value))
+                ? intl.formatMessage(messages.wizardNameTaken)
+                : undefined;
+            } catch {
+              // Match sources-ui: an unavailable lookup must not block creation.
+              return undefined;
+            }
+          },
           {
             type: validatorTypes.REQUIRED,
             message: intl.formatMessage(messages.wizardNameRequired),

@@ -203,6 +203,11 @@ export default defineMessages({
     description: 'Validation message when the integration name is empty',
     defaultMessage: 'Enter a name for your integration.',
   },
+  wizardNameTaken: {
+    id: 'dataIntegrations.wizard.name.taken',
+    description: 'Validation message when an integration name already exists',
+    defaultMessage: 'That name is taken. Try another.',
+  },
 
   // Application selection step
   wizardApplicationStepTitle: {

@@ -54,6 +54,33 @@ describe('createSourcesApi', () => {
     await expect(api.getHcsEnrollment()).resolves.toBe(false);
   });
 
+  it('checks whether an exact source name is already taken', async () => {
+    mockApi.postGraphQL = jest.fn().mockResolvedValue({
+      data: { data: { sources: [{ id: 'src-1', name: 'existing' }] } },
+    });
+    const api = createSourcesApi({} as AxiosInstance);
+
+    await expect(api.isSourceNameTaken('existing')).resolves.toBe(true);
+    expect(mockApi.postGraphQL).toHaveBeenCalledWith({
+      graphQLRequest: {
+        query:
+          'query SourceName($filter: [Filter]) { sources(filter: $filter) { id, name } }',
+        variables: {
+          filter: [{ name: 'name', operation: 'eq', value: ['existing'] }],
+        },
+      },
+    });
+  });
+
+  it('reports an available source name when the exact lookup is empty', async () => {
+    mockApi.postGraphQL = jest.fn().mockResolvedValue({
+      data: { data: { sources: [] } },
+    });
+    const api = createSourcesApi({} as AxiosInstance);
+
+    await expect(api.isSourceNameTaken('new')).resolves.toBe(false);
+  });
+
   describe('createSource', () => {
     const input = {
       name: 'my-source',

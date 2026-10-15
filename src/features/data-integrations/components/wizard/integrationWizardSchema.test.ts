@@ -106,6 +106,16 @@ const firstStep = (types: SourceType[] = sourceTypes) =>
 const nameStep = (types: SourceType[] = sourceTypes) =>
   wizardField(types).fields[1];
 
+const nameStepWithNameLookup = (
+  isSourceNameTaken: (name: string) => Promise<boolean>,
+) =>
+  createIntegrationWizardSchema({
+    sourceTypes,
+    applicationTypes,
+    intl,
+    isSourceNameTaken,
+  }).fields[0].fields[1].fields[1];
+
 const step = (id: WizardStepId) =>
   wizardField().fields.find(({ name }: { name: string }) => name === id)!;
 const configurationStep = () => step(WizardStepId.Configuration);
@@ -531,12 +541,33 @@ describe('createIntegrationWizardSchema', () => {
 
     expect(nameField.name).toBe(SOURCE_NAME_FIELD);
     expect(nameField.isRequired).toBe(true);
-    expect(nameField.validate).toEqual([
-      {
-        type: validatorTypes.REQUIRED,
-        message: 'Enter a name for your integration.',
-      },
-    ]);
+    expect(nameField.validate).toHaveLength(2);
+    expect(nameField.validate?.[1]).toEqual({
+      type: validatorTypes.REQUIRED,
+      message: 'Enter a name for your integration.',
+    });
+  });
+
+  it('rejects a name already used by another integration', async () => {
+    const nameField = nameStepWithNameLookup(jest.fn().mockResolvedValue(true));
+    const validateName = nameField.validate?.[0] as (
+      value: string,
+    ) => Promise<string | undefined>;
+
+    await expect(validateName('existing-integration')).resolves.toBe(
+      'That name is taken. Try another.',
+    );
+  });
+
+  it('does not block naming when the duplicate-name lookup fails', async () => {
+    const nameField = nameStepWithNameLookup(
+      jest.fn().mockRejectedValue(new Error('lookup failed')),
+    );
+    const validateName = nameField.validate?.[0] as (
+      value: string,
+    ) => Promise<string | undefined>;
+
+    await expect(validateName('new-integration')).resolves.toBeUndefined();
   });
 
   it('renders the provider choice as a required card select', () => {

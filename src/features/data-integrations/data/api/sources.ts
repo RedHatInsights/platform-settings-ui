@@ -116,6 +116,10 @@ interface SourceQueryData {
   sources: Source[];
 }
 
+interface SourceNameQueryData {
+  sources: Array<Pick<Source, 'id' | 'name'>>;
+}
+
 /**
  * `availability_status_error`, `uid`, and `version` are deliberately absent —
  * the schema does not expose them on Source. Error text for a failing source
@@ -275,6 +279,23 @@ export function createSourcesApi(axios: AxiosInstance) {
       }
 
       return sources[0];
+    },
+
+    /** Matches the exact-name check used by sources-ui before source creation. */
+    async isSourceNameTaken(name: string): Promise<boolean> {
+      const response = await api.postGraphQL({
+        graphQLRequest: {
+          query:
+            'query SourceName($filter: [Filter]) { sources(filter: $filter) { id, name } }',
+          variables: {
+            filter: [{ name: 'name', operation: 'eq', value: [name] }],
+          },
+        },
+      });
+
+      const { sources } = unwrap<SourceNameQueryData>(response.data);
+
+      return sources.length > 0;
     },
 
     /**

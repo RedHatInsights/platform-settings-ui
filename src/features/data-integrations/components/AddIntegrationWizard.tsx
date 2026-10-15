@@ -27,6 +27,8 @@ import { useCreateSource } from '../data/queries/useCreateSource';
 import { useAwsRegions } from '../data/queries/useAwsRegions';
 import { useHcsEnrollment } from '../data/queries/useHcsEnrollment';
 import { useAzureLighthouse } from '../../../capabilities/useAzureLighthouse';
+import { useAppServices } from '../../../shared/ServiceContext';
+import { createSourcesApi } from '../data/api/sources';
 import messages from '../messages';
 import type { SourceTypeName } from '../types';
 
@@ -60,6 +62,8 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
   onClose,
 }) => {
   const intl = useIntl();
+  const { axios } = useAppServices();
+  const sourcesApi = useMemo(() => createSourcesApi(axios), [axios]);
   const {
     data: sourceTypes,
     isLoading: isLoadingSourceTypes,
@@ -121,6 +125,7 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
             hcsEnrolled,
             enableLighthouse,
             intl,
+            isSourceNameTaken: sourcesApi.isSourceNameTaken,
             selectedType: sourceType,
           })
         : undefined,
@@ -133,6 +138,7 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
       enableLighthouse,
       hasProviders,
       intl,
+      sourcesApi,
       sourceType,
     ],
   );

@@ -8,6 +8,7 @@ import { useAwsRegions } from '../data/queries/useAwsRegions';
 import { useCreateSource } from '../data/queries/useCreateSource';
 import { useHcsEnrollment } from '../data/queries/useHcsEnrollment';
 import { useSourceTypes } from '../data/queries/useSourceTypes';
+import { useAppServices } from '../../../shared/ServiceContext';
 
 jest.mock('../data/queries/useApplicationTypes', () => ({
   useApplicationTypes: jest.fn(),
@@ -26,6 +27,9 @@ jest.mock('../data/queries/useSourceTypes', () => ({
 }));
 jest.mock('../../../capabilities/useAzureLighthouse', () => ({
   useAzureLighthouse: jest.fn(),
+}));
+jest.mock('../../../shared/ServiceContext', () => ({
+  useAppServices: jest.fn(),
 }));
 jest.mock('./wizard/IntegrationsFormRenderer', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -98,6 +102,9 @@ function renderWizard(onClose = jest.fn()) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(useAppServices).mockReturnValue({
+    axios: {},
+  } as ReturnType<typeof useAppServices>);
   jest.mocked(useAzureLighthouse).mockReturnValue(false);
   jest.mocked(useSourceTypes).mockReturnValue({
     data: sourceTypes,

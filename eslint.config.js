@@ -1,3 +1,4 @@
+const reactHooks = require('eslint-plugin-react-hooks');
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { defineConfig } = require('eslint/config');
 const fecPlugin = require('@redhat-cloud-services/eslint-config-redhat-cloud-services');
@@ -7,6 +8,10 @@ const governancePlugin = require('experience-ui-governance/eslint-plugin');
 const i18nextPlugin = require('eslint-plugin-i18next');
 
 module.exports = defineConfig(
+  {
+    plugins: { 'react-hooks': reactHooks },
+    rules: { 'react-hooks/exhaustive-deps': 'error' },
+  },
   fecPlugin,
   {
     languageOptions: {

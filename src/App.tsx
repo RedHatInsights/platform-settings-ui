@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { IntlProvider } from 'react-intl';
 import { Bullseye } from '@patternfly/react-core/dist/dynamic/layouts/Bullseye';
 import { Spinner } from '@patternfly/react-core/dist/dynamic/components/Spinner';
 import NotificationsProvider from '@redhat-cloud-services/frontend-components-notifications/NotificationsProvider';
 import { useAddNotification } from '@redhat-cloud-services/frontend-components-notifications/hooks';
 import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome';
-import { useChromeLocale } from './shared/i18n';
+import { IntlMessagesProvider, useChromeLocale } from './shared/i18n';
 
 import ErrorBoundary from './Components/ErrorBoundary';
 import Routing from './Routing';
@@ -28,6 +27,7 @@ const AppWithServices = () => {
       .catch(() => {
         setIsOrgAdmin(false);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pre-existing pattern
   }, []);
 
   const services = useMemo(
@@ -63,14 +63,15 @@ const App = () => {
 
   useEffect(() => {
     updateDocumentTitle('Platform Settings');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pre-existing pattern
   }, []);
 
   return (
-    <IntlProvider locale={locale} defaultLocale="en">
+    <IntlMessagesProvider locale={locale}>
       <NotificationsProvider>
         <AppWithServices />
       </NotificationsProvider>
-    </IntlProvider>
+    </IntlMessagesProvider>
   );
 };
 

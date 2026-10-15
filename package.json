@@ -69,6 +69,7 @@
     "@types/react-dom": "^18.3.7",
     "@typescript-eslint/parser": "^8.59.2",
     "eslint-plugin-i18next": "^6.1.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "experience-ui-governance": "github:RedHatInsights/experience-ui-governance",
     "http-server": "^14.1.1",
     "identity-obj-proxy": "^3.0.0",

@@ -104,6 +104,7 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
       sourceTypes
         ? buildSourceTypeOptions(sourceTypes, intl).length > 0
         : false,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pre-existing pattern
     [sourceTypes],
   );
 

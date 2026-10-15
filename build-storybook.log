@@ -1,0 +1,55 @@
+
+> platform-settings-ui@1.2.0 build-storybook
+> storybook build --output-dir=/private/var/folders/dy/n69n_9nj3nqfxf6516r0g5vc0000gn/T/chromatic--73364-Dgsm61KDWS9R
+
+
+[90m┌[39m  Building storybook v10.5.2
+[90m│[39m
+[32m◇[39m  Cleaning outputDir:
+[90m│[39m  [36m../../../../../private/var/folders/dy/n69n_9nj3nqfxf6516r0g5vc0000gn/T/chromatic--73364-Dgsm61KDWS9R[39m
+[90m│[39m
+[32m◇[39m  Loading presets
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at ]8;;https://storybook.js.org/telemetryhttps://storybook.js.org/telemetry]8;;
+[90m│[39m
+[32m◇[39m  Building manager..
+[90m│[39m
+[34m●[39m  Building open services..
+[90m│[39m
+[34m●[39m  Building preview..
+[90m│[39m
+[34m●[39m  Addon-docs: using MDX3
+[90m│[39m
+[34m●[39m  Using implicit CSS loaders
+[90m│[39m
+[34m●[39m  Using default Webpack5 setup
+[90m│[39m
+[34m●[39m  Copying static files: [36mstatic[39m at
+[90m│[39m  [36m../../../../../private/var/folders/dy/n69n_9nj3nqfxf6516r0g5vc0000gn/T/chromatic--73364-Dgsm61KDWS9R[39m
+[90m│[39m
+[33m▲[39m  asset size limit: The following asset(s) exceed the recommended size
+[90m│[39m  limit (244 KiB).
+[90m│[39m  This can impact web performance.
+[90m│[39m  Assets:
+[90m│[39m  609.ea8df006.iframe.bundle.js (830 KiB)
+[90m│[39m  61.137fd225.iframe.bundle.js (1.08 MiB)
+[90m│[39m  613.37d03b54.iframe.bundle.js (5.32 MiB)
+[90m│[39m  549.e9a892bb.iframe.bundle.js (3.15 MiB)
+[90m│[39m
+[33m▲[39m  entrypoint size limit: The following entrypoint(s) combined asset size
+[90m│[39m  exceeds the recommended limit (244 KiB). This can impact web
+[90m│[39m  performance.
+[90m│[39m  Entrypoints:
+[90m│[39m  main (3.16 MiB)
+[90m│[39m  runtime~main.d975c5f5.iframe.bundle.js
+[90m│[39m  549.e9a892bb.iframe.bundle.js
+[90m│[39m  main.d3c63f05.iframe.bundle.js
+
+[90m│[39m
+[32m◇[39m  Output directory:
+[90m│[39m  /private/var/folders/dy/n69n_9nj3nqfxf6516r0g5vc0000gn/T/chromatic--73364-Dgsm61KDWS9R
+[90m│[39m
+[90m└[39m  Storybook build completed successfully
+

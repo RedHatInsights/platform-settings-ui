@@ -164,6 +164,7 @@ const ApplicationSwitchGroup: React.FC<UseFieldApiConfig> = (props) => {
     }
     didDefault.current = true;
     input.onChange(isAccountAuthorization ? compatibleIds : []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pre-existing pattern
   }, []);
 
   // A provider swapped after the fact can leave an application behind that it
@@ -174,6 +175,7 @@ const ApplicationSwitchGroup: React.FC<UseFieldApiConfig> = (props) => {
     if (pruned.length !== selectedValues.length) {
       input.onChange(pruned);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pre-existing pattern
   }, [compatibleIds]);
 
   const toggle = (value: string, checked: boolean) => {

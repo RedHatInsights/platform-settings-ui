@@ -21,6 +21,7 @@ const AwsExternalId: React.FC<UseFieldApiConfig> = (props) => {
 
   useEffect(() => {
     if (!input.value) input.onChange(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pre-existing pattern
   }, [id]);
 
   return (

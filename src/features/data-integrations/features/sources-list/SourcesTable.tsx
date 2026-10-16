@@ -18,6 +18,11 @@ import type { Source } from '../../data/types/sources.types';
 import type { SourceTypeName } from '../../types';
 import { AppLink } from '../../../../Components/AppLink';
 import AddDataIntegrationDropdown from '../../components/AddDataIntegrationDropdown';
+import IntegrationPermissionsAlert from '../../components/IntegrationPermissionsAlert';
+import {
+  Stack,
+  StackItem,
+} from '@patternfly/react-core/dist/dynamic/layouts/Stack';
 import ConnectedApplicationsCell from './components/ConnectedApplicationsCell';
 import SourceStatusLabel from '../../components/SourceStatusLabel';
 import messages from './messages';
@@ -32,7 +37,11 @@ const columns = [
 ] as const;
 type ColumnKey = (typeof columns)[number];
 
-const SourcesTable: React.FC = () => {
+interface SourcesTableProps {
+  canWrite?: boolean;
+}
+
+const SourcesTable: React.FC<SourcesTableProps> = ({ canWrite = true }) => {
   const intl = useIntl();
   const location = useLocation();
 
@@ -214,40 +223,48 @@ const SourcesTable: React.FC = () => {
     error || sourceTypesError || applicationTypesError || null;
 
   return (
-    <TableView
-      ariaLabel={intl.formatMessage(pageMessages.myDataIntegrationsTab)}
-      columns={columns}
-      columnConfig={columnConfig}
-      sortableColumns={['dateAdded', 'type']}
-      data={isLoading ? undefined : data?.data}
-      totalCount={data?.meta.count}
-      getRowId={(row) => row.id}
-      cellRenderers={cellRenderers}
-      sort={tableState.sort}
-      onSortChange={tableState.onSortChange}
-      page={tableState.page}
-      perPage={tableState.perPage}
-      perPageOptions={tableState.perPageOptions}
-      onPageChange={tableState.onPageChange}
-      onPerPageChange={tableState.onPerPageChange}
-      filterConfig={filterConfig}
-      filters={tableState.filters}
-      onFiltersChange={tableState.onFiltersChange}
-      clearAllFilters={tableState.clearAllFilters}
-      // The same dropdown the page header offers, repeated as the toolbar's
-      // primary action: the header scrolls away on long lists, and picking a
-      // provider here is the shortest route into the wizard.
-      toolbarActions={
-        <AddDataIntegrationDropdown
-          variant="primary"
-          toggleLabel={intl.formatMessage(messages.addIntegrationLabel)}
+    <Stack hasGutter>
+      <StackItem>
+        <IntegrationPermissionsAlert canWrite={canWrite} />
+      </StackItem>
+      <StackItem>
+        <TableView
+          ariaLabel={intl.formatMessage(pageMessages.myDataIntegrationsTab)}
+          columns={columns}
+          columnConfig={columnConfig}
+          sortableColumns={['dateAdded', 'type']}
+          data={isLoading ? undefined : data?.data}
+          totalCount={data?.meta.count}
+          getRowId={(row) => row.id}
+          cellRenderers={cellRenderers}
+          sort={tableState.sort}
+          onSortChange={tableState.onSortChange}
+          page={tableState.page}
+          perPage={tableState.perPage}
+          perPageOptions={tableState.perPageOptions}
+          onPageChange={tableState.onPageChange}
+          onPerPageChange={tableState.onPerPageChange}
+          filterConfig={filterConfig}
+          filters={tableState.filters}
+          onFiltersChange={tableState.onFiltersChange}
+          clearAllFilters={tableState.clearAllFilters}
+          // The same dropdown the page header offers, repeated as the toolbar's
+          // primary action: the header scrolls away on long lists, and picking a
+          // provider here is the shortest route into the wizard.
+          toolbarActions={
+            <AddDataIntegrationDropdown
+              variant="primary"
+              isDisabled={!canWrite}
+              toggleLabel={intl.formatMessage(messages.addIntegrationLabel)}
+            />
+          }
+          error={combinedError as Error | null}
+          emptyStateNoData={emptyStateNoData}
+          emptyStateNoResults={emptyStateNoResults}
+          emptyStateError={emptyStateError}
         />
-      }
-      error={combinedError as Error | null}
-      emptyStateNoData={emptyStateNoData}
-      emptyStateNoResults={emptyStateNoResults}
-      emptyStateError={emptyStateError}
-    />
+      </StackItem>
+    </Stack>
   );
 };
 

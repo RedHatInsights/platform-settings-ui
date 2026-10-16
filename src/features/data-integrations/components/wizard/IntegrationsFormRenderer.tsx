@@ -8,7 +8,18 @@ import ApplicationSwitchGroup from './ApplicationSwitchGroup';
 import AwsManualInstructions from './AwsManualInstructions';
 import AwsRegionSelect from './AwsRegionSelect';
 import AwsExternalId from './AwsExternalId';
+import AzureLighthouseInstructions from './AzureLighthouseInstructions';
+import AzureProvisioningInstructions from './AzureProvisioningInstructions';
+import GoogleProvisioningInstructions from './GoogleProvisioningInstructions';
+import RhelManagementInstructions from './RhelManagementInstructions';
+import AzureCostInstructions from './AzureCostInstructions';
+import GoogleCostInstructions from './GoogleCostInstructions';
+import {
+  OpenShiftApplicationDescription,
+  OpenShiftOperatorInstructions,
+} from './OpenShiftInstructions';
 import ManualAwsApplicationSelect from './ManualAwsApplicationSelect';
+import ProviderNameDescription from './ProviderNameDescription';
 import SourceTypeCardSelect from './SourceTypeCardSelect';
 import ReviewSummary from './ReviewSummary';
 import SubmissionResult from './SubmissionResult';
@@ -30,12 +41,21 @@ import {
  * standing up the whole wizard.
  */
 export const mapperExtension = {
+  'azure-lighthouse-instructions': AzureLighthouseInstructions,
+  'azure-provisioning-instructions': AzureProvisioningInstructions,
+  'google-provisioning-instructions': GoogleProvisioningInstructions,
+  'rhel-management-instructions': RhelManagementInstructions,
+  'azure-cost-instructions': AzureCostInstructions,
+  'google-cost-instructions': GoogleCostInstructions,
+  'openshift-application-description': OpenShiftApplicationDescription,
+  'openshift-operator-instructions': OpenShiftOperatorInstructions,
   [CARD_SELECT_COMPONENT]: SourceTypeCardSelect,
   [APPLICATION_SELECT_COMPONENT]: ApplicationSwitchGroup,
   [AWS_MANUAL_INSTRUCTIONS_COMPONENT]: AwsManualInstructions,
   [AWS_EXTERNAL_ID_COMPONENT]: AwsExternalId,
   [AWS_REGION_SELECT_COMPONENT]: AwsRegionSelect,
   [MANUAL_AWS_APPLICATION_SELECT_COMPONENT]: ManualAwsApplicationSelect,
+  'provider-name-description': ProviderNameDescription,
   [REVIEW_SUMMARY_COMPONENT]: ReviewSummary,
   [SUBMISSION_RESULT_COMPONENT]: SubmissionResult,
 };

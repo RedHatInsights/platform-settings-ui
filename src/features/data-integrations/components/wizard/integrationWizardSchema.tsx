@@ -1,10 +1,17 @@
 import React from 'react';
 import componentTypes from '@data-driven-forms/react-form-renderer/component-types';
 import validatorTypes from '@data-driven-forms/react-form-renderer/validator-types';
+import { Label } from '@patternfly/react-core/dist/dynamic/components/Label';
 import type { LegacySchemaType } from '@data-driven-forms/react-form-renderer/common-types';
 import type { IntlShape } from 'react-intl';
-import { Label } from '@patternfly/react-core/dist/dynamic/components/Label';
+import {
+  Button,
+  ButtonVariant,
+} from '@patternfly/react-core/dist/dynamic/components/Button';
 import messages from '../../messages';
+import { Popover } from '@patternfly/react-core/dist/dynamic/components/Popover';
+import QuestionCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/question-circle-icon';
+import { DOCS_URL } from '../../constants/docs';
 import { getSourceTypeIcon } from '../../constants/sourceTypeIcons';
 import type { SourceTypeName } from '../../types';
 import type {
@@ -15,38 +22,33 @@ import type {
   SourceType,
 } from '../../data/types/sources.types';
 import type { ApplicationOption } from './ApplicationSwitchGroup';
+import { providerWizardSteps } from './providerWizardSteps';
 
-/**
- * Every step the Add Data Integration wizard will eventually have.
- *
- * Only {@link WizardStepId.SourceTypeSelection} is implemented here. The rest
- * are declared up front so the follow-up auth stories (RHCLOUD-51314 onwards)
- * add steps against fixed ids rather than renaming as they go — `crossroads`
- * and `nextStep` resolvers both address steps by id.
- */
+/** Step ids referenced by the wizard's route and crossroads mappings. */
 export enum WizardStepId {
   SourceTypeSelection = 'source-type-selection',
   NameIntegration = 'name-integration',
   Configuration = 'configuration',
-  AuthTypeSelection = 'auth-type-selection',
   AuthCredentials = 'auth-credentials',
   EndpointConfiguration = 'endpoint-configuration',
   ApplicationSelection = 'application-selection',
+  AzureApplication = 'azure-application',
+  GoogleApplication = 'google-application',
   ManualApplicationSelection = 'manual-application-selection',
-  ManualAwsConfiguration = 'manual-aws-configuration',
+  ManualAwsCostStorage = 'manual-aws-cost-storage',
   ManualAwsCostUsage = 'manual-aws-cost-usage',
   ManualAwsCostTags = 'manual-aws-cost-tags',
-  ManualAwsPolicy = 'manual-aws-policy',
-  ManualAwsRole = 'manual-aws-role',
-  ManualAwsArn = 'manual-aws-arn',
+  ManualAwsProvisioningConfiguration = 'manual-aws-provisioning-configuration',
+  ManualAwsAccountAccessPolicy = 'manual-aws-account-access-policy',
+  ManualAwsAccountAccessRole = 'manual-aws-account-access-role',
+  ManualAwsAccountAccessArn = 'manual-aws-account-access-arn',
+  ManualAwsProvisioningRole = 'manual-aws-provisioning-role',
+  ManualAwsProvisioningArn = 'manual-aws-provisioning-arn',
   Review = 'review',
   SubmissionResult = 'submission-result',
 }
 
-/**
- * Field name for the chosen provider. Matches `sources-ui`'s wizard so the
- * auth schemas that stories 2-4 port over keep working unchanged.
- */
+/** Field name for the chosen provider, matching sources-ui. */
 export const SOURCE_TYPE_FIELD = 'source_type';
 
 /** Field name for the integration's display name. */
@@ -64,16 +66,14 @@ export const AUTH_TYPE_FIELD = 'authentication.authtype';
 export const AUTH_USERNAME_FIELD = 'authentication.username';
 export const AUTH_PASSWORD_FIELD = 'authentication.password';
 
-/**
- * The only authentication type offered today — AWS's superkey credential, the
- * one account authorization has Red Hat manage.
- */
+/** AWS's superkey credential for account authorization. */
 export const ACCESS_KEY_AUTH_TYPE = 'access_key_secret_key';
 
 /** Field name and values for the configuration mode, both from `sources-ui`. */
 export const APP_CREATION_WORKFLOW_FIELD = 'source.app_creation_workflow';
 export const ACCOUNT_AUTHORIZATION = 'account_authorization';
 export const MANUAL_CONFIGURATION = 'manual_configuration';
+const HELP_TEXT_ARIA_LABEL = 'Help text';
 
 /**
  * Whether a provider offers to have Red Hat manage its credentials.
@@ -99,22 +99,7 @@ export const MANUAL_AWS_APPLICATION_SELECT_COMPONENT =
   'manual-aws-application-select';
 export const AWS_EXTERNAL_ID_COMPONENT = 'aws-external-id';
 
-/**
- * Authentication types each provider offers, in card order.
- *
- * AWS has exactly one, which is why the wizard routes straight past the
- * authentication step for it — see {@link createIntegrationWizardSchema}. The
- * other three are empty until RHCLOUD-51317 implements them; an empty list is
- * what makes that step a dead end they cannot advance past, rather than a
- * broken one.
- */
-const AUTH_TYPES_BY_PROVIDER: Record<SourceTypeName, string[]> = {
-  amazon: [ACCESS_KEY_AUTH_TYPE],
-  openshift: [],
-  google: [],
-  azure: [],
-};
-
+/** Translated AWS authentication labels shown in review. */
 const AUTH_TYPE_LABELS: Record<
   string,
   (typeof messages)[keyof typeof messages]
@@ -213,6 +198,16 @@ export function providerLabel(
   return intl.formatMessage(PROVIDER_LABELS[provider]);
 }
 
+/** Short provider name used by the provider-specific wizard header. */
+function wizardProviderLabel(
+  provider: SourceTypeName,
+  intl: IntlShape,
+): string {
+  return provider === 'amazon'
+    ? intl.formatMessage(messages.amazonShortLabel)
+    : providerLabel(provider, intl);
+}
+
 /** One selectable card in the source type step. */
 export interface SourceTypeOption {
   value: SourceTypeName;
@@ -254,6 +249,9 @@ export interface IntegrationWizardSchemaOptions {
   awsRegions?: string[];
   isAwsRegionsError?: boolean;
   hcsEnrolled?: boolean;
+  enableLighthouse?: boolean;
+  /** Exact-name lookup used to prevent duplicate integrations. */
+  isSourceNameTaken?: (name: string) => Promise<boolean>;
   intl: IntlShape;
   /**
    * Provider the wizard was opened with, if any. Its only effect on the schema
@@ -317,12 +315,17 @@ export function createIntegrationWizardSchema({
   awsRegions = [],
   isAwsRegionsError = false,
   hcsEnrolled = false,
+  enableLighthouse = false,
+  isSourceNameTaken,
   intl,
   selectedType,
 }: IntegrationWizardSchemaOptions): LegacySchemaType {
   // A provider with no card cannot start the wizard on step two: there would
   // be nothing selected to go Back to.
   const startingType = resolveSelectedType(sourceTypes, selectedType);
+  const providerTitle = startingType
+    ? wizardProviderLabel(startingType, intl)
+    : undefined;
 
   return {
     fields: [
@@ -331,9 +334,17 @@ export function createIntegrationWizardSchema({
         name: WIZARD_TITLE_ID,
         inModal: true,
         showTitles: true,
-        title: intl.formatMessage(messages.wizardTitle),
+        title: providerTitle
+          ? intl.formatMessage(messages.wizardProviderTitle, {
+              provider: providerTitle,
+            })
+          : intl.formatMessage(messages.wizardTitle),
         titleId: WIZARD_TITLE_ID,
-        description: intl.formatMessage(messages.wizardDescription),
+        description: intl.formatMessage(
+          providerTitle
+            ? messages.wizardProviderDescription
+            : messages.wizardDescription,
+        ),
         closeButtonAriaLabel: intl.formatMessage(messages.wizardClose),
         // The mapper nests a second `role="dialog"` inside the modal and
         // spreads unknown schema keys onto it, so this is the only way to give
@@ -357,6 +368,7 @@ export function createIntegrationWizardSchema({
           SOURCE_TYPE_FIELD,
           APP_CREATION_WORKFLOW_FIELD,
           MANUAL_APPLICATION_FIELD,
+          'application.extra.storage_only',
         ],
         initialState: startingType
           ? {
@@ -371,13 +383,12 @@ export function createIntegrationWizardSchema({
           : undefined,
         fields: [
           sourceTypeStep(sourceTypes, intl),
-          nameIntegrationStep(sourceTypes, intl),
+          nameIntegrationStep(sourceTypes, intl, isSourceNameTaken),
           configurationStep(intl),
-          authTypeSelectionStep(intl),
           authCredentialsStep(intl),
           applicationSelectionStep(applicationTypes, intl),
           manualApplicationSelectionStep(applicationTypes, hcsEnrolled, intl),
-          manualAwsConfigurationStep(
+          manualAwsCostStorageStep(
             applicationTypes,
             awsRegions,
             isAwsRegionsError,
@@ -385,9 +396,9 @@ export function createIntegrationWizardSchema({
           ),
           manualAwsCostUsageStep(intl),
           manualAwsCostTagsStep(intl),
-          manualAwsPolicyStep(applicationTypes, intl),
-          manualAwsRoleStep(applicationTypes, intl),
-          manualAwsArnStep(applicationTypes, intl),
+          manualAwsProvisioningConfigurationStep(applicationTypes, intl),
+          ...manualAwsAccountAccessStep(applicationTypes, intl),
+          ...providerWizardSteps(applicationTypes, intl, enableLighthouse),
           reviewStep(intl),
           submissionResultStep(intl),
         ],
@@ -430,11 +441,9 @@ function sourceTypeStep(sourceTypes: SourceType[], intl: IntlShape) {
  * Where naming leads, per provider.
  *
  * A provider Red Hat can manage credentials for is asked how it wants to be
- * configured; that step then collects the credential itself. Everything else
- * keeps the older routing: exactly one authentication type skips the selection
- * step, because asking someone to pick from a list of one is a click that
- * answers nothing, and none at all lands on it and is held by the required
- * validator — see {@link authTypeSelectionStep}.
+ * configured; that step then collects the credential itself. Other providers
+ * select an application first, as they do in sources-ui. AWS without the
+ * superkey catalogue flag falls back to its generic credential step.
  *
  * Every provider that can reach this resolver must be a key. `selectNext`
  * returns `undefined` for an unmapped value while `nextStep` itself stays
@@ -452,9 +461,13 @@ function stepAfterNaming(sourceTypes: SourceType[]) {
     }
 
     stepMapper[provider] =
-      AUTH_TYPES_BY_PROVIDER[provider].length === 1
-        ? WizardStepId.AuthCredentials
-        : WizardStepId.AuthTypeSelection;
+      provider === 'openshift'
+        ? 'openshift-application'
+        : provider === 'azure'
+          ? WizardStepId.AzureApplication
+          : provider === 'google'
+            ? WizardStepId.GoogleApplication
+            : WizardStepId.AuthCredentials;
   }
 
   return { when: SOURCE_TYPE_FIELD, stepMapper };
@@ -603,20 +616,20 @@ function configurationStep(intl: IntlShape) {
  * by the renderer against live form state, which gets the same result without
  * a custom component.
  */
-function nameIntegrationStep(sourceTypes: SourceType[], intl: IntlShape) {
+function nameIntegrationStep(
+  sourceTypes: SourceType[],
+  intl: IntlShape,
+  isSourceNameTaken?: (name: string) => Promise<boolean>,
+) {
   return {
     name: WizardStepId.NameIntegration,
     title: intl.formatMessage(messages.wizardNameStepTitle),
     nextStep: stepAfterNaming(sourceTypes),
     fields: [
-      ...buildSourceTypeOptions(sourceTypes, intl).map(({ value, label }) => ({
-        component: componentTypes.PLAIN_TEXT,
-        name: `name-step-description-${value}`,
-        condition: { when: SOURCE_TYPE_FIELD, is: value },
-        label: intl.formatMessage(messages.wizardNameStepDescription, {
-          provider: label,
-        }),
-      })),
+      {
+        component: 'provider-name-description',
+        name: 'name-step-description',
+      },
       {
         component: componentTypes.TEXT_FIELD,
         name: SOURCE_NAME_FIELD,
@@ -624,6 +637,33 @@ function nameIntegrationStep(sourceTypes: SourceType[], intl: IntlShape) {
         placeholder: intl.formatMessage(messages.wizardNamePlaceholder),
         isRequired: true,
         validate: [
+          async (value: string | undefined) => {
+            if (!value || !isSourceNameTaken) {
+              return undefined;
+            }
+
+            const nameTakenMessage = intl.formatMessage(
+              messages.wizardNameTaken,
+            );
+
+            try {
+              if (await isSourceNameTaken(value)) {
+                // DDF's async validator composer preserves rejected validator
+                // results, while it discards a resolved error before running
+                // the next validator. This matches sources-ui's validator.
+                throw nameTakenMessage;
+              }
+
+              return undefined;
+            } catch (error) {
+              if (error === nameTakenMessage) {
+                throw error;
+              }
+
+              // Match sources-ui: an unavailable lookup must not block creation.
+              return undefined;
+            }
+          },
           {
             type: validatorTypes.REQUIRED,
             message: intl.formatMessage(messages.wizardNameRequired),
@@ -706,12 +746,35 @@ function manualApplicationSelectionStep(
   return {
     name: WizardStepId.ManualApplicationSelection,
     title: intl.formatMessage(messages.wizardManualApplicationTitle),
-    nextStep: WizardStepId.ManualAwsConfiguration,
+    nextStep: {
+      when: MANUAL_APPLICATION_FIELD,
+      stepMapper: Object.fromEntries(
+        applicationTypes
+          .filter(({ name }) =>
+            [COST_APP, RHEL_APP, PROVISIONING_APP].includes(name),
+          )
+          .map(({ id, name }) => [
+            id,
+            name === COST_APP
+              ? WizardStepId.ManualAwsCostStorage
+              : name === RHEL_APP
+                ? WizardStepId.ManualAwsAccountAccessPolicy
+                : WizardStepId.ManualAwsProvisioningConfiguration,
+          ]),
+      ),
+    },
     fields: [
       {
         component: componentTypes.PLAIN_TEXT,
         name: 'manual-application-description',
-        label: intl.formatMessage(messages.wizardManualApplicationDescription),
+        label: (
+          <>
+            {intl.formatMessage(messages.wizardManualApplicationDescription)}{' '}
+            <a href={DOCS_URL} target="_blank" rel="noopener noreferrer">
+              {intl.formatMessage(messages.learnMore)}
+            </a>
+          </>
+        ),
       },
       {
         component: MANUAL_AWS_APPLICATION_SELECT_COMPONENT,
@@ -728,6 +791,7 @@ function manualApplicationSelectionStep(
               hcsEnrolled && name === COST_APP
                 ? intl.formatMessage(messages.wizardAwsHcsName)
                 : display_name,
+            name,
           })),
         validate: [{ type: validatorTypes.REQUIRED }],
       },
@@ -735,118 +799,254 @@ function manualApplicationSelectionStep(
   };
 }
 
-function manualAwsConfigurationStep(
+function manualAwsConfigurationFields(
+  applicationTypes: ApplicationType[],
+  awsRegions: string[],
+  isAwsRegionsError: boolean,
+  intl: IntlShape,
+  appNames: string[],
+) {
+  return appNames.flatMap((appName) => {
+    const id = applicationTypes.find((app) => app.name === appName)?.id;
+    if (!id) return [];
+    return [
+      {
+        component: componentTypes.SUB_FORM,
+        name: `manual-aws-${id}`,
+        condition: { when: MANUAL_APPLICATION_FIELD, is: id },
+        fields: [
+          {
+            component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
+            name: `manual-aws-instructions-${id}`,
+            appName,
+            applicationTypeId: id,
+            stage: 'details',
+          },
+          ...(appName === COST_APP
+            ? [
+                {
+                  component: componentTypes.TEXT_FIELD,
+                  name: AWS_BUCKET_FIELD,
+                  label: intl.formatMessage(messages.wizardAwsBucket),
+                  isRequired: true,
+                  validate: [
+                    { type: validatorTypes.REQUIRED },
+                    {
+                      type: validatorTypes.PATTERN,
+                      pattern:
+                        /(?!(^((2(5[0-5]|[0-4][0-9])|[01]?[0-9]{1,2})\.){3}(2(5[0-5]|[0-4][0-9])|[01]?[0-9]{1,2})$|^xn--|-s3alias$))^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/,
+                      message: intl.formatMessage(
+                        messages.wizardAwsBucketPattern,
+                      ),
+                    },
+                  ],
+                },
+                {
+                  component: AWS_REGION_SELECT_COMPONENT,
+                  name: AWS_REGION_FIELD,
+                  label: intl.formatMessage(messages.wizardAwsRegion),
+                  isRequired: true,
+                  validate: [{ type: validatorTypes.REQUIRED }],
+                  options: awsRegions.map((region) => ({
+                    value: region,
+                    label: region,
+                  })),
+                },
+                ...(isAwsRegionsError
+                  ? [
+                      {
+                        component: componentTypes.PLAIN_TEXT,
+                        name: 'aws-region-error',
+                        label: intl.formatMessage(
+                          messages.wizardAwsRegionsError,
+                        ),
+                      },
+                    ]
+                  : []),
+              ]
+            : []),
+          ...(appName === PROVISIONING_APP
+            ? [
+                {
+                  component: componentTypes.TEXT_FIELD,
+                  name: 'meta.account',
+                  label: intl.formatMessage(messages.wizardAwsAccountNumber),
+                  placeholder: '123456789012',
+                  isRequired: true,
+                  validate: [{ type: validatorTypes.REQUIRED }],
+                },
+              ]
+            : []),
+        ],
+      },
+    ];
+  });
+}
+
+function manualAwsCostStorageStep(
   applicationTypes: ApplicationType[],
   awsRegions: string[],
   isAwsRegionsError: boolean,
   intl: IntlShape,
 ) {
-  const appId = (name: string) =>
-    applicationTypes.find((app) => app.name === name)?.id;
-  const provisioningId = appId(PROVISIONING_APP);
-
   return {
-    name: WizardStepId.ManualAwsConfiguration,
-    title: intl.formatMessage(messages.wizardManualAwsConfigurationTitle),
-    nextStep: {
-      when: MANUAL_APPLICATION_FIELD,
-      stepMapper: Object.fromEntries(
-        applicationTypes
-          .filter(({ name }) =>
-            [COST_APP, RHEL_APP, PROVISIONING_APP].includes(name),
-          )
-          .map(({ id }) => [
-            id,
-            id === provisioningId
-              ? WizardStepId.ManualAwsRole
-              : id === appId(COST_APP)
-                ? WizardStepId.ManualAwsCostUsage
-                : WizardStepId.ManualAwsPolicy,
-          ]),
-      ),
-    },
-    fields: [
-      ...([COST_APP, RHEL_APP, PROVISIONING_APP] as const).flatMap(
-        (appName) => {
-          const id = appId(appName);
-          if (!id) return [];
-          return [
-            {
-              component: componentTypes.SUB_FORM,
-              name: `manual-aws-${id}`,
-              condition: { when: MANUAL_APPLICATION_FIELD, is: id },
-              fields: [
-                {
-                  component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
-                  name: `manual-aws-instructions-${id}`,
-                  appName,
-                  applicationTypeId: id,
-                  stage: 'details',
-                },
-                ...(appName === COST_APP
-                  ? [
-                      {
-                        component: componentTypes.TEXT_FIELD,
-                        name: AWS_BUCKET_FIELD,
-                        label: intl.formatMessage(messages.wizardAwsBucket),
-                        isRequired: true,
-                        validate: [
-                          { type: validatorTypes.REQUIRED },
-                          {
-                            type: validatorTypes.PATTERN,
-                            pattern:
-                              /(?!(^((2(5[0-5]|[0-4][0-9])|[01]?[0-9]{1,2})\.){3}(2(5[0-5]|[0-4][0-9])|[01]?[0-9]{1,2})$|^xn--|-s3alias$))^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/,
-                            message: intl.formatMessage(
-                              messages.wizardAwsBucketPattern,
-                            ),
-                          },
-                        ],
-                      },
-                      {
-                        component: AWS_REGION_SELECT_COMPONENT,
-                        name: AWS_REGION_FIELD,
-                        label: intl.formatMessage(messages.wizardAwsRegion),
-                        isRequired: true,
-                        validate: [{ type: validatorTypes.REQUIRED }],
-                        options: awsRegions.map((region) => ({
-                          value: region,
-                          label: region,
-                        })),
-                      },
-                      ...(isAwsRegionsError
-                        ? [
-                            {
-                              component: componentTypes.PLAIN_TEXT,
-                              name: 'aws-region-error',
-                              label: intl.formatMessage(
-                                messages.wizardAwsRegionsError,
-                              ),
-                            },
-                          ]
-                        : []),
-                    ]
-                  : []),
-                ...(appName === PROVISIONING_APP
-                  ? [
-                      {
-                        component: componentTypes.TEXT_FIELD,
-                        name: 'meta.account',
-                        label: intl.formatMessage(
-                          messages.wizardAwsAccountNumber,
-                        ),
-                        placeholder: '123456789012',
-                        isRequired: true,
-                        validate: [{ type: validatorTypes.REQUIRED }],
-                      },
-                    ]
-                  : []),
-              ],
-            },
-          ];
-        },
-      ),
-    ],
+    name: WizardStepId.ManualAwsCostStorage,
+    title: intl.formatMessage(messages.wizardAwsCostStorageTitle),
+    nextStep: WizardStepId.ManualAwsCostUsage,
+    fields: manualAwsConfigurationFields(
+      applicationTypes,
+      awsRegions,
+      isAwsRegionsError,
+      intl,
+      [COST_APP],
+    ),
   };
+}
+
+function manualAwsProvisioningConfigurationStep(
+  applicationTypes: ApplicationType[],
+  intl: IntlShape,
+) {
+  return {
+    name: WizardStepId.ManualAwsProvisioningConfiguration,
+    title: intl.formatMessage(messages.wizardAwsAccountNumberTitle),
+    nextStep: WizardStepId.ManualAwsProvisioningRole,
+    fields: manualAwsConfigurationFields(applicationTypes, [], false, intl, [
+      PROVISIONING_APP,
+    ]),
+  };
+}
+
+function manualInstructionSectionFields(
+  applicationTypes: ApplicationType[],
+  stage: 'policy' | 'role' | 'arn',
+  appNames: string[],
+) {
+  return applicationTypes
+    .filter(({ name }) => appNames.includes(name))
+    .map(({ id, name }) => ({
+      component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
+      name: `manual-aws-${stage}-${id}`,
+      condition: { when: MANUAL_APPLICATION_FIELD, is: id },
+      appName: name,
+      applicationTypeId: id,
+      stage,
+    }));
+}
+
+function manualAwsAccountAccessStep(
+  applicationTypes: ApplicationType[],
+  intl: IntlShape,
+) {
+  const accountAccessApplications = [COST_APP, RHEL_APP];
+  const accountAccessTitle = intl.formatMessage(
+    messages.wizardAwsAccountAccessTitle,
+  );
+  const accountAccessGroup = {
+    name: 'manual-aws-account-access',
+    title: accountAccessTitle,
+  };
+
+  return [
+    {
+      name: WizardStepId.ManualAwsAccountAccessPolicy,
+      title: intl.formatMessage(messages.wizardAwsPolicyTitle),
+      substepOf: accountAccessGroup,
+      nextStep: WizardStepId.ManualAwsAccountAccessRole,
+      fields: manualInstructionSectionFields(applicationTypes, 'policy', [
+        COST_APP,
+        RHEL_APP,
+      ]),
+    },
+    {
+      name: WizardStepId.ManualAwsAccountAccessRole,
+      title: intl.formatMessage(messages.wizardAwsRoleTitle),
+      substepOf: 'manual-aws-account-access',
+      nextStep: WizardStepId.ManualAwsAccountAccessArn,
+      fields: [
+        ...manualInstructionSectionFields(
+          applicationTypes,
+          'role',
+          accountAccessApplications,
+        ),
+      ],
+    },
+    {
+      name: WizardStepId.ManualAwsAccountAccessArn,
+      title: intl.formatMessage(messages.wizardAwsArnTitle),
+      substepOf: 'manual-aws-account-access',
+      nextStep: WizardStepId.Review,
+      fields: [
+        ...manualInstructionSectionFields(
+          applicationTypes,
+          'arn',
+          accountAccessApplications,
+        ),
+        ...applicationTypes
+          .filter(({ name }) => [COST_APP, RHEL_APP].includes(name))
+          .map(({ id }) => ({
+            component: AWS_EXTERNAL_ID_COMPONENT,
+            name: 'authentication.extra.external_id',
+            condition: { when: MANUAL_APPLICATION_FIELD, is: id },
+          })),
+        {
+          component: componentTypes.TEXT_FIELD,
+          name: AWS_ARN_FIELD,
+          label: intl.formatMessage(messages.wizardAwsRoleArn),
+          placeholder: 'arn:aws:iam::123456789012:role/CostManagement',
+          isRequired: true,
+          validate: [
+            { type: validatorTypes.REQUIRED },
+            {
+              type: validatorTypes.PATTERN,
+              pattern: /^arn:aws:.*/,
+              message: intl.formatMessage(messages.wizardAwsRoleArnPattern),
+            },
+            { type: validatorTypes.MIN_LENGTH, threshold: 10 },
+          ],
+        },
+      ],
+    },
+    {
+      name: WizardStepId.ManualAwsProvisioningRole,
+      title: intl.formatMessage(messages.wizardAwsRoleTitle),
+      substepOf: {
+        name: 'manual-aws-provisioning-access',
+        title: accountAccessTitle,
+      },
+      nextStep: WizardStepId.ManualAwsProvisioningArn,
+      fields: manualInstructionSectionFields(applicationTypes, 'role', [
+        PROVISIONING_APP,
+      ]),
+    },
+    {
+      name: WizardStepId.ManualAwsProvisioningArn,
+      title: intl.formatMessage(messages.wizardAwsArnTitle),
+      substepOf: 'manual-aws-provisioning-access',
+      nextStep: WizardStepId.Review,
+      fields: [
+        ...manualInstructionSectionFields(applicationTypes, 'arn', [
+          PROVISIONING_APP,
+        ]),
+        {
+          component: componentTypes.TEXT_FIELD,
+          name: AWS_ARN_FIELD,
+          label: intl.formatMessage(messages.wizardAwsRoleArn),
+          placeholder: 'arn:aws:iam::123456789012:role/Provisioning',
+          isRequired: true,
+          validate: [
+            { type: validatorTypes.REQUIRED },
+            {
+              type: validatorTypes.PATTERN,
+              pattern: /^arn:aws:.*/,
+              message: intl.formatMessage(messages.wizardAwsRoleArnPattern),
+            },
+            { type: validatorTypes.MIN_LENGTH, threshold: 10 },
+          ],
+        },
+      ],
+    },
+  ];
 }
 
 function manualAwsCostUsageStep(intl: IntlShape) {
@@ -856,11 +1056,11 @@ function manualAwsCostUsageStep(intl: IntlShape) {
     nextStep: WizardStepId.ManualAwsCostTags,
     fields: [
       {
-        component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
-        name: 'manual-aws-cost-usage-instructions',
-        appName: COST_APP,
-        applicationTypeId: '',
-        stage: 'usage',
+        component: componentTypes.PLAIN_TEXT,
+        name: 'aws-cost-usage-description',
+        label: intl.formatMessage(messages.wizardAwsCostUsageInstructions, {
+          application: intl.formatMessage(messages.wizardAwsCostManagementName),
+        }),
       },
       {
         component: componentTypes.RADIO,
@@ -875,25 +1075,36 @@ function manualAwsCostUsageStep(intl: IntlShape) {
           },
           {
             value: true,
-            label: intl.formatMessage(messages.wizardAwsCustomExport),
+            label: (
+              <>
+                {intl.formatMessage(messages.wizardAwsCustomExport)}
+                <Popover
+                  aria-label={HELP_TEXT_ARIA_LABEL}
+                  position="right"
+                  bodyContent={intl.formatMessage(
+                    messages.wizardAwsCustomExportHelp,
+                  )}
+                >
+                  <Button
+                    aria-label={intl.formatMessage(
+                      messages.wizardAwsCustomExportHelpLabel,
+                    )}
+                    icon={<QuestionCircleIcon className="pf-v6-u-ml-xs" />}
+                    className="pf-v6-u-p-0 pf-v6-u-m-0"
+                    variant={ButtonVariant.plain}
+                  />
+                </Popover>
+              </>
+            ),
           },
         ],
       },
       {
         component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
-        name: 'manual-aws-cost-export-default',
-        condition: { when: 'application.extra.storage_only', is: false },
+        name: 'manual-aws-cost-usage-instructions',
         appName: COST_APP,
         applicationTypeId: '',
-        stage: 'export-default',
-      },
-      {
-        component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
-        name: 'manual-aws-cost-export-custom',
-        condition: { when: 'application.extra.storage_only', is: true },
-        appName: COST_APP,
-        applicationTypeId: '',
-        stage: 'export-custom',
+        stage: 'usage',
       },
     ],
   };
@@ -903,7 +1114,7 @@ function manualAwsCostTagsStep(intl: IntlShape) {
   return {
     name: WizardStepId.ManualAwsCostTags,
     title: intl.formatMessage(messages.wizardAwsCostTagsTitle),
-    nextStep: WizardStepId.ManualAwsPolicy,
+    nextStep: WizardStepId.ManualAwsAccountAccessPolicy,
     fields: [
       {
         component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
@@ -918,156 +1129,65 @@ function manualAwsCostTagsStep(intl: IntlShape) {
         label: intl.formatMessage(messages.wizardAwsMetered),
       },
       {
+        component: componentTypes.PLAIN_TEXT,
+        name: 'aws-tags-account-instructions',
+        label: intl.formatMessage(
+          messages.wizardAwsCostTagsAccountInstructions,
+        ),
+      },
+      {
         component: componentTypes.CHECKBOX,
         name: 'aws.aliases.enabled',
-        label: intl.formatMessage(messages.wizardAwsAliases),
+        label: (
+          <>
+            {intl.formatMessage(messages.wizardAwsAliases)}
+            <Popover
+              aria-label={HELP_TEXT_ARIA_LABEL}
+              position="right"
+              bodyContent={intl.formatMessage(messages.wizardAwsAliasesHelp)}
+            >
+              <Button
+                aria-label={intl.formatMessage(
+                  messages.wizardAwsAliasesHelpLabel,
+                )}
+                icon={<QuestionCircleIcon className="pf-v6-u-ml-xs" />}
+                className="pf-v6-u-p-0 pf-v6-u-m-0"
+                variant={ButtonVariant.plain}
+              />
+            </Popover>
+          </>
+        ),
       },
       {
         component: componentTypes.CHECKBOX,
         name: 'aws.org_units.enabled',
-        label: intl.formatMessage(messages.wizardAwsOrgUnits),
-      },
-    ],
-  };
-}
-
-function manualInstructionFields(
-  applicationTypes: ApplicationType[],
-  stage: 'policy' | 'role' | 'arn',
-) {
-  return applicationTypes
-    .filter(({ name }) =>
-      (stage === 'policy'
-        ? [COST_APP, RHEL_APP]
-        : [COST_APP, RHEL_APP, PROVISIONING_APP]
-      ).includes(name),
-    )
-    .map(({ id, name }) => ({
-      component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
-      name: `manual-aws-${stage}-${id}`,
-      condition: { when: MANUAL_APPLICATION_FIELD, is: id },
-      appName: name,
-      applicationTypeId: id,
-      stage,
-    }));
-}
-
-function manualAwsPolicyStep(
-  applicationTypes: ApplicationType[],
-  intl: IntlShape,
-) {
-  return {
-    name: WizardStepId.ManualAwsPolicy,
-    title: intl.formatMessage(messages.wizardAwsPolicyTitle),
-    nextStep: WizardStepId.ManualAwsRole,
-    fields: manualInstructionFields(applicationTypes, 'policy'),
-  };
-}
-
-function manualAwsRoleStep(
-  applicationTypes: ApplicationType[],
-  intl: IntlShape,
-) {
-  return {
-    name: WizardStepId.ManualAwsRole,
-    title: intl.formatMessage(messages.wizardAwsRoleTitle),
-    nextStep: WizardStepId.ManualAwsArn,
-    fields: [
-      ...manualInstructionFields(applicationTypes, 'role'),
-      ...applicationTypes
-        .filter(({ name }) => [COST_APP, RHEL_APP].includes(name))
-        .map(({ id }) => ({
-          component: AWS_EXTERNAL_ID_COMPONENT,
-          name: 'authentication.extra.external_id',
-          condition: { when: MANUAL_APPLICATION_FIELD, is: id },
-        })),
-    ],
-  };
-}
-
-function manualAwsArnStep(
-  applicationTypes: ApplicationType[],
-  intl: IntlShape,
-) {
-  return {
-    name: WizardStepId.ManualAwsArn,
-    title: intl.formatMessage(messages.wizardAwsArnTitle),
-    nextStep: WizardStepId.Review,
-    fields: [
-      ...manualInstructionFields(applicationTypes, 'arn'),
-      {
-        component: componentTypes.TEXT_FIELD,
-        name: AWS_ARN_FIELD,
-        label: intl.formatMessage(messages.wizardAwsRoleArn),
-        placeholder: 'arn:aws:iam::123456789012:role/CostManagement',
-        isRequired: true,
-        validate: [
-          { type: validatorTypes.REQUIRED },
-          {
-            type: validatorTypes.PATTERN,
-            pattern: /^arn:aws:.*/,
-            message: intl.formatMessage(messages.wizardAwsRoleArnPattern),
-          },
-          { type: validatorTypes.MIN_LENGTH, threshold: 10 },
-        ],
+        label: (
+          <>
+            {intl.formatMessage(messages.wizardAwsOrgUnits)}
+            <Popover
+              aria-label={HELP_TEXT_ARIA_LABEL}
+              position="right"
+              bodyContent={intl.formatMessage(messages.wizardAwsOrgUnitsHelp)}
+            >
+              <Button
+                aria-label={intl.formatMessage(
+                  messages.wizardAwsOrgUnitsHelpLabel,
+                )}
+                icon={<QuestionCircleIcon className="pf-v6-u-ml-xs" />}
+                className="pf-v6-u-p-0 pf-v6-u-m-0"
+                variant={ButtonVariant.plain}
+              />
+            </Popover>
+          </>
+        ),
       },
     ],
   };
 }
 
 /**
- * The authentication type step.
- *
- * Only providers with something other than exactly one authentication type
- * reach it — see {@link stepAfterNaming} — which today means the three with
- * none at all. So it renders the "not supported yet" line and an option-less
- * required radio group, and the failing validator is what holds the primary
- * button disabled. That matters beyond tidiness: `selectNext` returns
- * `undefined` for a value the `stepMapper` below has no key for, which would
- * navigate the wizard to a step that does not exist.
- *
- * RHCLOUD-51317 fills `AUTH_TYPES_BY_PROVIDER` in and gives this step real
- * per-provider options.
- */
-function authTypeSelectionStep(intl: IntlShape) {
-  return {
-    name: WizardStepId.AuthTypeSelection,
-    title: intl.formatMessage(messages.wizardAuthTypeStepTitle),
-    nextStep: {
-      when: AUTH_TYPE_FIELD,
-      stepMapper: { [ACCESS_KEY_AUTH_TYPE]: WizardStepId.AuthCredentials },
-    },
-    fields: [
-      {
-        component: componentTypes.PLAIN_TEXT,
-        name: 'auth-type-step-description',
-        label: intl.formatMessage(messages.wizardAuthTypeUnavailable),
-      },
-      {
-        component: componentTypes.RADIO,
-        name: AUTH_TYPE_FIELD,
-        label: intl.formatMessage(messages.wizardAuthTypeLabel),
-        isRequired: true,
-        options: [],
-        validate: [
-          {
-            type: validatorTypes.REQUIRED,
-            message: intl.formatMessage(messages.wizardAuthTypeRequired),
-          },
-        ],
-      },
-    ],
-  };
-}
-
-/**
- * The generic credentials step.
- *
- * Nothing routes here today: AWS collects its credential inside the
- * configuration step, and the three providers without an authentication type
- * stop before this one. It is the target {@link stepAfterNaming} falls back to
- * for a provider with exactly one authentication type and no superkey — the
- * shape RHCLOUD-51317's providers arrive in.
+ * AWS fallback when the catalogue has no superkey flag. The normal AWS path
+ * collects the same fields in the configuration step.
  *
  * `authtype` is not something the user picks, so it is written into the form
  * on mount instead of being asked for. `initializeOnMount` makes that survive
@@ -1140,6 +1260,7 @@ function reviewStep(intl: IntlShape) {
         component: componentTypes.PLAIN_TEXT,
         name: 'review-step-description',
         label: intl.formatMessage(messages.wizardReviewStepDescription),
+        TextContentProps: { className: 'pf-v6-u-mb-md' },
       },
       {
         component: REVIEW_SUMMARY_COMPONENT,
@@ -1174,17 +1295,27 @@ function submissionResultStep(intl: IntlShape) {
 /** The form's value shape, as final-form nests the dotted field names. */
 export interface IntegrationWizardValues {
   [SOURCE_TYPE_FIELD]?: SourceTypeName;
-  source?: { name?: string; app_creation_workflow?: AppCreationWorkflow };
+  source?: {
+    name?: string;
+    app_creation_workflow?: AppCreationWorkflow;
+    source_ref?: string;
+  };
   authentication?: {
     authtype?: AuthenticationType;
     username?: string;
     password?: string;
-    extra?: { external_id?: string };
+    extra?: { external_id?: string; azure?: { tenant_id?: string } };
   };
   application?: {
     application_type_id?: string;
     extra?: Record<string, unknown>;
   };
+  endpoint?: {
+    role?: string;
+    verify_ssl?: boolean;
+    certificate_authority?: string;
+  };
+  url?: string;
   aws?: { aliases?: { enabled?: boolean }; org_units?: { enabled?: boolean } };
   meta?: { account?: string };
   [APPLICATIONS_FIELD]?: string[];
@@ -1201,27 +1332,51 @@ export interface IntegrationWizardValues {
 export function toCreateSourceInput(
   values: IntegrationWizardValues,
   applicationTypes: ApplicationType[] = [],
+  hcsEnrolled = false,
 ): CreateSourceInput {
   const manual = values.source?.app_creation_workflow === MANUAL_CONFIGURATION;
+  const provider = values[SOURCE_TYPE_FIELD];
   const manualApplication = applicationTypes.find(
     ({ id }) => id === values.application?.application_type_id,
   );
   const manualAuthType = manualAwsAuthType(manualApplication?.name);
+  const applicationExtra = values.application
+    ? { ...(values.application.extra ?? {}), hcs: hcsEnrolled }
+    : undefined;
   if (manual && !manualAuthType) {
     throw new Error('Unknown manual AWS application');
   }
   return {
     name: values.source?.name ?? '',
-    sourceTypeName: values[SOURCE_TYPE_FIELD] ?? '',
+    sourceTypeName: provider ?? '',
     appCreationWorkflow: values.source?.app_creation_workflow,
-    authentication: values.authentication?.username
+    sourceRef:
+      provider === 'openshift' && manualApplication?.name === COST_APP
+        ? values.source?.source_ref
+        : undefined,
+    endpoint:
+      provider !== 'amazon' &&
+      !manualApplication &&
+      (values.url || values.endpoint)
+        ? { ...values.endpoint, url: values.url }
+        : undefined,
+    authentication: (
+      provider === 'amazon'
+        ? Boolean(values.authentication?.username)
+        : Boolean(
+            values.authentication?.authtype &&
+            values.authentication.authtype !== 'empty',
+          )
+    )
       ? {
           authtype: manual
             ? manualAuthType!
-            : (values.authentication.authtype ?? ACCESS_KEY_AUTH_TYPE),
-          username: values.authentication.username,
-          password: values.authentication.password,
-          ...(manual ? { extra: values.authentication.extra } : {}),
+            : (values.authentication?.authtype ?? ACCESS_KEY_AUTH_TYPE),
+          username: values.authentication?.username,
+          password: values.authentication?.password,
+          ...(values.authentication?.extra
+            ? { extra: values.authentication.extra }
+            : {}),
         }
       : undefined,
     applicationTypeIds: manual ? [] : (values[APPLICATIONS_FIELD] ?? []),
@@ -1237,7 +1392,15 @@ export function toCreateSourceInput(
         ? {
             id: manualApplication.id,
             name: manualApplication.name,
-            extra: values.application?.extra,
+            extra: applicationExtra,
+          }
+        : undefined,
+    selectedApplication:
+      provider !== 'amazon' && manualApplication
+        ? {
+            id: manualApplication.id,
+            name: manualApplication.name,
+            extra: applicationExtra,
           }
         : undefined,
   };

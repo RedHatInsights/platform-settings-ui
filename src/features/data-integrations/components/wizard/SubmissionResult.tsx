@@ -4,6 +4,10 @@ import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
 import WizardContext from '@data-driven-forms/react-form-renderer/wizard-context';
 import { Button } from '@patternfly/react-core/dist/dynamic/components/Button';
 import {
+  Content,
+  ContentVariants,
+} from '@patternfly/react-core/dist/dynamic/components/Content';
+import {
   EmptyState,
   EmptyStateActions,
   EmptyStateBody,
@@ -30,14 +34,41 @@ export interface WizardSubmissionState {
   isError: boolean;
   error: unknown;
   createdSource?: Source;
+  isRemoving: boolean;
   /** Clears the mutation and restarts the wizard from step one. */
   onAddAnother: () => void;
   /** Dismisses the wizard without the "are you sure" confirmation. */
   onClose: () => void;
+  /** Closes validation without resetting the in-flight create mutation. */
+  onCloseWhileSubmitting: () => void;
+  /** Removes a source that was created but failed availability validation. */
+  onRemove: () => void;
 }
 
 export const WizardSubmissionContext =
   React.createContext<WizardSubmissionState | null>(null);
+
+const validationErrorFor = (
+  source: Source | undefined,
+  fallback: string,
+): string | undefined => {
+  if (!source) {
+    return undefined;
+  }
+
+  const unavailable = [
+    {
+      availability_status: source.availability_status,
+      availability_status_error: source.availability_status_error,
+    },
+    ...(source.applications ?? []),
+    ...(source.endpoint ?? []),
+  ].find((resource) => resource.availability_status === 'unavailable');
+
+  return unavailable
+    ? (unavailable.availability_status_error ?? fallback)
+    : undefined;
+};
 
 /**
  * The `submission-result` data-driven-forms component.
@@ -56,13 +87,81 @@ const SubmissionResult: React.FC = () => {
   const { jumpToStep, prevSteps } = React.useContext(WizardContext);
   const submission = React.useContext(WizardSubmissionContext);
 
-  if (!submission || submission.isPending) {
+  // Mutation state and the result-step transition are separate renders. Do
+  // not show success in the gap before the create response has arrived.
+  if (
+    !submission ||
+    submission.isPending ||
+    (!submission.isError && !submission.createdSource)
+  ) {
     return (
       <EmptyState
         titleText={intl.formatMessage(messages.wizardResultSubmitting)}
         headingLevel="h2"
         icon={Spinner}
-      />
+      >
+        <EmptyStateBody>
+          <Content>
+            <Content component={ContentVariants.p} className="pf-v6-u-mb-md">
+              {intl.formatMessage(messages.wizardResultSubmittingDescription)}
+            </Content>
+            <Content component={ContentVariants.p}>
+              {intl.formatMessage(messages.wizardResultSubmittingContinue)}
+            </Content>
+          </Content>
+        </EmptyStateBody>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="link" onClick={submission?.onCloseWhileSubmitting}>
+              {intl.formatMessage(messages.wizardResultClose)}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
+      </EmptyState>
+    );
+  }
+
+  const created = submission.createdSource;
+  const validationError = validationErrorFor(
+    created,
+    intl.formatMessage(messages.wizardResultValidationErrorBody),
+  );
+
+  if (validationError && created) {
+    return (
+      <EmptyState
+        status="danger"
+        titleText={intl.formatMessage(
+          messages.wizardResultValidationErrorTitle,
+        )}
+        headingLevel="h2"
+        icon={ExclamationCircleIcon}
+      >
+        <EmptyStateBody>{validationError}</EmptyStateBody>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button
+              variant="primary"
+              component={(props) => (
+                <AppLink
+                  {...props}
+                  to={created.id}
+                  onClick={submission.onClose}
+                />
+              )}
+            >
+              {intl.formatMessage(messages.wizardResultEditIntegration)}
+            </Button>
+            <Button
+              variant="link"
+              onClick={submission.onRemove}
+              isDisabled={submission.isRemoving}
+            >
+              {intl.formatMessage(messages.wizardResultRemoveIntegration)}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
+      </EmptyState>
     );
   }
 
@@ -99,8 +198,6 @@ const SubmissionResult: React.FC = () => {
       </EmptyState>
     );
   }
-
-  const created = submission.createdSource;
 
   return (
     <EmptyState

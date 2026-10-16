@@ -23,7 +23,7 @@ export const seedApplicationTypes: ApplicationType[] = [
     name: '/insights/platform/cost-management',
     display_name: 'Cost Management',
     created_at: '2020-01-15T10:00:00Z',
-    supported_source_types: ['amazon', 'google', 'azure'],
+    supported_source_types: ['amazon', 'google', 'azure', 'openshift'],
   },
   {
     id: APPLICATION_TYPE_RHEL,

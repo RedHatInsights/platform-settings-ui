@@ -12,6 +12,7 @@ const READER_DOCS =
   'https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/general#reader';
 const ROLE_DOCS =
   'https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/management-and-governance#managed-services-registration-assignment-delete-role';
+const LIGHTHOUSE_CLICKED_FIELD = 'lighthouse-clicked';
 
 const messages = defineMessages({
   roleTitle: {
@@ -74,6 +75,10 @@ const messages = defineMessages({
     defaultMessage:
       'The Azure Lighthouse link could not be loaded. Please return to this step and try again.',
   },
+  and: {
+    id: 'dataIntegrations.azureLighthouse.and',
+    defaultMessage: 'and',
+  },
 });
 
 const AzureLighthouseInstructions: React.FC<{
@@ -112,7 +117,7 @@ const AzureLighthouseInstructions: React.FC<{
           <a href={READER_DOCS} target="_blank" rel="noopener noreferrer">
             {intl.formatMessage(messages.reader)}
           </a>{' '}
-          and{' '}
+          {intl.formatMessage(messages.and)}{' '}
           <a href={ROLE_DOCS} target="_blank" rel="noopener noreferrer">
             {intl.formatMessage(messages.assignmentRole)}
           </a>
@@ -125,7 +130,7 @@ const AzureLighthouseInstructions: React.FC<{
           href={link}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => form.change('lighthouse-clicked', true)}
+          onClick={() => form.change(LIGHTHOUSE_CLICKED_FIELD, true)}
         >
           {intl.formatMessage(messages.link)}
         </Button>

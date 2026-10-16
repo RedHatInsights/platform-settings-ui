@@ -64,6 +64,11 @@ export default defineMessages({
     description: 'Amazon Web Services provider name',
     defaultMessage: 'Amazon Web Services',
   },
+  amazonShortLabel: {
+    id: 'dataIntegrations.provider.amazonShort',
+    description: 'Short Amazon Web Services provider name for wizard titles',
+    defaultMessage: 'AWS',
+  },
   googleLabel: {
     id: 'dataIntegrations.provider.google',
     description: 'Google Cloud Platform provider name',
@@ -112,6 +117,24 @@ export default defineMessages({
     defaultMessage: 'Unknown',
   },
 
+  // Permission state shared by the About and My data integrations views.
+  permissionsAlertTitle: {
+    id: 'dataIntegrations.permissionsAlert.title',
+    description: 'Title of the integration permissions alert',
+    defaultMessage: 'Need to create an integration?',
+  },
+  permissionsAlertDescription: {
+    id: 'dataIntegrations.permissionsAlert.description',
+    description: 'Description of the integration permissions alert',
+    defaultMessage:
+      'You do not have the permissions for integration management. Contact your organization admin if you need these permissions updated.',
+  },
+  permissionsAlertLink: {
+    id: 'dataIntegrations.permissionsAlert.link',
+    description: 'Link to request integration access',
+    defaultMessage: 'Request access via the Virtual Assistant',
+  },
+
   // Creation wizard shell
   wizardTitle: {
     id: 'dataIntegrations.wizard.title',
@@ -123,6 +146,17 @@ export default defineMessages({
     description: 'Add data integration wizard subtitle',
     defaultMessage:
       'Configure an integration to start importing data from your provider.',
+  },
+  wizardProviderTitle: {
+    id: 'dataIntegrations.wizard.provider.title',
+    description: 'Provider-specific add integration wizard title',
+    defaultMessage: 'Add {provider} integration',
+  },
+  wizardProviderDescription: {
+    id: 'dataIntegrations.wizard.provider.description',
+    description: 'Provider-specific add integration wizard subtitle',
+    defaultMessage:
+      'Configure an integration to connect to your Red Hat applications.',
   },
   wizardClose: {
     id: 'dataIntegrations.wizard.close',
@@ -438,9 +472,14 @@ export default defineMessages({
     defaultMessage:
       'To store the data export (previously called a cost and usage report) for cost management, create an Amazon S3 bucket.',
   },
+  wizardAwsCostStorageBucketInstructions: {
+    id: 'dataIntegrations.wizard.manual.awsCostStorageBucketInstructions',
+    defaultMessage:
+      'On AWS, specify or create an Amazon S3 bucket for your account and enter its name below.',
+  },
   wizardAwsCostTagsTitle: {
     id: 'dataIntegrations.wizard.manual.awsCostTagsTitle',
-    defaultMessage: 'Tag aliases and organizational units',
+    defaultMessage: 'Tags, aliases and organizational units',
   },
   wizardAwsCostUsageInstructions: {
     id: 'dataIntegrations.wizard.manual.awsCostUsageInstructions',
@@ -494,10 +533,33 @@ export default defineMessages({
     defaultMessage:
       'Skip creating the default data export. Follow the additional configuration steps for a customized export.',
   },
+  wizardAwsSkipStep: {
+    id: 'dataIntegrations.wizard.manual.awsSkipStep',
+    defaultMessage: 'Skip this step and proceed to next step',
+  },
+  wizardAwsCustomExportEmptyState: {
+    id: 'dataIntegrations.wizard.manual.awsCustomExportEmptyState',
+    defaultMessage:
+      'Because you have chosen to manually customize the data set you want to send to cost management, you do not need to create a data export (previously called a cost and usage report).',
+  },
+  wizardAwsAdditionalConfigurationSteps: {
+    id: 'dataIntegrations.wizard.manual.awsAdditionalConfigurationSteps',
+    defaultMessage: 'Additional configuration steps',
+  },
   wizardAwsCostTagsInstructions: {
     id: 'dataIntegrations.wizard.manual.awsCostTagsInstructions',
     defaultMessage:
       'To use tags to organize your AWS resources in the {application} application, activate your tags in AWS to allow them to be imported automatically.',
+  },
+  wizardAwsTagsOpenAllocation: {
+    id: 'dataIntegrations.wizard.manual.awsTagsOpenAllocation',
+    defaultMessage:
+      'In the AWS Billing and Cost Management console, open the Cost Allocation Tags section.',
+  },
+  wizardAwsTagsActivate: {
+    id: 'dataIntegrations.wizard.manual.awsTagsActivate',
+    defaultMessage:
+      'Select the tags you want to use in the {application} application, and click Activate.',
   },
   wizardAwsCostTagsAccountInstructions: {
     id: 'dataIntegrations.wizard.manual.awsCostTagsAccountInstructions',
@@ -577,7 +639,7 @@ export default defineMessages({
   },
   wizardAwsRoleArn: {
     id: 'dataIntegrations.wizard.manual.awsRoleArn',
-    defaultMessage: 'IAM role ARN',
+    defaultMessage: 'ARN',
   },
   wizardAwsAccountNumber: {
     id: 'dataIntegrations.wizard.manual.awsAccountNumber',
@@ -589,7 +651,27 @@ export default defineMessages({
   },
   wizardAwsPolicyInstructions: {
     id: 'dataIntegrations.wizard.manual.awsPolicyInstructions',
-    defaultMessage: 'In AWS IAM, create a policy using this JSON:',
+    defaultMessage:
+      'To grant permissions to the cost management report you just configured, create an AWS Identity and Access Management (IAM) policy.',
+  },
+  wizardAwsIamSignIn: {
+    id: 'dataIntegrations.wizard.manual.awsIamSignIn',
+    defaultMessage:
+      'Sign in to the AWS Identity and Access Management (IAM) console.',
+  },
+  wizardAwsIamCreatePolicy: {
+    id: 'dataIntegrations.wizard.manual.awsIamCreatePolicy',
+    defaultMessage:
+      'Create a new policy, pasting the following content into the JSON text box.',
+  },
+  wizardAwsIamCompletePolicy: {
+    id: 'dataIntegrations.wizard.manual.awsIamCompletePolicy',
+    defaultMessage: 'Complete the process to create your new policy.',
+  },
+  wizardAwsIamKeepBrowserOpen: {
+    id: 'dataIntegrations.wizard.manual.awsIamKeepBrowserOpen',
+    defaultMessage:
+      '<doNotClose>Do not close your browser.</doNotClose> You will need to be logged in to the IAM console to complete the next step.',
   },
   wizardAwsCreateRoleInstructions: {
     id: 'dataIntegrations.wizard.manual.awsCreateRoleInstructions',
@@ -605,6 +687,15 @@ export default defineMessages({
     id: 'dataIntegrations.wizard.manual.awsArnInstructions',
     defaultMessage:
       'To enable account access, capture the ARN associated with the role you just created.',
+  },
+  wizardAwsRoleSelect: {
+    id: 'dataIntegrations.wizard.manual.awsRoleSelect',
+    defaultMessage: 'From the Roles tab, select the role you just created.',
+  },
+  wizardAwsRoleCopyArn: {
+    id: 'dataIntegrations.wizard.manual.awsRoleCopyArn',
+    defaultMessage:
+      'From the Summary screen, copy the role ARN and paste it in the ARN field below:',
   },
   wizardAwsAliases: {
     id: 'dataIntegrations.wizard.manual.awsAliases',
@@ -674,6 +765,10 @@ export default defineMessages({
     id: 'dataIntegrations.wizard.manual.awsConnectCloudFormation',
     defaultMessage: 'Connect AWS with CloudFormation',
   },
+  wizardAwsRolePermissions: {
+    id: 'dataIntegrations.wizard.manual.awsRolePermissions',
+    defaultMessage: 'See role permissions',
+  },
   wizardAwsCostInstructions: {
     id: 'dataIntegrations.wizard.manual.awsCostInstructions',
     defaultMessage:
@@ -695,16 +790,19 @@ export default defineMessages({
   },
   wizardAwsExternalId: {
     id: 'dataIntegrations.wizard.manual.awsExternalId',
-    defaultMessage: 'Enable the external ID requirement and use this value:',
+    defaultMessage: 'Paste the following value in the External ID field:',
   },
   wizardAwsExternalIdLabel: {
     id: 'dataIntegrations.wizard.manual.awsExternalIdLabel',
     defaultMessage: 'External ID',
   },
+  wizardAwsAttachPolicy: {
+    id: 'dataIntegrations.wizard.manual.awsAttachPolicy',
+    defaultMessage: 'Attach the permissions policy that you just created.',
+  },
   wizardAwsFinishRole: {
     id: 'dataIntegrations.wizard.manual.awsFinishRole',
-    defaultMessage:
-      'Attach the permissions policy that you just created and complete the process to create your new role.',
+    defaultMessage: 'Complete the process to create your new role.',
   },
   wizardAwsRoleArnPattern: {
     id: 'dataIntegrations.wizard.manual.awsRoleArnPattern',
@@ -802,8 +900,27 @@ export default defineMessages({
   },
   wizardResultSubmitting: {
     id: 'dataIntegrations.wizard.result.submitting',
-    description: 'Shown while the integration is being created',
-    defaultMessage: 'Adding your integration',
+    description: 'Shown while integration credentials are being validated',
+    defaultMessage: 'Validating credentials',
+  },
+  wizardResultSubmittingDescription: {
+    id: 'dataIntegrations.wizard.result.submittingDescription',
+    description:
+      'Explanation shown while integration validation is in progress',
+    defaultMessage:
+      "This might take some time. You'll receive a notification if you are still in the Integrations application when the process completes. Otherwise, you can check the status in the main integrations table at any time.",
+  },
+  wizardResultSubmittingContinue: {
+    id: 'dataIntegrations.wizard.result.submittingContinue',
+    description:
+      'Instruction shown while integration validation is in progress',
+    defaultMessage:
+      'In the meantime, you can close this window while the validation process continues.',
+  },
+  wizardResultClose: {
+    id: 'dataIntegrations.wizard.result.close',
+    description: 'Action that closes the validation state',
+    defaultMessage: 'Close',
   },
   wizardResultSuccessTitle: {
     id: 'dataIntegrations.wizard.result.successTitle',
@@ -838,6 +955,17 @@ export default defineMessages({
     defaultMessage:
       'Your integration was not created. Check your connection and try again.',
   },
+  wizardResultValidationErrorTitle: {
+    id: 'dataIntegrations.wizard.result.validationErrorTitle',
+    description:
+      'Title shown when an integration fails availability validation',
+    defaultMessage: 'Configuration unsuccessful',
+  },
+  wizardResultValidationErrorBody: {
+    id: 'dataIntegrations.wizard.result.validationErrorBody',
+    description: 'Fallback text when validation returns no failure reason',
+    defaultMessage: 'Unknown error',
+  },
   wizardResultRetry: {
     id: 'dataIntegrations.wizard.result.retry',
     description: 'Button that submits the integration again after a failure',
@@ -847,6 +975,16 @@ export default defineMessages({
     id: 'dataIntegrations.wizard.result.edit',
     description: 'Button that returns to the review step after a failure',
     defaultMessage: 'Edit details',
+  },
+  wizardResultEditIntegration: {
+    id: 'dataIntegrations.wizard.result.editIntegration',
+    description: 'Button that opens an integration after validation fails',
+    defaultMessage: 'Edit integration',
+  },
+  wizardResultRemoveIntegration: {
+    id: 'dataIntegrations.wizard.result.removeIntegration',
+    description: 'Button that removes an integration after validation fails',
+    defaultMessage: 'Remove integration',
   },
 
   // Wizard loading and error states

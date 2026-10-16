@@ -7,6 +7,7 @@ import { Content } from '@patternfly/react-core/dist/dynamic/components/Content'
 const TEMPLATE =
   'https://provisioning-public-assets.s3.amazonaws.com/AzureLighthouse/offering_template.json';
 const LIGHTHOUSE_LINK = `https://portal.azure.com/#create/Microsoft.Template/uri/${encodeURIComponent(TEMPLATE)}`;
+const LIGHTHOUSE_CLICKED_FIELD = 'lighthouse-clicked';
 
 const copy = defineMessages({
   lighthouse: {
@@ -48,7 +49,7 @@ const AzureProvisioningInstructions: React.FC<{
         target="_blank"
         rel="noopener noreferrer"
         isBlock
-        onClick={() => form.change('lighthouse-clicked', true)}
+        onClick={() => form.change(LIGHTHOUSE_CLICKED_FIELD, true)}
       >
         {intl.formatMessage(copy.link)}
       </Button>

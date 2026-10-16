@@ -79,6 +79,14 @@ describe('createSourcesApi', () => {
     await expect(api.isSourceNameTaken('new')).resolves.toBe(false);
   });
 
+  it('deletes a source through the generated API client', async () => {
+    mockApi.deleteSource = jest.fn().mockResolvedValue({});
+    const api = createSourcesApi({} as AxiosInstance);
+
+    await expect(api.deleteSource('src-1')).resolves.toBeUndefined();
+    expect(mockApi.deleteSource).toHaveBeenCalledWith({ id: 'src-1' });
+  });
+
   describe('createSource', () => {
     const input = {
       name: 'my-source',
@@ -166,7 +174,16 @@ describe('createSourcesApi', () => {
         });
         await jest.advanceTimersByTimeAsync(1000);
 
-        await expect(result).resolves.toEqual(created);
+        await expect(result).resolves.toEqual({
+          ...created,
+          applications: [
+            {
+              id: 'app-1',
+              application_type_id: '3',
+              availability_status: 'available',
+            },
+          ],
+        });
         expect(get).toHaveBeenCalledTimes(2);
         expect(get).toHaveBeenCalledWith(
           '/api/sources/v3.1/applications/app-1',
@@ -196,8 +213,47 @@ describe('createSourcesApi', () => {
           ...input,
           availabilityWaitApplicationTypeIds: ['3'],
         }),
-      ).resolves.toEqual(created);
+      ).resolves.toEqual({
+        ...created,
+        applications: [
+          {
+            id: 'app-2',
+            application_type_id: '4',
+            availability_status: 'in_progress',
+          },
+        ],
+      });
       expect(get).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns an unavailable application when validation fails', async () => {
+      const created = { id: 'src-1', name: 'my-source' };
+      const post = jest.fn().mockResolvedValue({
+        data: {
+          sources: [created],
+          applications: [{ id: 'app-1', application_type_id: '3' }],
+        },
+      });
+      const get = jest
+        .fn()
+        .mockRejectedValue(new Error('validation request failed'));
+
+      await expect(
+        createSourcesApi({
+          post,
+          get,
+        } as unknown as AxiosInstance).createSource(input),
+      ).resolves.toEqual({
+        ...created,
+        applications: [
+          {
+            id: 'app-1',
+            application_type_id: '3',
+            availability_status: 'unavailable',
+            availability_status_error: 'validation request failed',
+          },
+        ],
+      });
     });
 
     it('sends an empty applications array when none were selected', async () => {
@@ -319,23 +375,27 @@ describe('createSourcesApi', () => {
           },
         })
         .mockResolvedValue({ data: {} });
+      const get = jest.fn().mockResolvedValue({
+        data: { availability_status: 'available' },
+      });
 
-      await createSourcesApi({ post } as unknown as AxiosInstance).createSource(
-        {
-          name: 'azure-cost',
-          sourceTypeName: 'azure',
-          endpoint: { url: 'https://management.azure.com' },
-          selectedApplication: {
-            id: '1',
-            name: '/insights/platform/cost-management',
-          },
-          authentication: {
-            authtype: 'tenant_id_client_id_client_secret',
-            username: 'client',
-            password: 'secret',
-          },
+      await createSourcesApi({
+        post,
+        get,
+      } as unknown as AxiosInstance).createSource({
+        name: 'azure-cost',
+        sourceTypeName: 'azure',
+        endpoint: { url: 'https://management.azure.com' },
+        selectedApplication: {
+          id: '1',
+          name: '/insights/platform/cost-management',
         },
-      );
+        authentication: {
+          authtype: 'tenant_id_client_id_client_secret',
+          username: 'client',
+          password: 'secret',
+        },
+      });
 
       expect(post).toHaveBeenNthCalledWith(
         2,

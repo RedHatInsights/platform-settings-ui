@@ -11,6 +11,8 @@ import {
 import { MenuToggle } from '@patternfly/react-core/dist/dynamic/components/MenuToggle';
 import messages from '../../messages';
 
+const SELECT_MAX_MENU_HEIGHT = '12rem';
+
 const AwsRegionSelect: React.FC<UseFieldApiConfig> = (props) => {
   const intl = useIntl();
   const [isOpen, setIsOpen] = useState(false);
@@ -35,7 +37,7 @@ const AwsRegionSelect: React.FC<UseFieldApiConfig> = (props) => {
           }
           setIsOpen(false);
         }}
-        maxMenuHeight="12rem"
+        maxMenuHeight={SELECT_MAX_MENU_HEIGHT}
         isScrollable
         popperProps={{
           appendTo: 'inline',

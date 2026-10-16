@@ -35,6 +35,12 @@ export interface SourceApplication {
   paused_at?: string;
 }
 
+export interface SourceEndpoint {
+  id: string;
+  availability_status?: SourceAvailabilityStatus;
+  availability_status_error?: string;
+}
+
 export interface Source {
   id: string;
   name: string;
@@ -62,6 +68,8 @@ export interface Source {
   version?: string;
   /** Populated by the list query; absent on detail reads. */
   applications?: SourceApplication[];
+  /** Populated by the create validation response. */
+  endpoint?: SourceEndpoint[];
 }
 
 /**
@@ -221,6 +229,7 @@ export interface BulkCreatePayload {
 export interface BulkCreateResponse {
   sources?: Source[];
   applications?: SourceApplication[];
+  endpoints?: SourceEndpoint[];
   authentications?: Array<{ id: string }>;
 }
 

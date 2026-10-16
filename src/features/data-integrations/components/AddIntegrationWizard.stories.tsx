@@ -12,6 +12,7 @@ import {
   createPendingSourceTypesHandler,
   createSourceTypesSubsetHandler,
   createSourcesHandlers,
+  createUnavailableApplicationHandler,
   sourcesDb,
 } from '../data/mocks/sources';
 import { clearAndType, waitForModal } from '../../../shared/interactionHelpers';
@@ -600,16 +601,14 @@ export const AmazonManualConfiguration: Story = {
       ).toBeInTheDocument();
       await user.click(modal.getByRole('button', { name: 'Next' }));
       await modal.findByRole('heading', {
-        name: 'Tag aliases and organizational units',
+        name: 'Tags, aliases and organizational units',
       });
       await user.click(modal.getByRole('button', { name: 'Next' }));
       await modal.findByRole('heading', { name: 'Create IAM policy' });
       await user.click(modal.getByRole('button', { name: 'Next' }));
       await modal.findByRole('heading', { name: 'Create IAM role' });
       expect(
-        modal.getByText(
-          'Enable the external ID requirement and use this value:',
-        ),
+        modal.getByText('Paste the following value in the External ID field:'),
       ).toBeInTheDocument();
       expect(modal.getByDisplayValue('148761653619')).toBeInTheDocument();
       const externalId = (
@@ -622,7 +621,7 @@ export const AmazonManualConfiguration: Story = {
       await modal.findByRole('heading', { name: 'Enter ARN' });
       await clearAndType(
         user,
-        () => modal.getByRole('textbox', { name: 'IAM role ARN' }),
+        () => modal.getByRole('textbox', { name: 'ARN' }),
         'arn:aws:iam::123456789:role/CostManagement',
       );
       await user.click(modal.getByRole('button', { name: 'Next' }));
@@ -633,6 +632,19 @@ export const AmazonManualConfiguration: Story = {
 
       expect(modal.getByText('Manual configuration')).toBeInTheDocument();
       expect(modal.getByText('Cost Management')).toBeInTheDocument();
+      expect(
+        modal.getByText('S3 bucket name', { exact: true }),
+      ).toBeInTheDocument();
+      expect(modal.getByText('ARN', { exact: true })).toBeInTheDocument();
+      expect(
+        modal.getByText('Manage permissions in User Access'),
+      ).toBeInTheDocument();
+      expect(
+        modal.getByText(
+          'Make sure to manage permissions for this integration in custom roles that contain permissions for Cost Management.',
+        ),
+      ).toBeInTheDocument();
+      expect(modal.queryByText('Authentication type')).not.toBeInTheDocument();
       expect(modal.queryByText('Access key ID')).not.toBeInTheDocument();
       expect(modal.queryByText('Secret access key')).not.toBeInTheDocument();
       expect(
@@ -737,7 +749,7 @@ export const AmazonManualSwitchApplication: Story = {
     await modal.findByRole('heading', { name: 'Enter ARN' });
     await clearAndType(
       user,
-      () => modal.getByRole('textbox', { name: 'IAM role ARN' }),
+      () => modal.getByRole('textbox', { name: 'ARN' }),
       'arn:aws:iam::123456789:role/SubscriptionWatch',
     );
     await user.click(modal.getByRole('button', { name: 'Back' }));
@@ -761,7 +773,7 @@ export const AmazonManualSwitchApplication: Story = {
     await user.click(modal.getByRole('option', { name: 'us-east-1' }));
     for (const heading of [
       'Create cost and usage report',
-      'Tag aliases and organizational units',
+      'Tags, aliases and organizational units',
       'Create IAM policy',
       'Create IAM role',
       'Enter ARN',
@@ -769,9 +781,7 @@ export const AmazonManualSwitchApplication: Story = {
       await user.click(modal.getByRole('button', { name: 'Next' }));
       await modal.findByRole('heading', { name: heading });
     }
-    expect(modal.getByRole('textbox', { name: 'IAM role ARN' })).toHaveValue(
-      '',
-    );
+    expect(modal.getByRole('textbox', { name: 'ARN' })).toHaveValue('');
   },
 };
 
@@ -802,12 +812,13 @@ export const AmazonManualRhelManagement: Story = {
     await modal.findByRole('heading', { name: 'Enter ARN' });
     await clearAndType(
       user,
-      () => modal.getByRole('textbox', { name: 'IAM role ARN' }),
+      () => modal.getByRole('textbox', { name: 'ARN' }),
       'arn:aws:iam::123456789:role/SubscriptionWatch',
     );
     await user.click(modal.getByRole('button', { name: 'Next' }));
     await modal.findByRole('heading', { name: 'Review details' });
-    expect(modal.getByText('RHEL management IAM role')).toBeInTheDocument();
+    expect(modal.getByText('ARN', { exact: true })).toBeInTheDocument();
+    expect(modal.queryByText('Authentication type')).not.toBeInTheDocument();
     await user.click(modal.getByRole('button', { name: 'Add' }));
     await modal.findByRole('heading', { name: 'Integration added' });
     const request = bulkCreateRequests[bulkCreateRequests.length - 1];
@@ -865,7 +876,7 @@ export const AmazonManualLaunchImages: Story = {
     await modal.findByRole('heading', { name: 'Enter ARN' });
     await clearAndType(
       user,
-      () => modal.getByRole('textbox', { name: 'IAM role ARN' }),
+      () => modal.getByRole('textbox', { name: 'ARN' }),
       'arn:aws:iam::123456789012:role/RH-HCC-provisioning-role',
     );
     await user.click(modal.getByRole('button', { name: 'Next' }));
@@ -986,6 +997,40 @@ export const AmazonSubmitNetworkError: Story = {
         modal.getByText(/Check your connection and try again/),
       ).toBeInTheDocument();
       expect(modal.getByRole('button', { name: 'Retry' })).toBeEnabled();
+    });
+  },
+};
+
+export const AmazonValidationError: Story = {
+  args: { sourceType: 'amazon' },
+  parameters: {
+    msw: {
+      handlers: [
+        ...createUnavailableApplicationHandler(),
+        ...createSourcesHandlers(),
+      ],
+    },
+  },
+  play: async ({ step }) => {
+    const user = userEvent.setup();
+    const modal = within(document.body);
+
+    await fillAwsDetails(user);
+    await user.click(modal.getByRole('button', { name: 'Add' }));
+
+    await step('Validation failure offers edit and remove', async () => {
+      await modal.findByRole('heading', {
+        name: 'Configuration unsuccessful',
+      });
+      expect(
+        modal.getByText('Role assumption failed: access denied'),
+      ).toBeInTheDocument();
+      expect(
+        modal.getByRole('link', { name: 'Edit integration' }),
+      ).toBeInTheDocument();
+      expect(
+        modal.getByRole('button', { name: 'Remove integration' }),
+      ).toBeInTheDocument();
     });
   },
 };

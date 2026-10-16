@@ -341,6 +341,20 @@ export function createNetworkErrorBulkCreateHandler(
   return [http.post(`${baseUrl}/bulk_create`, () => HttpResponse.error())];
 }
 
+export function createUnavailableApplicationHandler(
+  baseUrl = SOURCES_API_BASE,
+) {
+  return [
+    http.get(`${baseUrl}/applications/:id`, ({ params }) =>
+      HttpResponse.json({
+        id: params.id,
+        availability_status: 'unavailable',
+        availability_status_error: 'Role assumption failed: access denied',
+      }),
+    ),
+  ];
+}
+
 /**
  * Fails the given number of times, then succeeds. Covers retry: the first
  * attempt shows the error view, the next one goes through.

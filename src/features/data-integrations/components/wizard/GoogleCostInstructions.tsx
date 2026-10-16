@@ -101,6 +101,14 @@ const copy = defineMessages({
     defaultMessage:
       'To collect and store the information needed for {application}, create a BigQuery dataset.',
   },
+  hcsApplication: {
+    id: 'dataIntegrations.googleCost.hcsApplication',
+    defaultMessage: 'Hybrid Committed Spend',
+  },
+  costManagementApplication: {
+    id: 'dataIntegrations.googleCost.costManagementApplication',
+    defaultMessage: 'Cost Management',
+  },
   datasetProject: {
     id: 'dataIntegrations.googleCost.datasetProject',
     defaultMessage:
@@ -261,8 +269,8 @@ const GoogleCostInstructions: React.FC<{ stage: Stage }> = ({ stage }) => {
         <p>
           {intl.formatMessage(copy.datasetIntro, {
             application: hcsEnrolled
-              ? 'Hybrid Committed Spend'
-              : 'Cost Management',
+              ? intl.formatMessage(copy.hcsApplication)
+              : intl.formatMessage(copy.costManagementApplication),
           })}
         </p>
         <ol>

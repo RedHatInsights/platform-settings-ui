@@ -6,6 +6,7 @@ import AddIntegrationWizard from './AddIntegrationWizard';
 import { useApplicationTypes } from '../data/queries/useApplicationTypes';
 import { useAwsRegions } from '../data/queries/useAwsRegions';
 import { useCreateSource } from '../data/queries/useCreateSource';
+import { useDeleteSource } from '../data/queries/useDeleteSource';
 import { useHcsEnrollment } from '../data/queries/useHcsEnrollment';
 import { useSourceTypes } from '../data/queries/useSourceTypes';
 import { useAppServices } from '../../../shared/ServiceContext';
@@ -18,6 +19,9 @@ jest.mock('../data/queries/useAwsRegions', () => ({
 }));
 jest.mock('../data/queries/useCreateSource', () => ({
   useCreateSource: jest.fn(),
+}));
+jest.mock('../data/queries/useDeleteSource', () => ({
+  useDeleteSource: jest.fn(),
 }));
 jest.mock('../data/queries/useHcsEnrollment', () => ({
   useHcsEnrollment: jest.fn(),
@@ -84,6 +88,12 @@ const mockCreateSource = {
   data: undefined,
 };
 
+const mockDeleteSource = {
+  mutate: jest.fn(),
+  reset: jest.fn(),
+  isPending: false,
+};
+
 const sourceTypes = [
   { id: '1', name: 'amazon', product_name: 'Amazon Web Services' },
   { id: '2', name: 'google', product_name: 'Google Cloud Platform' },
@@ -127,6 +137,11 @@ beforeEach(() => {
     .mocked(useCreateSource)
     .mockReturnValue(
       mockCreateSource as unknown as ReturnType<typeof useCreateSource>,
+    );
+  jest
+    .mocked(useDeleteSource)
+    .mockReturnValue(
+      mockDeleteSource as unknown as ReturnType<typeof useDeleteSource>,
     );
 });
 

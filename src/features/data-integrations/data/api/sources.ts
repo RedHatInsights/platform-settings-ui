@@ -1,6 +1,7 @@
 import {
   type ListApplicationTypesReturnType,
   type ListSourceTypesReturnType,
+  deleteSource,
   listApplicationTypes,
   listSourceTypes,
   postGraphQL,
@@ -15,6 +16,8 @@ import type {
   CreateSourceInput,
   PageSource,
   Source,
+  SourceApplication,
+  SourceEndpoint,
   SourceType,
   SourcesParams,
 } from '../types/sources.types';
@@ -35,16 +38,22 @@ const APPLICATION_TYPES_LIMIT = 100;
 const AVAILABILITY_WAIT_MS = 10_000;
 const AVAILABILITY_POLL_MS = 1_000;
 
+const validationErrorMessage = (error: unknown): string =>
+  error instanceof Error && error.message
+    ? error.message
+    : 'Unable to validate integration';
+
 async function checkApplicationAvailability(
   axios: AxiosInstance,
-  id: string,
+  application: SourceApplication,
   wait: boolean,
-): Promise<void> {
+): Promise<SourceApplication> {
+  const { id } = application;
   const deadline = Date.now() + (wait ? AVAILABILITY_WAIT_MS : 0);
 
   try {
     while (true) {
-      const { data } = await axios.get<{ availability_status?: string }>(
+      const { data } = await axios.get<SourceApplication>(
         `${SOURCES_API_BASE}/applications/${id}`,
       );
       if (
@@ -53,16 +62,40 @@ async function checkApplicationAvailability(
         data.availability_status === 'unavailable' ||
         Date.now() >= deadline
       ) {
-        return;
+        return data;
       }
       await new Promise((resolve) => setTimeout(resolve, AVAILABILITY_POLL_MS));
     }
-  } catch {
-    // Creation succeeded; a failed status read must not invite a duplicate retry.
+  } catch (error) {
+    return {
+      ...application,
+      id,
+      availability_status: 'unavailable',
+      availability_status_error: validationErrorMessage(error),
+    };
+  }
+}
+
+async function checkEndpointAvailability(
+  axios: AxiosInstance,
+  id: string,
+): Promise<SourceEndpoint> {
+  try {
+    const { data } = await axios.get<SourceEndpoint>(
+      `${SOURCES_API_BASE}/endpoints/${id}`,
+    );
+    return data;
+  } catch (error) {
+    return {
+      id,
+      availability_status: 'unavailable',
+      availability_status_error: validationErrorMessage(error),
+    };
   }
 }
 
 const endpoints = {
+  deleteSource,
   listApplicationTypes,
   listSourceTypes,
   postGraphQL,
@@ -414,19 +447,40 @@ export function createSourcesApi(axios: AxiosInstance) {
         // Creation succeeded; a failed status check must not invite a duplicate retry.
       }
 
-      await Promise.all(
-        (response.data?.applications ?? []).map((application) =>
-          checkApplicationAvailability(
-            axios,
-            application.id,
-            input.availabilityWaitApplicationTypeIds?.includes(
-              application.application_type_id,
-            ) ?? false,
-          ),
-        ),
-      );
+      const [applications, endpoint] = await Promise.all([
+        response.data?.applications
+          ? Promise.all(
+              response.data.applications.map((application) =>
+                checkApplicationAvailability(
+                  axios,
+                  application,
+                  input.availabilityWaitApplicationTypeIds?.includes(
+                    application.application_type_id,
+                  ) ?? false,
+                ).then((status) => ({ ...application, ...status })),
+              ),
+            )
+          : undefined,
+        response.data?.endpoints
+          ? Promise.all(
+              response.data.endpoints.map((createdEndpoint) =>
+                checkEndpointAvailability(axios, createdEndpoint.id).then(
+                  (status) => ({ ...createdEndpoint, ...status }),
+                ),
+              ),
+            )
+          : undefined,
+      ]);
 
-      return created;
+      return {
+        ...created,
+        ...(applications ? { applications } : {}),
+        ...(endpoint ? { endpoint } : {}),
+      };
+    },
+
+    async deleteSource(id: string): Promise<void> {
+      await api.deleteSource({ id });
     },
 
     async getSourceTypes(): Promise<SourceType[]> {

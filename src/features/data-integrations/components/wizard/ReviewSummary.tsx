@@ -22,6 +22,8 @@ import {
 } from './integrationWizardSchema';
 import type { IntegrationWizardValues } from './integrationWizardSchema';
 
+const REVIEW_TERM_WIDTH = '200px';
+
 const providerReview = defineMessages({
   clusterId: {
     id: 'dataIntegrations.review.clusterId',
@@ -88,7 +90,7 @@ const providerReview = defineMessages({
   },
   bucket: {
     id: 'dataIntegrations.review.bucket',
-    defaultMessage: 'Cloud storage bucket',
+    defaultMessage: 'S3 bucket name',
   },
   dataset: {
     id: 'dataIntegrations.review.dataset',
@@ -129,10 +131,13 @@ const providerReview = defineMessages({
   },
 });
 
-const DescriptionListTerm: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => (
-  <PatternFlyDescriptionListTerm className="pf-v6-u-text-nowrap">
+const DescriptionListTerm: React.FC<{
+  children: React.ReactNode;
+  allowWrap?: boolean;
+}> = ({ children, allowWrap = false }) => (
+  <PatternFlyDescriptionListTerm
+    className={allowWrap ? undefined : 'pf-v6-u-text-nowrap'}
+  >
     {children}
   </PatternFlyDescriptionListTerm>
 );
@@ -249,6 +254,9 @@ const ReviewSummary: React.FC = () => {
     extra?.storage_only &&
     !hcsEnrolled,
   );
+  const showPermissionsAlert = Boolean(
+    manualAppName === '/insights/platform/cost-management' && !hcsEnrolled,
+  );
 
   const formatReviewValue = (value: unknown): React.ReactNode => {
     if (typeof value === 'boolean') {
@@ -273,7 +281,7 @@ const ReviewSummary: React.FC = () => {
     <DescriptionList
       isHorizontal
       tabIndex={0}
-      horizontalTermWidthModifier={{ default: '200px' }}
+      horizontalTermWidthModifier={{ default: REVIEW_TERM_WIDTH }}
     >
       <DescriptionListGroup>
         <DescriptionListTerm>
@@ -316,7 +324,7 @@ const ReviewSummary: React.FC = () => {
       {reviewFields.map(({ label, value }) =>
         value !== undefined && value !== '' ? (
           <DescriptionListGroup key={`${label.id}-${String(value)}`}>
-            <DescriptionListTerm>
+            <DescriptionListTerm allowWrap={label === providerReview.orgUnits}>
               {intl.formatMessage(label)}
             </DescriptionListTerm>
             <DescriptionListDescription>
@@ -412,14 +420,16 @@ const ReviewSummary: React.FC = () => {
         )}
       {provider === 'amazon' && credential && (
         <>
-          <DescriptionListGroup>
-            <DescriptionListTerm>
-              {intl.formatMessage(messages.wizardReviewAuthType)}
-            </DescriptionListTerm>
-            <DescriptionListDescription>
-              {authType ? authTypeLabel(authType, intl) : ''}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
+          {isAccountAuthorization && (
+            <DescriptionListGroup>
+              <DescriptionListTerm>
+                {intl.formatMessage(messages.wizardReviewAuthType)}
+              </DescriptionListTerm>
+              <DescriptionListDescription>
+                {authType ? authTypeLabel(authType, intl) : ''}
+              </DescriptionListDescription>
+            </DescriptionListGroup>
+          )}
           <DescriptionListGroup>
             <DescriptionListTerm>
               {intl.formatMessage(
@@ -471,7 +481,7 @@ const ReviewSummary: React.FC = () => {
           {intl.formatMessage(providerReview.customCostDescription)}
         </Alert>
       )}
-      {provider === 'openshift' && (
+      {showPermissionsAlert && (
         <Alert
           isInline
           className="pf-v6-u-mt-md pf-v6-u-w-100"

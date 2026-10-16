@@ -1,7 +1,11 @@
 import React from 'react';
+import { FormattedMessage } from 'react-intl';
 import { useIntl } from 'react-intl';
 import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
-import { ClipboardCopy } from '@patternfly/react-core/dist/dynamic/components/ClipboardCopy';
+import {
+  ClipboardCopy,
+  ClipboardCopyVariant,
+} from '@patternfly/react-core/dist/dynamic/components/ClipboardCopy';
 import { Content } from '@patternfly/react-core/dist/dynamic/components/Content';
 import { Alert } from '@patternfly/react-core/dist/dynamic/components/Alert';
 import { Button } from '@patternfly/react-core/dist/dynamic/components/Button';
@@ -34,6 +38,18 @@ const COST_ACCESS_GUIDE =
 const COST_TAGS_GUIDE =
   'https://docs.redhat.com/en/documentation/cost_management_service/1-latest/integrate-adding_filtered_aws_int#activating-aws-tags';
 const PROVISIONING_ROLE_NAME = 'RH-HCC-provisioning-role';
+
+const generateExternalId = () => {
+  if (typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(
+    '',
+  );
+};
+
 const PROVISIONING_PERMISSIONS = [
   'IAM:GetPolicyVersion',
   'IAM:GetPolicy',
@@ -77,10 +93,26 @@ const AwsManualInstructions: React.FC<{
     ? intl.formatMessage(messages.wizardAwsHcsName)
     : intl.formatMessage(messages.wizardAwsCostManagementName);
   const values = form.getState().values as IntegrationWizardValues;
+  const [generatedExternalId] = React.useState(() =>
+    stage === 'role' ? generateExternalId() : undefined,
+  );
   const provisioning = useAwsProvisioningAccount(
     applicationTypeId,
     appName === PROVISIONING_APP && stage === 'role',
   );
+  const externalId =
+    values.authentication?.extra?.external_id ?? generatedExternalId;
+
+  React.useEffect(() => {
+    if (stage === 'role' && !values.authentication?.extra?.external_id) {
+      form.change?.('authentication.extra.external_id', generatedExternalId);
+    }
+  }, [
+    form,
+    generatedExternalId,
+    stage,
+    values.authentication?.extra?.external_id,
+  ]);
 
   if (stage === 'details') {
     return (
@@ -104,8 +136,9 @@ const AwsManualInstructions: React.FC<{
             </p>
             <ol>
               <li>
-                On AWS, specify or create an Amazon S3 bucket for your account
-                and enter its name below.
+                {intl.formatMessage(
+                  messages.wizardAwsCostStorageBucketInstructions,
+                )}
               </li>
             </ol>
           </>
@@ -123,19 +156,19 @@ const AwsManualInstructions: React.FC<{
       return (
         <EmptyState
           headingLevel="h4"
-          titleText="Skip this step and proceed to next step"
+          titleText={intl.formatMessage(messages.wizardAwsSkipStep)}
           icon={InfoCircleIcon}
           variant={EmptyStateVariant.sm}
         >
           <EmptyStateBody>
-            Because you have chosen to manually customize the data set you want
-            to send to cost management, you do not need to create a data export
-            (previously called a cost and usage report).
+            {intl.formatMessage(messages.wizardAwsCustomExportEmptyState)}
           </EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <a href={COST_GUIDE} target="_blank" rel="noopener noreferrer">
-                Additional configuration steps
+                {intl.formatMessage(
+                  messages.wizardAwsAdditionalConfigurationSteps,
+                )}
               </a>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -172,33 +205,42 @@ const AwsManualInstructions: React.FC<{
 
   if (stage === 'tags') {
     return (
-      <Content>
-        {!showHcs && (
+      <>
+        <Content>
+          {!showHcs && (
+            <p>
+              <a
+                href={COST_TAGS_GUIDE}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {intl.formatMessage(messages.learnMore)}
+              </a>
+            </p>
+          )}
           <p>
-            <a href={COST_TAGS_GUIDE} target="_blank" rel="noopener noreferrer">
-              {intl.formatMessage(messages.learnMore)}
-            </a>
+            {intl.formatMessage(messages.wizardAwsCostTagsInstructions, {
+              application,
+            })}
           </p>
-        )}
-        <p>{intl.formatMessage(messages.wizardAwsCostTagsInstructions)}</p>
-        <ol>
-          <li>
-            In the AWS Billing and Cost Management console, open the Cost
-            Allocation Tags section.
-          </li>
-          <li>
-            Select the tags you want to use in the {application} application,
-            and click Activate.
-          </li>
-        </ol>
+          <ol>
+            <li>{intl.formatMessage(messages.wizardAwsTagsOpenAllocation)}</li>
+            <li>
+              {intl.formatMessage(messages.wizardAwsTagsActivate, {
+                application,
+              })}
+            </li>
+          </ol>
+        </Content>
         {meteredRhel && (
           <Alert
             isInline
             variant="info"
+            className="pf-v6-u-mt-md pf-v6-u-mb-md"
             title={intl.formatMessage(messages.wizardAwsMeteredAlert)}
           />
         )}
-      </Content>
+      </>
     );
   }
 
@@ -261,21 +303,25 @@ const AwsManualInstructions: React.FC<{
           )}
         </p>
         <ol>
-          <li>
-            Sign in to the AWS Identity and Access Management (IAM) console.
-          </li>
-          <li>
-            Create a new policy, pasting the following content into the JSON
-            text box.
-          </li>
+          <li>{intl.formatMessage(messages.wizardAwsIamSignIn)}</li>
+          <li>{intl.formatMessage(messages.wizardAwsIamCreatePolicy)}</li>
+          <ClipboardCopy
+            isCode
+            variant={ClipboardCopyVariant.expansion}
+            className="pf-v6-u-m-sm-on-sm"
+            isReadOnly
+          >
+            {JSON.stringify(policy, null, 2)}
+          </ClipboardCopy>
+          <li>{intl.formatMessage(messages.wizardAwsIamCompletePolicy)}</li>
         </ol>
-        <ClipboardCopy isCode isReadOnly>
-          {JSON.stringify(policy, null, 2)}
-        </ClipboardCopy>
-        <p>Complete the process to create your new policy.</p>
         <p>
-          <strong>Do not close your browser.</strong> You will need to be logged
-          in to the IAM console to complete the next step.
+          <FormattedMessage
+            {...messages.wizardAwsIamKeepBrowserOpen}
+            values={{
+              doNotClose: (chunks) => <strong>{chunks}</strong>,
+            }}
+          />
         </p>
       </Content>
     );
@@ -286,11 +332,8 @@ const AwsManualInstructions: React.FC<{
       <Content>
         <p>{intl.formatMessage(messages.wizardAwsArnInstructions)}</p>
         <ol>
-          <li>From the Roles tab, select the role you just created.</li>
-          <li>
-            From the Summary screen, copy the role ARN and paste it in the ARN
-            field below:
-          </li>
+          <li>{intl.formatMessage(messages.wizardAwsRoleSelect)}</li>
+          <li>{intl.formatMessage(messages.wizardAwsRoleCopyArn)}</li>
         </ol>
         {appName === PROVISIONING_APP && values.meta?.account && (
           <ClipboardCopy
@@ -328,7 +371,10 @@ const AwsManualInstructions: React.FC<{
     return (
       <Content>
         <p>{intl.formatMessage(messages.wizardAwsProvisioningInstructions)}</p>
-        <ExpandableSection toggleText="See role permissions" isIndented>
+        <ExpandableSection
+          toggleText={intl.formatMessage(messages.wizardAwsRolePermissions)}
+          isIndented
+        >
           <ul>
             {PROVISIONING_PERMISSIONS.map((permission) => (
               <li key={permission}>{permission}</li>
@@ -369,9 +415,20 @@ const AwsManualInstructions: React.FC<{
       <ol>
         <li>{intl.formatMessage(messages.wizardAwsCreateNewRole)}</li>
         <li>{intl.formatMessage(messages.wizardAwsTrustAccount)}</li>
+        <ClipboardCopy className="pf-v6-u-m-sm-on-sm" isReadOnly>
+          {trustAccountId}
+        </ClipboardCopy>
+        <li>{intl.formatMessage(messages.wizardAwsExternalId)}</li>
+        <ClipboardCopy
+          className="pf-v6-u-m-sm-on-sm"
+          isReadOnly
+          textAriaLabel={intl.formatMessage(messages.wizardAwsExternalIdLabel)}
+        >
+          {externalId ?? ''}
+        </ClipboardCopy>
+        <li>{intl.formatMessage(messages.wizardAwsAttachPolicy)}</li>
+        <li>{intl.formatMessage(messages.wizardAwsFinishRole)}</li>
       </ol>
-      <ClipboardCopy isReadOnly>{trustAccountId}</ClipboardCopy>
-      <p>{intl.formatMessage(messages.wizardAwsFinishRole)}</p>
     </Content>
   );
 };

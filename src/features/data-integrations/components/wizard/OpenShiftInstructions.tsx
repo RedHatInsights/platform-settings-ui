@@ -69,7 +69,7 @@ export const OpenShiftApplicationDescription: React.FC = () => {
             <FlexItem spacer={{ default: 'spacerSm' }}>
               <CheckCircleIcon
                 color="var(--pf-t--global--icon--color--status--success--default)"
-                aria-hidden="true"
+                aria-hidden
               />
             </FlexItem>
             <FlexItem>

@@ -41,6 +41,7 @@ interface ManualApplicationProps extends UseFieldApiProps<string | undefined> {
 const COST_MANAGEMENT = '/insights/platform/cost-management';
 const CLOUD_METER = '/insights/platform/cloud-meter';
 const PROVISIONING = '/insights/platform/provisioning';
+const AMAZON_SOURCE_TYPE = 'amazon';
 
 const applicationLabel = (
   option: ApplicationOption,
@@ -108,7 +109,7 @@ const ManualAwsApplicationSelect: React.FC<UseFieldApiConfig> = (props) => {
               )}
               {option.name === CLOUD_METER && (
                 <Stack className="pf-v6-u-mt-sm pf-v6-u-ml-lg">
-                  {bundlePoints('amazon', intl).map((point) => (
+                  {bundlePoints(AMAZON_SOURCE_TYPE, intl).map((point) => (
                     <StackItem key={point.title} className="pf-v6-u-mb-sm">
                       <Flex>
                         <FlexItem spacer={{ default: 'spacerSm' }}>

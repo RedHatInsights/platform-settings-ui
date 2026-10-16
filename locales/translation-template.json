@@ -239,9 +239,288 @@
     "defaultMessage": "Analyze, forecast, and optimize your Red Hat OpenShift cluster costs in hybrid cloud environments.",
     "description": "What the Cost Management application does"
   },
+  "dataIntegrations.application.provisioning.description": {
+    "defaultMessage": "Build and launch images with custom content as Virtual Machines in hybrid cloud environments."
+  },
+  "dataIntegrations.azureCost.billingRole": {
+    "defaultMessage": "Launch the Azure Portal and give the service principal created above the {role} role."
+  },
+  "dataIntegrations.azureCost.costManagementApplication": {
+    "defaultMessage": "Cost Management"
+  },
+  "dataIntegrations.azureCost.enrollmentRole": {
+    "defaultMessage": "Launch the Azure Enterprise Portal and give the service principal created above Administrator role on the associated account."
+  },
+  "dataIntegrations.azureCost.exportAfter": {
+    "defaultMessage": "After configuring the daily export, enter its name below."
+  },
+  "dataIntegrations.azureCost.exportIntro": {
+    "defaultMessage": "Create a recurring task to export cost data to your Azure storage account, where Cost Management will retrieve the data."
+  },
+  "dataIntegrations.azureCost.exportOpen": {
+    "defaultMessage": "From the Azure portal, add a new cost export."
+  },
+  "dataIntegrations.azureCost.exportSettings": {
+    "defaultMessage": "Provide a container name and directory path, use the settings below, and leave all other options at their defaults."
+  },
+  "dataIntegrations.azureCost.exportType": {
+    "defaultMessage": "Export type"
+  },
+  "dataIntegrations.azureCost.exportTypeValue": {
+    "defaultMessage": "Daily export of month-to-date costs"
+  },
+  "dataIntegrations.azureCost.hcsApplication": {
+    "defaultMessage": "Hybrid Committed Spend"
+  },
+  "dataIntegrations.azureCost.learnMore": {
+    "defaultMessage": "Learn more"
+  },
+  "dataIntegrations.azureCost.readerRole": {
+    "defaultMessage": "Run this command in Cloud Shell to create a Cost Management Reader role:"
+  },
+  "dataIntegrations.azureCost.resourceGroup": {
+    "defaultMessage": "Resource group name"
+  },
+  "dataIntegrations.azureCost.resourceGroupValue": {
+    "defaultMessage": "Resource group for the storage account"
+  },
+  "dataIntegrations.azureCost.rolesCreate": {
+    "defaultMessage": "Run this command in Cloud Shell to create a service principal with the Storage Blob Data Reader role. Enter the tenant, client ID, and secret from its output below:"
+  },
+  "dataIntegrations.azureCost.rolesIntro": {
+    "defaultMessage": "Red Hat recommends dedicated credentials to grant {application} read-only access to Azure cost data."
+  },
+  "dataIntegrations.azureCost.scopeAlert": {
+    "defaultMessage": "If your organization is converting systems from CentOS 7 to RHEL and using hourly billing, select Include RHEL usage."
+  },
+  "dataIntegrations.azureCost.scopeCommand": {
+    "defaultMessage": "Run the following command in Cloud Shell to obtain the selected cost export scope. Enter its output below:"
+  },
+  "dataIntegrations.azureCost.scopeCustom": {
+    "defaultMessage": "Since you have chosen to manually customize the data set you want to send to Cost Management, you do not need to specify an export scope at this point and time."
+  },
+  "dataIntegrations.azureCost.scopeCustomTitle": {
+    "defaultMessage": "Skip this step and proceed to next step"
+  },
+  "dataIntegrations.azureCost.scopeIntro": {
+    "defaultMessage": "From the Azure portal, select the scope for the new cost export. If there is a need to further customize the data you want to send to Red Hat, select the manually customize option to follow the special instructions on how to."
+  },
+  "dataIntegrations.azureCost.scopeLabel": {
+    "defaultMessage": "Scope"
+  },
+  "dataIntegrations.azureCost.storageAfter": {
+    "defaultMessage": "After configuring a resource group and storage account in the Azure portal, enter the following:"
+  },
+  "dataIntegrations.azureCost.storageIntro": {
+    "defaultMessage": "Red Hat recommends creating a dedicated resource group and storage account in Azure to collect cost data and metrics for cost management."
+  },
+  "dataIntegrations.azureCost.storageName": {
+    "defaultMessage": "Storage account name"
+  },
+  "dataIntegrations.azureCost.storageNameValue": {
+    "defaultMessage": "Created storage account name or existing storage account name"
+  },
+  "dataIntegrations.azureCost.subscription": {
+    "defaultMessage": "Run the following command in Cloud Shell to obtain the Subscription ID where the cost export is stored, then enter it below:"
+  },
+  "dataIntegrations.azureLighthouse.and": {
+    "defaultMessage": "and"
+  },
+  "dataIntegrations.azureLighthouse.assignmentRole": {
+    "defaultMessage": "Managed Services Registration assignment Delete Role"
+  },
+  "dataIntegrations.azureLighthouse.azureDocs": {
+    "defaultMessage": "Azure documentation"
+  },
+  "dataIntegrations.azureLighthouse.copyId": {
+    "defaultMessage": "When deployment is complete, click Go to subscription and copy the Subscription ID."
+  },
+  "dataIntegrations.azureLighthouse.create": {
+    "defaultMessage": "Click Create to run the deployment. This creates two roles in your Azure account:"
+  },
+  "dataIntegrations.azureLighthouse.instructions": {
+    "defaultMessage": "In Azure Lighthouse, deploy the Azure Resource Manager custom template that connects your Red Hat and Azure accounts. Click Go to Lighthouse and follow these instructions:"
+  },
+  "dataIntegrations.azureLighthouse.link": {
+    "defaultMessage": "Go to Lighthouse"
+  },
+  "dataIntegrations.azureLighthouse.reader": {
+    "defaultMessage": "Reader"
+  },
+  "dataIntegrations.azureLighthouse.review": {
+    "defaultMessage": "Edit any other instance details and click Review + create."
+  },
+  "dataIntegrations.azureLighthouse.roleRequirement": {
+    "defaultMessage": "Your Azure account must have at least the Owner role for the selected subscription."
+  },
+  "dataIntegrations.azureLighthouse.roleTitle": {
+    "defaultMessage": "Azure role requirements"
+  },
+  "dataIntegrations.azureLighthouse.select": {
+    "defaultMessage": "Select the Azure subscription that you want to use with RHEL management."
+  },
+  "dataIntegrations.azureLighthouse.subscription": {
+    "defaultMessage": "Paste your Azure subscription ID from the previous step into the field below."
+  },
+  "dataIntegrations.azureLighthouse.unavailable": {
+    "defaultMessage": "The Azure Lighthouse link could not be loaded. Please return to this step and try again."
+  },
+  "dataIntegrations.azureProvisioning.lighthouse": {
+    "defaultMessage": "Complete configuration steps in Azure Lighthouse according to Microsoft instructions. When you're finished, return to this wizard to finish creating this Azure source."
+  },
+  "dataIntegrations.azureProvisioning.link": {
+    "defaultMessage": "Take me to Lighthouse"
+  },
+  "dataIntegrations.azureProvisioning.subscription": {
+    "defaultMessage": "Log in to your Azure account and navigate to your subscriptions. Copy the subscription ID you have connected through Lighthouse."
+  },
+  "dataIntegrations.googleCost.accessIntro": {
+    "defaultMessage": "To delegate account access, add a new member to your project."
+  },
+  "dataIntegrations.googleCost.accessOpen": {
+    "defaultMessage": "In your IAM & Admin console, navigate to <b>IAM</b> and click <b>Add</b> to add a new member."
+  },
+  "dataIntegrations.googleCost.accessPaste": {
+    "defaultMessage": "Paste the following value into the <b>New members</b> field:"
+  },
+  "dataIntegrations.googleCost.accessRole": {
+    "defaultMessage": "Select the role you just created."
+  },
+  "dataIntegrations.googleCost.accessSave": {
+    "defaultMessage": "Click Save."
+  },
+  "dataIntegrations.googleCost.accountError": {
+    "defaultMessage": "There is an error loading the account address. Please go back and return to this step."
+  },
+  "dataIntegrations.googleCost.accountLoading": {
+    "defaultMessage": "Loading account address..."
+  },
+  "dataIntegrations.googleCost.billingEdit": {
+    "defaultMessage": "In the <b>Detailed usage cost</b> section, click <b>Edit settings.</b>"
+  },
+  "dataIntegrations.googleCost.billingIntro": {
+    "defaultMessage": "To enable detailed billing data exports to BigQuery, set up daily cost export."
+  },
+  "dataIntegrations.googleCost.billingOpen": {
+    "defaultMessage": "In the Billing console, click <b>Billing export.</b>"
+  },
+  "dataIntegrations.googleCost.billingSave": {
+    "defaultMessage": "Click <b>Save.</b>"
+  },
+  "dataIntegrations.googleCost.billingSelect": {
+    "defaultMessage": "Select the correct project and dataset from the dropdown menus."
+  },
+  "dataIntegrations.googleCost.billingTab": {
+    "defaultMessage": "Click the <b>BigQuery export</b> tab."
+  },
+  "dataIntegrations.googleCost.bucket": {
+    "defaultMessage": "You will need to create a cloud storage bucket that will contain the customized billing reports."
+  },
+  "dataIntegrations.googleCost.bucketName": {
+    "defaultMessage": "After creating the cloud storage bucket, enter its name in the following:"
+  },
+  "dataIntegrations.googleCost.costManagementApplication": {
+    "defaultMessage": "Cost Management"
+  },
+  "dataIntegrations.googleCost.customize": {
+    "defaultMessage": "If you need to further customize the data sent to Cost Management, select the manually customize option for the additional setup instructions."
+  },
+  "dataIntegrations.googleCost.datasetCreate": {
+    "defaultMessage": "Click <b>Create dataset.</b>"
+  },
+  "dataIntegrations.googleCost.datasetIntro": {
+    "defaultMessage": "To collect and store the information needed for {application}, create a BigQuery dataset."
+  },
+  "dataIntegrations.googleCost.datasetName": {
+    "defaultMessage": "In the <b>Dataset ID</b> field, enter a name for your dataset."
+  },
+  "dataIntegrations.googleCost.datasetProject": {
+    "defaultMessage": "In the BigQuery console, select your project (<b>{projectId}</b>) from the navigation menu."
+  },
+  "dataIntegrations.googleCost.hcsApplication": {
+    "defaultMessage": "Hybrid Committed Spend"
+  },
+  "dataIntegrations.googleCost.iamCreate": {
+    "defaultMessage": "Create a new role."
+  },
+  "dataIntegrations.googleCost.iamFinish": {
+    "defaultMessage": "Click <b>Create role.</b>"
+  },
+  "dataIntegrations.googleCost.iamIntro": {
+    "defaultMessage": "To specify GCP access permissions for Red Hat, create an Identity and Access Management (IAM) role."
+  },
+  "dataIntegrations.googleCost.iamOpen": {
+    "defaultMessage": "From the GCP console, navigate to <b>IAM & Admin > Roles.</b>"
+  },
+  "dataIntegrations.googleCost.iamPermissions": {
+    "defaultMessage": "Add the following permissions to your custom role:"
+  },
+  "dataIntegrations.googleCost.learnMore": {
+    "defaultMessage": "Learn more"
+  },
+  "dataIntegrations.googleCost.project": {
+    "defaultMessage": "Google Cloud Platform (GCP) recommends that you create a cloud project to contain all your billing administration needs. We’ll use this project to set up your BigQuery billing export."
+  },
+  "dataIntegrations.googleCost.projectId": {
+    "defaultMessage": "Enter the ID of a project within your GCP billing account."
+  },
+  "dataIntegrations.googleProvisioning.connect": {
+    "defaultMessage": "Connect Google Cloud"
+  },
+  "dataIntegrations.googleProvisioning.error": {
+    "defaultMessage": "There was an error while loading the commands. Please go back and return to this step to try again."
+  },
+  "dataIntegrations.googleProvisioning.intro": {
+    "defaultMessage": "To delegate account access, create a custom role and grant it to the Red Hat service account."
+  },
+  "dataIntegrations.googleProvisioning.loading": {
+    "defaultMessage": "Loading configuration..."
+  },
+  "dataIntegrations.googleProvisioning.open": {
+    "defaultMessage": "Click Connect Google Cloud to open Cloud Shell in a new tab."
+  },
+  "dataIntegrations.googleProvisioning.paste": {
+    "defaultMessage": "Paste this script in Cloud Shell and wait for the role creation and binding to finish."
+  },
+  "dataIntegrations.googleProvisioning.permissions": {
+    "defaultMessage": "See role permissions"
+  },
+  "dataIntegrations.googleProvisioning.project": {
+    "defaultMessage": "Log in to Google Cloud Platform and copy your project ID."
+  },
+  "dataIntegrations.googleProvisioning.return": {
+    "defaultMessage": "Return to this window and click Next."
+  },
+  "dataIntegrations.googleProvisioning.steps": {
+    "defaultMessage": "Follow these steps to create the role:"
+  },
   "dataIntegrations.myDataIntegrations.placeholder": {
     "defaultMessage": "The data integrations table is coming soon.",
     "description": "Placeholder text for the not-yet-built integrations table"
+  },
+  "dataIntegrations.openshift.costDescription": {
+    "defaultMessage": "Analyze, forecast, and optimize your Red Hat OpenShift cluster costs in hybrid cloud environments."
+  },
+  "dataIntegrations.openshift.costTitle": {
+    "defaultMessage": "Cost Management"
+  },
+  "dataIntegrations.openshift.learnMore": {
+    "defaultMessage": "Learn more"
+  },
+  "dataIntegrations.openshift.operator": {
+    "defaultMessage": "For Red Hat OpenShift Container Platform 4.6 and later, install the {operator} from the OpenShift Container Platform web console."
+  },
+  "dataIntegrations.openshift.operatorClusterId": {
+    "defaultMessage": "Otherwise, enter the cluster identifier below. You can find the cluster identifier in the cluster’s Help > About screen."
+  },
+  "dataIntegrations.openshift.operatorStop": {
+    "defaultMessage": "If you configured the operator to create an integration (create_source: true), {stop} here and {cancel} out of this flow."
+  },
+  "dataIntegrations.openshift.trackDescription": {
+    "defaultMessage": "Track spend through Red Hat OpenShift Container Platform and apply them to your Red Hat committed spend."
+  },
+  "dataIntegrations.openshift.trackTitle": {
+    "defaultMessage": "Track Red Hat committed spend"
   },
   "dataIntegrations.page.description": {
     "defaultMessage": "Manage your sourcing and sharing with popular cloud providers.",
@@ -255,21 +534,286 @@
     "defaultMessage": "Data Integrations",
     "description": "Data Integrations page title"
   },
+  "dataIntegrations.permissionsAlert.description": {
+    "defaultMessage": "You do not have the permissions for integration management. Contact your organization admin if you need these permissions updated.",
+    "description": "Description of the integration permissions alert"
+  },
+  "dataIntegrations.permissionsAlert.link": {
+    "defaultMessage": "Request access via the Virtual Assistant",
+    "description": "Link to request integration access"
+  },
+  "dataIntegrations.permissionsAlert.title": {
+    "defaultMessage": "Need to create an integration?",
+    "description": "Title of the integration permissions alert"
+  },
+  "dataIntegrations.provider.access": {
+    "defaultMessage": "Assign access"
+  },
+  "dataIntegrations.provider.accessGuide": {
+    "defaultMessage": "Assign the IAM role to the service account used by this integration."
+  },
+  "dataIntegrations.provider.accountAccess": {
+    "defaultMessage": "Enable account access"
+  },
   "dataIntegrations.provider.amazon": {
     "defaultMessage": "Amazon Web Services",
     "description": "Amazon Web Services provider name"
+  },
+  "dataIntegrations.provider.amazonShort": {
+    "defaultMessage": "AWS",
+    "description": "Short Amazon Web Services provider name for wizard titles"
+  },
+  "dataIntegrations.provider.application": {
+    "defaultMessage": "Select application"
+  },
+  "dataIntegrations.provider.applicationField": {
+    "defaultMessage": "Select an application"
+  },
+  "dataIntegrations.provider.applicationIntro": {
+    "defaultMessage": "Select an application to connect to your integration. You can connect additional applications after integration creation."
   },
   "dataIntegrations.provider.azure": {
     "defaultMessage": "Microsoft Azure",
     "description": "Microsoft Azure provider name"
   },
+  "dataIntegrations.provider.billing": {
+    "defaultMessage": "Billing export"
+  },
+  "dataIntegrations.provider.billingGuide": {
+    "defaultMessage": "Enable billing export to the dataset before finishing this integration."
+  },
+  "dataIntegrations.provider.bucket": {
+    "defaultMessage": "Cloud storage bucket name"
+  },
+  "dataIntegrations.provider.bucketGuide": {
+    "defaultMessage": "Create the cloud storage bucket that will hold the customized billing export."
+  },
+  "dataIntegrations.provider.bucketStep": {
+    "defaultMessage": "Create cloud storage bucket"
+  },
+  "dataIntegrations.provider.ca": {
+    "defaultMessage": "TLS certificate (PEM)"
+  },
+  "dataIntegrations.provider.clientId": {
+    "defaultMessage": "Client (Application) ID"
+  },
+  "dataIntegrations.provider.clientSecret": {
+    "defaultMessage": "Client secret"
+  },
+  "dataIntegrations.provider.clusterId": {
+    "defaultMessage": "Cluster Identifier"
+  },
+  "dataIntegrations.provider.clusterUrl": {
+    "defaultMessage": "OpenShift cluster URL"
+  },
+  "dataIntegrations.provider.credentials": {
+    "defaultMessage": "Credentials"
+  },
+  "dataIntegrations.provider.customCostExport": {
+    "defaultMessage": "I wish to manually customize the data set sent to Cost Management"
+  },
+  "dataIntegrations.provider.dataset": {
+    "defaultMessage": "Dataset ID"
+  },
+  "dataIntegrations.provider.datasetGuide": {
+    "defaultMessage": "Create the billing dataset and enter its ID when using the default export."
+  },
+  "dataIntegrations.provider.datasetStep": {
+    "defaultMessage": "Create dataset"
+  },
+  "dataIntegrations.provider.defaultCostExport": {
+    "defaultMessage": "I am OK with sending the default data set to Cost Management"
+  },
+  "dataIntegrations.provider.export": {
+    "defaultMessage": "Daily export"
+  },
+  "dataIntegrations.provider.exportGuide": {
+    "defaultMessage": "Configure a daily export of Azure cost data to the storage account."
+  },
+  "dataIntegrations.provider.exportName": {
+    "defaultMessage": "Cost export name"
+  },
   "dataIntegrations.provider.google": {
     "defaultMessage": "Google Cloud Platform",
     "description": "Google Cloud Platform provider name"
   },
+  "dataIntegrations.provider.iam": {
+    "defaultMessage": "Create IAM role"
+  },
+  "dataIntegrations.provider.iamGuide": {
+    "defaultMessage": "Create the IAM role that grants Cost Management access to billing data."
+  },
+  "dataIntegrations.provider.learnMore": {
+    "defaultMessage": "Learn more"
+  },
+  "dataIntegrations.provider.lighthouse": {
+    "defaultMessage": "Configure Azure Lighthouse"
+  },
+  "dataIntegrations.provider.metered": {
+    "defaultMessage": "Include RHEL usage"
+  },
+  "dataIntegrations.provider.offlineToken": {
+    "defaultMessage": "Obtain offline token"
+  },
   "dataIntegrations.provider.openshift": {
     "defaultMessage": "OpenShift Container Platform",
     "description": "OpenShift Container Platform provider name"
+  },
+  "dataIntegrations.provider.operator": {
+    "defaultMessage": "Install and configure operator"
+  },
+  "dataIntegrations.provider.operatorGuide": {
+    "defaultMessage": "Install the cost management operator in your cluster, then enter its cluster identifier."
+  },
+  "dataIntegrations.provider.playbook": {
+    "defaultMessage": "Run Ansible playbook"
+  },
+  "dataIntegrations.provider.project": {
+    "defaultMessage": "Project"
+  },
+  "dataIntegrations.provider.projectGuide": {
+    "defaultMessage": "Enter the Google billing project and service account credentials."
+  },
+  "dataIntegrations.provider.projectId": {
+    "defaultMessage": "Project ID"
+  },
+  "dataIntegrations.provider.projectIdStep": {
+    "defaultMessage": "Enter Project ID"
+  },
+  "dataIntegrations.provider.projectRole": {
+    "defaultMessage": "Create custom role"
+  },
+  "dataIntegrations.provider.resourceGroup": {
+    "defaultMessage": "Resource group name"
+  },
+  "dataIntegrations.provider.roles": {
+    "defaultMessage": "Roles"
+  },
+  "dataIntegrations.provider.rolesGuide": {
+    "defaultMessage": "Assign the service principal access to the export, then enter its tenant ID, client ID, and secret."
+  },
+  "dataIntegrations.provider.scope": {
+    "defaultMessage": "Specify cost export scope"
+  },
+  "dataIntegrations.provider.scopeGuide": {
+    "defaultMessage": "Choose the billing export scope and whether to include RHEL usage."
+  },
+  "dataIntegrations.provider.scopeName": {
+    "defaultMessage": "Cost export scope"
+  },
+  "dataIntegrations.provider.serviceJson": {
+    "defaultMessage": "Service Account JSON"
+  },
+  "dataIntegrations.provider.setSubscriptionId": {
+    "defaultMessage": "Set subscription ID"
+  },
+  "dataIntegrations.provider.storageAccount": {
+    "defaultMessage": "Storage account name"
+  },
+  "dataIntegrations.provider.storageGuide": {
+    "defaultMessage": "Create a resource group and storage account for the daily cost export."
+  },
+  "dataIntegrations.provider.storageOnly": {
+    "defaultMessage": "Customize the data sent to Cost Management"
+  },
+  "dataIntegrations.provider.storageStep": {
+    "defaultMessage": "Resource group and storage account"
+  },
+  "dataIntegrations.provider.subscriptionId": {
+    "defaultMessage": "Subscription ID"
+  },
+  "dataIntegrations.provider.tenantId": {
+    "defaultMessage": "Tenant (Directory) ID"
+  },
+  "dataIntegrations.provider.token": {
+    "defaultMessage": "Token"
+  },
+  "dataIntegrations.provider.verifyTls": {
+    "defaultMessage": "Verify TLS certificates"
+  },
+  "dataIntegrations.review.accountNumber": {
+    "defaultMessage": "Account number"
+  },
+  "dataIntegrations.review.aliases": {
+    "defaultMessage": "Include AWS account aliases"
+  },
+  "dataIntegrations.review.awsRegion": {
+    "defaultMessage": "AWS region"
+  },
+  "dataIntegrations.review.bucket": {
+    "defaultMessage": "S3 bucket name"
+  },
+  "dataIntegrations.review.ca": {
+    "defaultMessage": "TLS certificate"
+  },
+  "dataIntegrations.review.clientId": {
+    "defaultMessage": "Client ID"
+  },
+  "dataIntegrations.review.clusterId": {
+    "defaultMessage": "Cluster identifier"
+  },
+  "dataIntegrations.review.clusterUrl": {
+    "defaultMessage": "Cluster URL"
+  },
+  "dataIntegrations.review.credential": {
+    "defaultMessage": "Credential"
+  },
+  "dataIntegrations.review.customCost.description": {
+    "defaultMessage": "You will need to perform more configuration steps after creating the source. To find more information, click on the link below."
+  },
+  "dataIntegrations.review.customCost.link": {
+    "defaultMessage": "Customizing your {application} cost and usage report"
+  },
+  "dataIntegrations.review.customCost.title": {
+    "defaultMessage": "Don't forget additional configuration steps!"
+  },
+  "dataIntegrations.review.dataset": {
+    "defaultMessage": "Dataset ID"
+  },
+  "dataIntegrations.review.disabled": {
+    "defaultMessage": "Disabled"
+  },
+  "dataIntegrations.review.enabled": {
+    "defaultMessage": "Enabled"
+  },
+  "dataIntegrations.review.exportName": {
+    "defaultMessage": "Cost export name"
+  },
+  "dataIntegrations.review.includeRhel": {
+    "defaultMessage": "Include RHEL usage"
+  },
+  "dataIntegrations.review.none": {
+    "defaultMessage": "Not provided"
+  },
+  "dataIntegrations.review.orgUnits": {
+    "defaultMessage": "Include AWS organizational units"
+  },
+  "dataIntegrations.review.projectId": {
+    "defaultMessage": "Project ID"
+  },
+  "dataIntegrations.review.provided": {
+    "defaultMessage": "Provided"
+  },
+  "dataIntegrations.review.resourceGroup": {
+    "defaultMessage": "Resource group"
+  },
+  "dataIntegrations.review.scope": {
+    "defaultMessage": "Cost export scope"
+  },
+  "dataIntegrations.review.storageAccount": {
+    "defaultMessage": "Storage account"
+  },
+  "dataIntegrations.review.subscription": {
+    "defaultMessage": "Subscription ID"
+  },
+  "dataIntegrations.review.subscriptionId": {
+    "defaultMessage": "Subscription ID"
+  },
+  "dataIntegrations.review.tenantId": {
+    "defaultMessage": "Tenant ID"
+  },
+  "dataIntegrations.review.verifyTls": {
+    "defaultMessage": "Verify TLS"
   },
   "dataIntegrations.rhelBundle.autoregistration.description": {
     "defaultMessage": "Cloud instances automatically connect to console.redhat.com when provisioned.",
@@ -302,6 +846,18 @@
   "dataIntegrations.rhelBundle.subWatch.title": {
     "defaultMessage": "High precision subscription watch data",
     "description": "Title of the subscription watch capability"
+  },
+  "dataIntegrations.rhelManagement.azurePlaybook": {
+    "defaultMessage": "Download and run the following commands against a running Azure VM."
+  },
+  "dataIntegrations.rhelManagement.googlePlaybook": {
+    "defaultMessage": "Download and run the following commands against a running Google Cloud VM."
+  },
+  "dataIntegrations.rhelManagement.token": {
+    "defaultMessage": "Generate a token to authenticate the calls to APIs for Red Hat services."
+  },
+  "dataIntegrations.rhelManagement.tokenLink": {
+    "defaultMessage": "To obtain an offline token, follow the steps at {link}."
   },
   "dataIntegrations.sourceDetail.actions.cancel": {
     "defaultMessage": "Cancel",
@@ -599,6 +1155,9 @@
     "defaultMessage": "Back",
     "description": "Wizard Back button"
   },
+  "dataIntegrations.wizard.bundleLabel": {
+    "defaultMessage": "Bundle"
+  },
   "dataIntegrations.wizard.cancel": {
     "defaultMessage": "Cancel",
     "description": "Wizard Cancel button"
@@ -707,12 +1266,18 @@
     "defaultMessage": "Unable to load integration types",
     "description": "Title shown when the provider catalogue fails to load"
   },
+  "dataIntegrations.wizard.google.customExport": {
+    "defaultMessage": "I wish to manually customize the dataset sent to Cost Management"
+  },
+  "dataIntegrations.wizard.google.defaultExport": {
+    "defaultMessage": "I am OK with sending the default dataset to Cost Management"
+  },
   "dataIntegrations.wizard.loading": {
     "defaultMessage": "Loading integration types",
     "description": "Accessible label for the spinner shown while providers load"
   },
   "dataIntegrations.wizard.manual.applicationDescription": {
-    "defaultMessage": "Select one application to connect to your integration. You can connect additional applications after integration creation."
+    "defaultMessage": "Select an application to connect to your integration. You can connect additional applications after integration creation."
   },
   "dataIntegrations.wizard.manual.applicationLabel": {
     "defaultMessage": "Select an application"
@@ -720,23 +1285,41 @@
   "dataIntegrations.wizard.manual.applicationTitle": {
     "defaultMessage": "Select application"
   },
+  "dataIntegrations.wizard.manual.awsAccountAccessTitle": {
+    "defaultMessage": "Enable account access"
+  },
   "dataIntegrations.wizard.manual.awsAccountInstructions": {
-    "defaultMessage": "Sign in to AWS and enter your account number below."
+    "defaultMessage": "Log in to your AWS account and copy your account number."
   },
   "dataIntegrations.wizard.manual.awsAccountNumber": {
-    "defaultMessage": "AWS account number"
+    "defaultMessage": "Account number"
+  },
+  "dataIntegrations.wizard.manual.awsAccountNumberTitle": {
+    "defaultMessage": "AWS Account Number"
+  },
+  "dataIntegrations.wizard.manual.awsAdditionalConfigurationSteps": {
+    "defaultMessage": "Additional configuration steps"
   },
   "dataIntegrations.wizard.manual.awsAliases": {
     "defaultMessage": "Include AWS account aliases"
+  },
+  "dataIntegrations.wizard.manual.awsAliasesHelp": {
+    "defaultMessage": "If there are account aliases, they will appear and be used for filtering when reporting on AWS accounts. This will include \"iam:ListAccountAliases\" in the IAM policy actions."
+  },
+  "dataIntegrations.wizard.manual.awsAliasesHelpLabel": {
+    "defaultMessage": "Help for AWS account aliases"
   },
   "dataIntegrations.wizard.manual.awsArnAuth": {
     "defaultMessage": "AWS IAM role"
   },
   "dataIntegrations.wizard.manual.awsArnInstructions": {
-    "defaultMessage": "Copy the ARN of the role you created and enter it below."
+    "defaultMessage": "To enable account access, capture the ARN associated with the role you just created."
   },
   "dataIntegrations.wizard.manual.awsArnTitle": {
     "defaultMessage": "Enter ARN"
+  },
+  "dataIntegrations.wizard.manual.awsAttachPolicy": {
+    "defaultMessage": "Attach the permissions policy that you just created."
   },
   "dataIntegrations.wizard.manual.awsBucket": {
     "defaultMessage": "S3 bucket name"
@@ -750,11 +1333,38 @@
   "dataIntegrations.wizard.manual.awsConnectCloudFormation": {
     "defaultMessage": "Connect AWS with CloudFormation"
   },
+  "dataIntegrations.wizard.manual.awsCostExportCompression": {
+    "defaultMessage": "Compression type: GZIP"
+  },
+  "dataIntegrations.wizard.manual.awsCostExportCreate": {
+    "defaultMessage": "Create a data export using the following values:"
+  },
   "dataIntegrations.wizard.manual.awsCostExportCustom": {
     "defaultMessage": "Skip creating the default data export. Follow the additional configuration steps for a customized export."
   },
   "dataIntegrations.wizard.manual.awsCostExportDefault": {
     "defaultMessage": "In AWS, create a Legacy CUR export named koku. Include resource IDs, enable automatic refresh, select hourly data, enable Redshift and QuickSight, disable Athena, use GZIP compression, and set the report path prefix to cost."
+  },
+  "dataIntegrations.wizard.manual.awsCostExportHourly": {
+    "defaultMessage": "Time unit: hourly"
+  },
+  "dataIntegrations.wizard.manual.awsCostExportName": {
+    "defaultMessage": "Export name: koku"
+  },
+  "dataIntegrations.wizard.manual.awsCostExportPrefix": {
+    "defaultMessage": "Report path prefix: cost"
+  },
+  "dataIntegrations.wizard.manual.awsCostExportRefresh": {
+    "defaultMessage": "Enable: Refresh automatically"
+  },
+  "dataIntegrations.wizard.manual.awsCostExportResourceIds": {
+    "defaultMessage": "Include: Resource IDs"
+  },
+  "dataIntegrations.wizard.manual.awsCostExportServices": {
+    "defaultMessage": "Enable support for: RedShift, QuickSight and disable support for Athena"
+  },
+  "dataIntegrations.wizard.manual.awsCostExportType": {
+    "defaultMessage": "Export type: Legacy CUR export"
   },
   "dataIntegrations.wizard.manual.awsCostInstructions": {
     "defaultMessage": "Create an S3 bucket for {application}, then follow the data export, IAM policy, and role steps."
@@ -762,59 +1372,119 @@
   "dataIntegrations.wizard.manual.awsCostManagementName": {
     "defaultMessage": "Cost Management"
   },
+  "dataIntegrations.wizard.manual.awsCostStorageBucketInstructions": {
+    "defaultMessage": "On AWS, specify or create an Amazon S3 bucket for your account and enter its name below."
+  },
+  "dataIntegrations.wizard.manual.awsCostStorageInstructions": {
+    "defaultMessage": "To store the data export (previously called a cost and usage report) for cost management, create an Amazon S3 bucket."
+  },
+  "dataIntegrations.wizard.manual.awsCostStorageTitle": {
+    "defaultMessage": "Create storage"
+  },
+  "dataIntegrations.wizard.manual.awsCostTagsAccountInstructions": {
+    "defaultMessage": "To use account aliases and organizational units in the display and filter of AWS resources, select the following."
+  },
   "dataIntegrations.wizard.manual.awsCostTagsInstructions": {
-    "defaultMessage": "In AWS Billing and Cost Management, open Cost Allocation Tags and activate the tags you want {application} to import."
+    "defaultMessage": "To use tags to organize your AWS resources in the {application} application, activate your tags in AWS to allow them to be imported automatically."
   },
   "dataIntegrations.wizard.manual.awsCostTagsTitle": {
     "defaultMessage": "Tags, aliases and organizational units"
   },
   "dataIntegrations.wizard.manual.awsCostUsageInstructions": {
-    "defaultMessage": "Choose whether to send the default AWS data export to {application} or customize it manually."
+    "defaultMessage": "The information {application} would need is your AWS account's data export. If there is a need to further customize the data export you want to send to {application}, select the manually customize option and follow the special instructions on how to."
   },
   "dataIntegrations.wizard.manual.awsCostUsageTitle": {
     "defaultMessage": "Create cost and usage report"
   },
+  "dataIntegrations.wizard.manual.awsCreateNewRole": {
+    "defaultMessage": "From the AWS Identity and Access Management console, create a new role."
+  },
   "dataIntegrations.wizard.manual.awsCreateRoleInstructions": {
-    "defaultMessage": "Create an IAM role and attach the policy you just created."
+    "defaultMessage": "To delegate account access, create an IAM role to associate with your IAM policy."
   },
   "dataIntegrations.wizard.manual.awsCustomExport": {
-    "defaultMessage": "Customize the data export manually"
+    "defaultMessage": "I wish to manually customize the data export sent to Cost Management"
+  },
+  "dataIntegrations.wizard.manual.awsCustomExportEmptyState": {
+    "defaultMessage": "Because you have chosen to manually customize the data set you want to send to cost management, you do not need to create a data export (previously called a cost and usage report)."
+  },
+  "dataIntegrations.wizard.manual.awsCustomExportHelp": {
+    "defaultMessage": "There will be a set of instructions at the end of this wizard that will guide you through completing the customized configuration in the AWS console."
+  },
+  "dataIntegrations.wizard.manual.awsCustomExportHelpLabel": {
+    "defaultMessage": "Help for manual data export configuration"
   },
   "dataIntegrations.wizard.manual.awsDefaultExport": {
-    "defaultMessage": "Send the default data export to Cost Management"
+    "defaultMessage": "I am OK with sending the default data export to Cost Management"
   },
   "dataIntegrations.wizard.manual.awsExportMode": {
     "defaultMessage": "Cost and usage report"
   },
   "dataIntegrations.wizard.manual.awsExternalId": {
-    "defaultMessage": "Enable the external ID requirement and use this value:"
+    "defaultMessage": "Paste the following value in the External ID field:"
   },
   "dataIntegrations.wizard.manual.awsExternalIdLabel": {
     "defaultMessage": "External ID"
   },
   "dataIntegrations.wizard.manual.awsFinishRole": {
-    "defaultMessage": "Attach your IAM policy to the role, then copy its ARN into the field below."
+    "defaultMessage": "Complete the process to create your new role."
   },
   "dataIntegrations.wizard.manual.awsHcsName": {
     "defaultMessage": "Hybrid Committed Spend"
   },
+  "dataIntegrations.wizard.manual.awsIamCompletePolicy": {
+    "defaultMessage": "Complete the process to create your new policy."
+  },
+  "dataIntegrations.wizard.manual.awsIamCreatePolicy": {
+    "defaultMessage": "Create a new policy, pasting the following content into the JSON text box."
+  },
+  "dataIntegrations.wizard.manual.awsIamKeepBrowserOpen": {
+    "defaultMessage": "<doNotClose>Do not close your browser.</doNotClose> You will need to be logged in to the IAM console to complete the next step."
+  },
+  "dataIntegrations.wizard.manual.awsIamSignIn": {
+    "defaultMessage": "Sign in to the AWS Identity and Access Management (IAM) console."
+  },
   "dataIntegrations.wizard.manual.awsMetered": {
     "defaultMessage": "Include RHEL usage"
+  },
+  "dataIntegrations.wizard.manual.awsMeteredAlert": {
+    "defaultMessage": "If your organization is converting systems from CentOS 7 to RHEL and using hourly billing, activate the com_redhat_rhel tag for your systems in the Cost Allocation Tags section of the AWS console. After activating the tag in AWS, select Include RHEL usage."
   },
   "dataIntegrations.wizard.manual.awsOrgUnits": {
     "defaultMessage": "Include AWS organizational units"
   },
+  "dataIntegrations.wizard.manual.awsOrgUnitsHelp": {
+    "defaultMessage": "If there are organizational units, they will be used for filtering when reporting on AWS resources. This will include \"organizations:List*\" and \"organizations:Describe*\" in the IAM policy actions."
+  },
+  "dataIntegrations.wizard.manual.awsOrgUnitsHelpLabel": {
+    "defaultMessage": "Help for AWS organizational units"
+  },
   "dataIntegrations.wizard.manual.awsPolicyInstructions": {
-    "defaultMessage": "In AWS IAM, create a policy using this JSON:"
+    "defaultMessage": "To grant permissions to the cost management report you just configured, create an AWS Identity and Access Management (IAM) policy."
   },
   "dataIntegrations.wizard.manual.awsPolicyTitle": {
     "defaultMessage": "Create IAM policy"
   },
   "dataIntegrations.wizard.manual.awsProvisioningError": {
-    "defaultMessage": "Unable to load the provisioning account. Return to this step to try again."
+    "defaultMessage": "There was an error while loading the commands. Please go back and return to this step to try again."
   },
   "dataIntegrations.wizard.manual.awsProvisioningInstructions": {
-    "defaultMessage": "Create the provisioning IAM role in your AWS account, then enter its ARN below."
+    "defaultMessage": "To integrate your AWS account with our service, you need to create an IAM role."
+  },
+  "dataIntegrations.wizard.manual.awsProvisioningLoading": {
+    "defaultMessage": "Loading configuration..."
+  },
+  "dataIntegrations.wizard.manual.awsProvisioningStepOne": {
+    "defaultMessage": "Click on 'Connect AWS' to open AWS CloudFormation in a new tab with the IAM role template."
+  },
+  "dataIntegrations.wizard.manual.awsProvisioningStepThree": {
+    "defaultMessage": "Return to this window and click 'Next' to retrieve the new role's ARN."
+  },
+  "dataIntegrations.wizard.manual.awsProvisioningStepTwo": {
+    "defaultMessage": "In AWS CloudFormation, click 'Create Stack' to initiate the creation of the IAM role. Wait until the status shows CREATE_COMPLETE."
+  },
+  "dataIntegrations.wizard.manual.awsProvisioningSteps": {
+    "defaultMessage": "Follow these steps to create the role:"
   },
   "dataIntegrations.wizard.manual.awsRegion": {
     "defaultMessage": "AWS region"
@@ -826,10 +1496,19 @@
     "defaultMessage": "Create an IAM policy granting sts:GetCallerIdentity, then create an IAM role for RHEL management."
   },
   "dataIntegrations.wizard.manual.awsRoleArn": {
-    "defaultMessage": "IAM role ARN"
+    "defaultMessage": "ARN"
   },
   "dataIntegrations.wizard.manual.awsRoleArnPattern": {
     "defaultMessage": "ARN must start with arn:aws:"
+  },
+  "dataIntegrations.wizard.manual.awsRoleCopyArn": {
+    "defaultMessage": "From the Summary screen, copy the role ARN and paste it in the ARN field below:"
+  },
+  "dataIntegrations.wizard.manual.awsRolePermissions": {
+    "defaultMessage": "See role permissions"
+  },
+  "dataIntegrations.wizard.manual.awsRoleSelect": {
+    "defaultMessage": "From the Roles tab, select the role you just created."
   },
   "dataIntegrations.wizard.manual.awsRoleTitle": {
     "defaultMessage": "Create IAM role"
@@ -840,8 +1519,17 @@
   "dataIntegrations.wizard.manual.awsSetupInstructions": {
     "defaultMessage": "AWS setup instructions"
   },
+  "dataIntegrations.wizard.manual.awsSkipStep": {
+    "defaultMessage": "Skip this step and proceed to next step"
+  },
+  "dataIntegrations.wizard.manual.awsTagsActivate": {
+    "defaultMessage": "Select the tags you want to use in the {application} application, and click Activate."
+  },
+  "dataIntegrations.wizard.manual.awsTagsOpenAllocation": {
+    "defaultMessage": "In the AWS Billing and Cost Management console, open the Cost Allocation Tags section."
+  },
   "dataIntegrations.wizard.manual.awsTrustAccount": {
-    "defaultMessage": "In the AWS IAM role trust settings, choose another AWS account and use this account ID:"
+    "defaultMessage": "Select another AWS account from the list of trusted entities and paste the following value into the Account ID field:"
   },
   "dataIntegrations.wizard.manual.provisioningArnAuth": {
     "defaultMessage": "Launch images IAM role"
@@ -869,17 +1557,37 @@
     "defaultMessage": "Name integration",
     "description": "Title of the integration naming wizard step"
   },
+  "dataIntegrations.wizard.name.taken": {
+    "defaultMessage": "That name is taken. Try another.",
+    "description": "Validation message when an integration name already exists"
+  },
   "dataIntegrations.wizard.next": {
     "defaultMessage": "Next",
     "description": "Wizard Next button"
+  },
+  "dataIntegrations.wizard.provider.description": {
+    "defaultMessage": "Configure an integration to connect to your Red Hat applications.",
+    "description": "Provider-specific add integration wizard subtitle"
+  },
+  "dataIntegrations.wizard.provider.title": {
+    "defaultMessage": "Add {provider} integration",
+    "description": "Provider-specific add integration wizard title"
   },
   "dataIntegrations.wizard.result.addAnother": {
     "defaultMessage": "Add another integration",
     "description": "Button that restarts the wizard to add another integration"
   },
+  "dataIntegrations.wizard.result.close": {
+    "defaultMessage": "Close",
+    "description": "Action that closes the validation state"
+  },
   "dataIntegrations.wizard.result.edit": {
     "defaultMessage": "Edit details",
     "description": "Button that returns to the review step after a failure"
+  },
+  "dataIntegrations.wizard.result.editIntegration": {
+    "defaultMessage": "Edit integration",
+    "description": "Button that opens an integration after validation fails"
   },
   "dataIntegrations.wizard.result.errorBody": {
     "defaultMessage": "Your integration was not created. Check your connection and try again.",
@@ -888,6 +1596,10 @@
   "dataIntegrations.wizard.result.errorTitle": {
     "defaultMessage": "Unable to add integration",
     "description": "Title shown when the integration could not be created"
+  },
+  "dataIntegrations.wizard.result.removeIntegration": {
+    "defaultMessage": "Remove integration",
+    "description": "Button that removes an integration after validation fails"
   },
   "dataIntegrations.wizard.result.retry": {
     "defaultMessage": "Retry",
@@ -898,8 +1610,16 @@
     "description": "Title of the wizard step shown after submitting"
   },
   "dataIntegrations.wizard.result.submitting": {
-    "defaultMessage": "Adding your integration",
-    "description": "Shown while the integration is being created"
+    "defaultMessage": "Validating credentials",
+    "description": "Shown while integration credentials are being validated"
+  },
+  "dataIntegrations.wizard.result.submittingContinue": {
+    "defaultMessage": "In the meantime, you can close this window while the validation process continues.",
+    "description": "Instruction shown while integration validation is in progress"
+  },
+  "dataIntegrations.wizard.result.submittingDescription": {
+    "defaultMessage": "This might take some time. You'll receive a notification if you are still in the Integrations application when the process completes. Otherwise, you can check the status in the main integrations table at any time.",
+    "description": "Explanation shown while integration validation is in progress"
   },
   "dataIntegrations.wizard.result.successBody": {
     "defaultMessage": "{name} was created. It may take a few minutes before data starts arriving.",
@@ -909,9 +1629,21 @@
     "defaultMessage": "Integration added",
     "description": "Title shown when the integration was created"
   },
+  "dataIntegrations.wizard.result.validationErrorBody": {
+    "defaultMessage": "Unknown error",
+    "description": "Fallback text when validation returns no failure reason"
+  },
+  "dataIntegrations.wizard.result.validationErrorTitle": {
+    "defaultMessage": "Configuration unsuccessful",
+    "description": "Title shown when an integration fails availability validation"
+  },
   "dataIntegrations.wizard.result.viewIntegration": {
     "defaultMessage": "View integration",
     "description": "Button that opens the newly created integration"
+  },
+  "dataIntegrations.wizard.review.application": {
+    "defaultMessage": "Application",
+    "description": "Label for the application field in the review step"
   },
   "dataIntegrations.wizard.review.applications": {
     "defaultMessage": "Applications",
@@ -926,15 +1658,23 @@
     "description": "Review row label for the chosen configuration mode"
   },
   "dataIntegrations.wizard.review.name": {
-    "defaultMessage": "Integration name",
+    "defaultMessage": "Name",
     "description": "Review row label for the integration name"
+  },
+  "dataIntegrations.wizard.review.permissions.description": {
+    "defaultMessage": "Make sure to manage permissions for this integration in custom roles that contain permissions for Cost Management.",
+    "description": "OpenShift review permissions alert description"
+  },
+  "dataIntegrations.wizard.review.permissions.title": {
+    "defaultMessage": "Manage permissions in User Access",
+    "description": "OpenShift review permissions alert title"
   },
   "dataIntegrations.wizard.review.secretMasked": {
     "defaultMessage": "Hidden",
     "description": "Stands in for the secret access key on the review step, which is never displayed"
   },
   "dataIntegrations.wizard.review.stepDescription": {
-    "defaultMessage": "Review the details below, then add your integration. Credentials are hidden for security.",
+    "defaultMessage": "Review the information below and click Add to add your integration. To edit details in previous steps, click Back.",
     "description": "Introductory text above the review summary"
   },
   "dataIntegrations.wizard.review.stepTitle": {

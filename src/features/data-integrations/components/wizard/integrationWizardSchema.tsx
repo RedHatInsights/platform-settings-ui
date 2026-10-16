@@ -73,6 +73,7 @@ export const ACCESS_KEY_AUTH_TYPE = 'access_key_secret_key';
 export const APP_CREATION_WORKFLOW_FIELD = 'source.app_creation_workflow';
 export const ACCOUNT_AUTHORIZATION = 'account_authorization';
 export const MANUAL_CONFIGURATION = 'manual_configuration';
+const HELP_TEXT_ARIA_LABEL = 'Help text';
 
 /**
  * Whether a provider offers to have Red Hat manage its credentials.
@@ -197,6 +198,16 @@ export function providerLabel(
   return intl.formatMessage(PROVIDER_LABELS[provider]);
 }
 
+/** Short provider name used by the provider-specific wizard header. */
+function wizardProviderLabel(
+  provider: SourceTypeName,
+  intl: IntlShape,
+): string {
+  return provider === 'amazon'
+    ? intl.formatMessage(messages.amazonShortLabel)
+    : providerLabel(provider, intl);
+}
+
 /** One selectable card in the source type step. */
 export interface SourceTypeOption {
   value: SourceTypeName;
@@ -312,6 +323,9 @@ export function createIntegrationWizardSchema({
   // A provider with no card cannot start the wizard on step two: there would
   // be nothing selected to go Back to.
   const startingType = resolveSelectedType(sourceTypes, selectedType);
+  const providerTitle = startingType
+    ? wizardProviderLabel(startingType, intl)
+    : undefined;
 
   return {
     fields: [
@@ -320,9 +334,17 @@ export function createIntegrationWizardSchema({
         name: WIZARD_TITLE_ID,
         inModal: true,
         showTitles: true,
-        title: intl.formatMessage(messages.wizardTitle),
+        title: providerTitle
+          ? intl.formatMessage(messages.wizardProviderTitle, {
+              provider: providerTitle,
+            })
+          : intl.formatMessage(messages.wizardTitle),
         titleId: WIZARD_TITLE_ID,
-        description: intl.formatMessage(messages.wizardDescription),
+        description: intl.formatMessage(
+          providerTitle
+            ? messages.wizardProviderDescription
+            : messages.wizardDescription,
+        ),
         closeButtonAriaLabel: intl.formatMessage(messages.wizardClose),
         // The mapper nests a second `role="dialog"` inside the modal and
         // spreads unknown schema keys onto it, so this is the only way to give
@@ -947,13 +969,6 @@ function manualAwsAccountAccessStep(
           'role',
           accountAccessApplications,
         ),
-        ...applicationTypes
-          .filter(({ name }) => [COST_APP, RHEL_APP].includes(name))
-          .map(({ id }) => ({
-            component: AWS_EXTERNAL_ID_COMPONENT,
-            name: 'authentication.extra.external_id',
-            condition: { when: MANUAL_APPLICATION_FIELD, is: id },
-          })),
       ],
     },
     {
@@ -967,6 +982,13 @@ function manualAwsAccountAccessStep(
           'arn',
           accountAccessApplications,
         ),
+        ...applicationTypes
+          .filter(({ name }) => [COST_APP, RHEL_APP].includes(name))
+          .map(({ id }) => ({
+            component: AWS_EXTERNAL_ID_COMPONENT,
+            name: 'authentication.extra.external_id',
+            condition: { when: MANUAL_APPLICATION_FIELD, is: id },
+          })),
         {
           component: componentTypes.TEXT_FIELD,
           name: AWS_ARN_FIELD,
@@ -1034,11 +1056,11 @@ function manualAwsCostUsageStep(intl: IntlShape) {
     nextStep: WizardStepId.ManualAwsCostTags,
     fields: [
       {
-        component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
-        name: 'manual-aws-cost-usage-instructions',
-        appName: COST_APP,
-        applicationTypeId: '',
-        stage: 'usage',
+        component: componentTypes.PLAIN_TEXT,
+        name: 'aws-cost-usage-description',
+        label: intl.formatMessage(messages.wizardAwsCostUsageInstructions, {
+          application: intl.formatMessage(messages.wizardAwsCostManagementName),
+        }),
       },
       {
         component: componentTypes.RADIO,
@@ -1055,9 +1077,9 @@ function manualAwsCostUsageStep(intl: IntlShape) {
             value: true,
             label: (
               <>
-                {intl.formatMessage(messages.wizardAwsCustomExport)}{' '}
+                {intl.formatMessage(messages.wizardAwsCustomExport)}
                 <Popover
-                  aria-label="Help text"
+                  aria-label={HELP_TEXT_ARIA_LABEL}
                   position="right"
                   bodyContent={intl.formatMessage(
                     messages.wizardAwsCustomExportHelp,
@@ -1067,7 +1089,7 @@ function manualAwsCostUsageStep(intl: IntlShape) {
                     aria-label={intl.formatMessage(
                       messages.wizardAwsCustomExportHelpLabel,
                     )}
-                    icon={<QuestionCircleIcon />}
+                    icon={<QuestionCircleIcon className="pf-v6-u-ml-xs" />}
                     className="pf-v6-u-p-0 pf-v6-u-m-0"
                     variant={ButtonVariant.plain}
                   />
@@ -1076,6 +1098,13 @@ function manualAwsCostUsageStep(intl: IntlShape) {
             ),
           },
         ],
+      },
+      {
+        component: AWS_MANUAL_INSTRUCTIONS_COMPONENT,
+        name: 'manual-aws-cost-usage-instructions',
+        appName: COST_APP,
+        applicationTypeId: '',
+        stage: 'usage',
       },
     ],
   };
@@ -1111,9 +1140,9 @@ function manualAwsCostTagsStep(intl: IntlShape) {
         name: 'aws.aliases.enabled',
         label: (
           <>
-            {intl.formatMessage(messages.wizardAwsAliases)}{' '}
+            {intl.formatMessage(messages.wizardAwsAliases)}
             <Popover
-              aria-label="Help text"
+              aria-label={HELP_TEXT_ARIA_LABEL}
               position="right"
               bodyContent={intl.formatMessage(messages.wizardAwsAliasesHelp)}
             >
@@ -1121,7 +1150,7 @@ function manualAwsCostTagsStep(intl: IntlShape) {
                 aria-label={intl.formatMessage(
                   messages.wizardAwsAliasesHelpLabel,
                 )}
-                icon={<QuestionCircleIcon />}
+                icon={<QuestionCircleIcon className="pf-v6-u-ml-xs" />}
                 className="pf-v6-u-p-0 pf-v6-u-m-0"
                 variant={ButtonVariant.plain}
               />
@@ -1134,9 +1163,9 @@ function manualAwsCostTagsStep(intl: IntlShape) {
         name: 'aws.org_units.enabled',
         label: (
           <>
-            {intl.formatMessage(messages.wizardAwsOrgUnits)}{' '}
+            {intl.formatMessage(messages.wizardAwsOrgUnits)}
             <Popover
-              aria-label="Help text"
+              aria-label={HELP_TEXT_ARIA_LABEL}
               position="right"
               bodyContent={intl.formatMessage(messages.wizardAwsOrgUnitsHelp)}
             >
@@ -1144,7 +1173,7 @@ function manualAwsCostTagsStep(intl: IntlShape) {
                 aria-label={intl.formatMessage(
                   messages.wizardAwsOrgUnitsHelpLabel,
                 )}
-                icon={<QuestionCircleIcon />}
+                icon={<QuestionCircleIcon className="pf-v6-u-ml-xs" />}
                 className="pf-v6-u-p-0 pf-v6-u-m-0"
                 variant={ButtonVariant.plain}
               />

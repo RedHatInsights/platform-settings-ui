@@ -24,6 +24,7 @@ import { WizardSubmissionContext } from './wizard/SubmissionResult';
 import { useApplicationTypes } from '../data/queries/useApplicationTypes';
 import { useSourceTypes } from '../data/queries/useSourceTypes';
 import { useCreateSource } from '../data/queries/useCreateSource';
+import { useDeleteSource } from '../data/queries/useDeleteSource';
 import { useAwsRegions } from '../data/queries/useAwsRegions';
 import { useHcsEnrollment } from '../data/queries/useHcsEnrollment';
 import { useAzureLighthouse } from '../../../capabilities/useAzureLighthouse';
@@ -91,6 +92,7 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
   const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
 
   const createSource = useCreateSource();
+  const deleteSource = useDeleteSource();
 
   /**
    * Bumped by "Add another integration" to remount the renderer.
@@ -165,13 +167,28 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
   const exit = () => {
     setIsConfirmingCancel(false);
     createSource.reset();
+    deleteSource.reset();
     setFormKey((key) => key + 1);
+    onClose();
+  };
+
+  const closeWhileSubmitting = () => {
+    // Leave the mutation alive so its query invalidation can refresh the table
+    // after the user closes the validation window.
     onClose();
   };
 
   const restart = () => {
     createSource.reset();
+    deleteSource.reset();
     setFormKey((key) => key + 1);
+  };
+
+  const removeCreatedSource = () => {
+    const sourceId = createSource.data?.id;
+    if (sourceId) {
+      deleteSource.mutate(sourceId, { onSuccess: exit });
+    }
   };
 
   const isUnavailable = isError || (!isLoading && !schema);
@@ -227,8 +244,11 @@ const AddIntegrationWizard: React.FC<AddIntegrationWizardProps> = ({
           isError: createSource.isError,
           error: createSource.error,
           createdSource: createSource.data,
+          isRemoving: deleteSource.isPending,
           onAddAnother: restart,
           onClose: exit,
+          onCloseWhileSubmitting: closeWhileSubmitting,
+          onRemove: removeCreatedSource,
         }}
       >
         <IntegrationsFormRenderer

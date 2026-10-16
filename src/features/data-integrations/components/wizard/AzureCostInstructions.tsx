@@ -19,6 +19,8 @@ const STORAGE_DOCS = `${COST_DOCS}/integrate-adding_azure_int#creating-an-azure-
 const ROLES_DOCS = `${COST_DOCS}/integrate-adding_azure_int#configuring-azure-roles`;
 const EXPORT_DOCS = `${COST_DOCS}/integrate-adding_azure_int#configuring-an-azure-daily-export-schedule`;
 const CUSTOM_DOCS = `${COST_DOCS}/integrate-azure_integration`;
+const SELECT_MAX_MENU_HEIGHT = '12rem';
+const ENROLLMENT_ACCOUNTS_SCOPE = 'enrollmentAccounts';
 
 const copy = defineMessages({
   learnMore: {
@@ -136,6 +138,14 @@ const copy = defineMessages({
     defaultMessage:
       'Launch the Azure Enterprise Portal and give the service principal created above Administrator role on the associated account.',
   },
+  hcsApplication: {
+    id: 'dataIntegrations.azureCost.hcsApplication',
+    defaultMessage: 'Hybrid Committed Spend',
+  },
+  costManagementApplication: {
+    id: 'dataIntegrations.azureCost.costManagementApplication',
+    defaultMessage: 'Cost Management',
+  },
 });
 
 const SCOPE_COMMANDS: Record<string, string> = {
@@ -198,7 +208,7 @@ const AzureCostContent: React.FC<{
                 }
                 setIsScopeOpen(false);
               }}
-              maxMenuHeight="12rem"
+              maxMenuHeight={SELECT_MAX_MENU_HEIGHT}
               isScrollable
               popperProps={{
                 appendTo: 'inline',
@@ -294,8 +304,8 @@ const AzureCostContent: React.FC<{
       <p>
         {intl.formatMessage(copy.rolesIntro, {
           application: hcsEnrolled
-            ? 'Hybrid Committed Spend'
-            : 'Cost Management',
+            ? intl.formatMessage(copy.hcsApplication)
+            : intl.formatMessage(copy.costManagementApplication),
         })}{' '}
         {!hcsEnrolled && link(ROLES_DOCS)}
       </p>
@@ -306,7 +316,7 @@ const AzureCostContent: React.FC<{
       {billingScope ? (
         <p>
           {intl.formatMessage(
-            scope.includes('enrollmentAccounts')
+            scope.includes(ENROLLMENT_ACCOUNTS_SCOPE)
               ? copy.enrollmentRole
               : copy.billingRole,
             { role: billingRole },

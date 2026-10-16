@@ -14,6 +14,7 @@ import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHead
 import Main from '@redhat-cloud-services/frontend-components/Main';
 // eslint-disable-next-line no-restricted-imports -- Page component needs chrome for document title
 import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome';
+import { useAppServices } from '../../shared/ServiceContext';
 import AddDataIntegrationDropdown from './components/AddDataIntegrationDropdown';
 import AboutTab from './features/about/AboutTab';
 import messages from './messages';
@@ -33,6 +34,7 @@ type TabKey = 'my-integrations' | 'about';
 const DataIntegrationsPage: React.FC = () => {
   const intl = useIntl();
   const { updateDocumentTitle } = useChrome();
+  const { isOrgAdmin } = useAppServices();
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -105,7 +107,12 @@ const DataIntegrationsPage: React.FC = () => {
           target: '_blank',
           rel: 'noopener noreferrer',
         }}
-        actionMenu={<AddDataIntegrationDropdown initialSourceType={addParam} />}
+        actionMenu={
+          <AddDataIntegrationDropdown
+            initialSourceType={addParam}
+            isDisabled={!isOrgAdmin}
+          />
+        }
       />
       <Tabs
         activeKey={activeTab}
@@ -147,7 +154,13 @@ const DataIntegrationsPage: React.FC = () => {
         />
       </Tabs>
       <Divider />
-      <Main>{activeTab === 'about' ? <AboutTab /> : <Outlet />}</Main>
+      <Main>
+        {activeTab === 'about' ? (
+          <AboutTab canWrite={isOrgAdmin} />
+        ) : (
+          <Outlet context={{ canWrite: isOrgAdmin }} />
+        )}
+      </Main>
     </>
   );
 };

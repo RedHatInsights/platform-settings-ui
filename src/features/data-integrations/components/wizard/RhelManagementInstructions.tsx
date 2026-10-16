@@ -1,5 +1,5 @@
 import React from 'react';
-import { defineMessages, useIntl } from 'react-intl';
+import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
 import { ClipboardCopy } from '@patternfly/react-core/dist/dynamic/components/ClipboardCopy';
 import { Content } from '@patternfly/react-core/dist/dynamic/components/Content';
 
@@ -15,7 +15,7 @@ const messages = defineMessages({
   },
   tokenLink: {
     id: 'dataIntegrations.rhelManagement.tokenLink',
-    defaultMessage: 'To obtain an offline token, follow the steps at',
+    defaultMessage: 'To obtain an offline token, follow the steps at {link}.',
   },
   azurePlaybook: {
     id: 'dataIntegrations.rhelManagement.azurePlaybook',
@@ -43,11 +43,20 @@ const RhelManagementInstructions: React.FC<{
           <p>{intl.formatMessage(messages.token)}</p>
           <ol>
             <li>
-              {intl.formatMessage(messages.tokenLink)}{' '}
-              <a href={TOKEN_URL} target="_blank" rel="noopener noreferrer">
-                {TOKEN_URL}
-              </a>
-              .
+              <FormattedMessage
+                {...messages.tokenLink}
+                values={{
+                  link: (
+                    <a
+                      href={TOKEN_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {TOKEN_URL}
+                    </a>
+                  ),
+                }}
+              />
             </li>
           </ol>
         </>

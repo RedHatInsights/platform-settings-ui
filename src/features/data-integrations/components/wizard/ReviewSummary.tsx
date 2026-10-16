@@ -92,6 +92,10 @@ const providerReview = defineMessages({
     id: 'dataIntegrations.review.bucket',
     defaultMessage: 'S3 bucket name',
   },
+  cloudStorageBucket: {
+    id: 'dataIntegrations.review.cloudStorageBucket',
+    defaultMessage: 'Cloud storage bucket name',
+  },
   dataset: {
     id: 'dataIntegrations.review.dataset',
     defaultMessage: 'Dataset ID',
@@ -240,7 +244,7 @@ const ReviewSummary: React.FC = () => {
       addReviewField(extra?.export_name, providerReview.exportName);
       addReviewField(extra?.metered, providerReview.includeRhel);
     } else if (provider === 'google') {
-      addReviewField(extra?.bucket, providerReview.bucket);
+      addReviewField(extra?.bucket, providerReview.cloudStorageBucket);
       addReviewField(extra?.dataset, providerReview.dataset);
     }
   } else if (manualAppName === '/insights/platform/provisioning') {

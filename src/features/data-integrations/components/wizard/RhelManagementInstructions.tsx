@@ -1,6 +1,9 @@
 import React from 'react';
 import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
-import { ClipboardCopy } from '@patternfly/react-core/dist/dynamic/components/ClipboardCopy';
+import {
+  ClipboardCopy,
+  ClipboardCopyVariant,
+} from '@patternfly/react-core/dist/dynamic/components/ClipboardCopy';
 import { Content } from '@patternfly/react-core/dist/dynamic/components/Content';
 
 const TOKEN_URL = 'https://access.redhat.com/management/api';
@@ -69,8 +72,14 @@ const RhelManagementInstructions: React.FC<{
                 : messages.googlePlaybook,
             )}
           </p>
-          <ClipboardCopy>{INSTALL_COMMAND}</ClipboardCopy>
-          <ClipboardCopy>
+          <ClipboardCopy className="pf-v6-u-mb-lg">
+            {INSTALL_COMMAND}
+          </ClipboardCopy>
+          <ClipboardCopy
+            variant={
+              provider === 'google' ? ClipboardCopyVariant.expansion : undefined
+            }
+          >
             {`ansible-playbook -i <${host}>, -b ~/.ansible/collections/ansible_collections/redhatinsights/subscriptions/playbooks/verify_account.yml -e rh_api_refresh_token=<OFFLINE_AUTH_TOKEN>`}
           </ClipboardCopy>
         </>

@@ -564,7 +564,7 @@ export function providerWizardSteps(
       title: t(copy.scope),
       nextStep: 'azure-cost-storage',
       fields: [
-        azureGuide('azure-scope-guide', 'scope'),
+        azureGuide('azure-scope-intro-guide', 'scopeIntro'),
         {
           component: componentTypes.RADIO,
           name: 'application.extra.storage_only',
@@ -573,13 +573,16 @@ export function providerWizardSteps(
             { value: true, label: t(copy.customCostExport) },
           ],
           initialValue: false,
+          initializeOnMount: true,
           hideInReview: true,
         },
+        azureGuide('azure-scope-alert-guide', 'scopeAlert'),
         {
           component: componentTypes.CHECKBOX,
           name: 'application.extra.metered',
           label: t(copy.metered),
         },
+        azureGuide('azure-scope-guide', 'scope'),
         {
           ...input('application.extra.scope', t(copy.scopeName), [
             {
@@ -760,6 +763,7 @@ export function providerWizardSteps(
           required,
           componentTypes.TEXTAREA,
         ),
+        googleGuide('google-project-description-guide', 'customize'),
         {
           component: componentTypes.RADIO,
           name: 'application.extra.storage_only',
@@ -774,6 +778,7 @@ export function providerWizardSteps(
             },
           ],
           initialValue: false,
+          initializeOnMount: true,
           hideInReview: true,
         },
       ],

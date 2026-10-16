@@ -3,7 +3,10 @@ import { defineMessages, useIntl } from 'react-intl';
 import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
 import { Alert } from '@patternfly/react-core/dist/dynamic/components/Alert';
 import { Button } from '@patternfly/react-core/dist/dynamic/components/Button';
-import { ClipboardCopy } from '@patternfly/react-core/dist/dynamic/components/ClipboardCopy';
+import {
+  ClipboardCopy,
+  ClipboardCopyVariant,
+} from '@patternfly/react-core/dist/dynamic/components/ClipboardCopy';
 import { Content } from '@patternfly/react-core/dist/dynamic/components/Content';
 import { ExpandableSection } from '@patternfly/react-core/dist/dynamic/components/ExpandableSection';
 import { useGoogleProvisioningAccount } from '../../data/queries/useGoogleProvisioningAccount';
@@ -141,7 +144,13 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:${
         <li>{intl.formatMessage(copy.open)}</li>
         <li>
           {intl.formatMessage(copy.paste)}
-          <ClipboardCopy isReadOnly>{script}</ClipboardCopy>
+          <ClipboardCopy
+            isReadOnly
+            isCode
+            variant={ClipboardCopyVariant.expansion}
+          >
+            {script}
+          </ClipboardCopy>
         </li>
         <li>{intl.formatMessage(copy.return)}</li>
       </ol>

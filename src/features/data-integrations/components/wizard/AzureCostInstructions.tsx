@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
+import type { MessageDescriptor } from 'react-intl';
 import FormSpy from '@data-driven-forms/react-form-renderer/form-spy';
 import { Alert } from '@patternfly/react-core/dist/dynamic/components/Alert';
 import { ClipboardCopy } from '@patternfly/react-core/dist/dynamic/components/ClipboardCopy';
 import { Content } from '@patternfly/react-core/dist/dynamic/components/Content';
+import {
+  EmptyState,
+  EmptyStateBody,
+  EmptyStateVariant,
+} from '@patternfly/react-core/dist/dynamic/components/EmptyState';
 import { MenuToggle } from '@patternfly/react-core/dist/dynamic/components/MenuToggle';
 import {
   Select,
@@ -11,6 +17,7 @@ import {
   SelectOption,
 } from '@patternfly/react-core/dist/dynamic/components/Select';
 import { useHcsEnrollment } from '../../data/queries/useHcsEnrollment';
+import InfoCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/info-circle-icon';
 import type { IntegrationWizardValues } from './integrationWizardSchema';
 
 const COST_DOCS =
@@ -40,11 +47,6 @@ const copy = defineMessages({
   scopeLabel: {
     id: 'dataIntegrations.azureCost.scopeLabel',
     defaultMessage: 'Scope',
-  },
-  scopeCommand: {
-    id: 'dataIntegrations.azureCost.scopeCommand',
-    defaultMessage:
-      'Run the following command in Cloud Shell to obtain the selected cost export scope. Enter its output below:',
   },
   scopeCustomTitle: {
     id: 'dataIntegrations.azureCost.scopeCustomTitle',
@@ -77,7 +79,7 @@ const copy = defineMessages({
   exportSettings: {
     id: 'dataIntegrations.azureCost.exportSettings',
     defaultMessage:
-      'Provide a container name and directory path, use the settings below, and leave all other options at their defaults.',
+      'Provide a name for the container and directory path, and specify the below settings to create the daily export. Leave all other options as the default.',
   },
   exportType: {
     id: 'dataIntegrations.azureCost.exportType',
@@ -106,22 +108,61 @@ const copy = defineMessages({
   },
   exportAfter: {
     id: 'dataIntegrations.azureCost.exportAfter',
-    defaultMessage: 'After configuring the daily export, enter its name below.',
+    defaultMessage: 'After configuring the daily export, enter the following:',
   },
   subscription: {
     id: 'dataIntegrations.azureCost.subscription',
     defaultMessage:
-      'Run the following command in Cloud Shell to obtain the Subscription ID where the cost export is stored, then enter it below:',
+      'Run the following command in Cloud Shell to obtain the Subscription ID where the cost export is being stored and enter it below:',
   },
   rolesIntro: {
     id: 'dataIntegrations.azureCost.rolesIntro',
     defaultMessage:
-      'Red Hat recommends dedicated credentials to grant {application} read-only access to Azure cost data.',
+      'Red Hat recommends configuring dedicated credentials to grant {application} read-only access to Azure cost data.',
   },
   rolesCreate: {
     id: 'dataIntegrations.azureCost.rolesCreate',
     defaultMessage:
-      'Run this command in Cloud Shell to create a service principal with the Storage Blob Data Reader role. Enter the tenant, client ID, and secret from its output below:',
+      'Run the following command in Cloud Shell to create a service principal with Cost Management Storage Blob Data Reader role. From the output enter the values in the fields below:',
+  },
+  scopeSubscription: {
+    id: 'dataIntegrations.azureCost.scopeSubscription',
+    defaultMessage:
+      'Run the following command from the Cloud Shell to obtain the Subscription ID associated with the generated cost export.',
+  },
+  scopeResourceGroup: {
+    id: 'dataIntegrations.azureCost.scopeResourceGroup',
+    defaultMessage:
+      'Run the following command from the Cloud Shell, providing the Resource Group name, to obtain the Resource Group scope associated with the generated cost export.',
+  },
+  scopeManagementGroup: {
+    id: 'dataIntegrations.azureCost.scopeManagementGroup',
+    defaultMessage:
+      'Run the following command from the Cloud Shell, providing the Management Group name, to obtain the Management Group scope associated with the generated cost export.',
+  },
+  scopeBillingAccount: {
+    id: 'dataIntegrations.azureCost.scopeBillingAccount',
+    defaultMessage:
+      'Run the following command from the Cloud Shell, providing the Billing Account name, to obtain the Billing Account scope associated with the generated cost export.',
+  },
+  scopeBillingProfile: {
+    id: 'dataIntegrations.azureCost.scopeBillingProfile',
+    defaultMessage:
+      'Run the following command from the Cloud Shell, providing the Billing Account name and the Billig Profile name, to obtain the Billing Profile scope associated with the generated cost export.',
+  },
+  scopeInvoiceSection: {
+    id: 'dataIntegrations.azureCost.scopeInvoiceSection',
+    defaultMessage:
+      'Run the following command from the Cloud Shell, providing the Billing Account name, Billing Profile name, and Invoice Section name, to obtain the Invoice Section scope associated with the generated cost export.',
+  },
+  scopeEnrollmentAccount: {
+    id: 'dataIntegrations.azureCost.scopeEnrollmentAccount',
+    defaultMessage: 'enrollment.',
+  },
+  scopeInput: {
+    id: 'dataIntegrations.azureCost.scopeInput',
+    defaultMessage:
+      'After running the command, enter the output in the following field:',
   },
   readerRole: {
     id: 'dataIntegrations.azureCost.readerRole',
@@ -158,7 +199,24 @@ const SCOPE_COMMANDS: Record<string, string> = {
   'Enrollment Account': `az billing enrollment-account show --name "{enrollmentAccountName}" | jq '.id' | tr -d '"'`,
 };
 
-type Stage = 'scope' | 'storage' | 'export' | 'subscription' | 'roles';
+const SCOPE_DESCRIPTIONS: Record<string, MessageDescriptor> = {
+  Subscription: copy.scopeSubscription,
+  'Resource Group': copy.scopeResourceGroup,
+  'Management Group': copy.scopeManagementGroup,
+  'Billing Account': copy.scopeBillingAccount,
+  'Billing Profile': copy.scopeBillingProfile,
+  'Invoice Section': copy.scopeInvoiceSection,
+  'Enrollment Account': copy.scopeEnrollmentAccount,
+} as const;
+
+type Stage =
+  | 'scopeIntro'
+  | 'scopeAlert'
+  | 'scope'
+  | 'storage'
+  | 'export'
+  | 'subscription'
+  | 'roles';
 
 const AzureCostContent: React.FC<{
   stage: Stage;
@@ -176,22 +234,38 @@ const AzureCostContent: React.FC<{
     </a>
   );
 
-  if (stage === 'scope') {
+  if (stage === 'scopeIntro') {
     return (
       <Content>
         <p>
           {intl.formatMessage(copy.scopeIntro)} {link(CUSTOM_DOCS)}
         </p>
-        <Alert
-          isInline
-          variant="info"
-          title={intl.formatMessage(copy.scopeAlert)}
-        />
+      </Content>
+    );
+  }
+  if (stage === 'scopeAlert') {
+    return (
+      <Alert
+        isInline
+        variant="info"
+        title={intl.formatMessage(copy.scopeAlert)}
+      />
+    );
+  }
+  if (stage === 'scope') {
+    return (
+      <Content>
         {custom ? (
-          <>
-            <h4>{intl.formatMessage(copy.scopeCustomTitle)}</h4>
-            <p>{intl.formatMessage(copy.scopeCustom)}</p>
-          </>
+          <EmptyState
+            headingLevel="h4"
+            titleText={intl.formatMessage(copy.scopeCustomTitle)}
+            icon={InfoCircleIcon}
+            variant={EmptyStateVariant.sm}
+          >
+            <EmptyStateBody>
+              {intl.formatMessage(copy.scopeCustom)}
+            </EmptyStateBody>
+          </EmptyState>
         ) : (
           <>
             <label htmlFor="azure-cost-scope-type">
@@ -236,10 +310,11 @@ const AzureCostContent: React.FC<{
                 ))}
               </SelectList>
             </Select>
-            <p>{intl.formatMessage(copy.scopeCommand)}</p>
+            <p>{intl.formatMessage(SCOPE_DESCRIPTIONS[scopeType])}</p>
             <ClipboardCopy isReadOnly>
               {SCOPE_COMMANDS[scopeType]}
             </ClipboardCopy>
+            <p>{intl.formatMessage(copy.scopeInput)}</p>
           </>
         )}
       </Content>

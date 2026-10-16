@@ -1,9 +1,10 @@
 import React from 'react';
-import { defineMessages, useIntl } from 'react-intl';
+import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
 import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
 import { Button } from '@patternfly/react-core/dist/dynamic/components/Button';
 import { Content } from '@patternfly/react-core/dist/dynamic/components/Content';
 import { Alert } from '@patternfly/react-core/dist/dynamic/components/Alert';
+import ExternalLinkAltIcon from '@patternfly/react-icons/dist/dynamic/icons/external-link-alt-icon';
 import { useAzureLighthouseLink } from '../../data/queries/useAzureLighthouseLink';
 
 const AZURE_DOCS =
@@ -22,7 +23,7 @@ const messages = defineMessages({
   roleRequirement: {
     id: 'dataIntegrations.azureLighthouse.roleRequirement',
     defaultMessage:
-      'Your Azure account must have at least the Owner role for the selected subscription.',
+      'To complete this step, your Azure account must have the Owner role, at a minimum, for the selected subscription. View the {link} for more information.',
   },
   azureDocs: {
     id: 'dataIntegrations.azureLighthouse.azureDocs',
@@ -31,7 +32,7 @@ const messages = defineMessages({
   instructions: {
     id: 'dataIntegrations.azureLighthouse.instructions',
     defaultMessage:
-      'In Azure Lighthouse, deploy the Azure Resource Manager custom template that connects your Red Hat and Azure accounts. Click Go to Lighthouse and follow these instructions:',
+      'In Azure Lighthouse, deploy the Azure Resource Manager custom template that connects your Red Hat and Azure accounts. When ready, click <b>Go to Lighthouse</b> and follow these instructions:',
   },
   select: {
     id: 'dataIntegrations.azureLighthouse.select',
@@ -41,12 +42,12 @@ const messages = defineMessages({
   review: {
     id: 'dataIntegrations.azureLighthouse.review',
     defaultMessage:
-      'Edit any other instance details and click Review + create.',
+      'Edit any other instance details and click <b>Review + create</b>.',
   },
   create: {
     id: 'dataIntegrations.azureLighthouse.create',
     defaultMessage:
-      'Click Create to run the deployment. This creates two roles in your Azure account:',
+      'Click <b>Create</b> to run the deployment. This action creates two roles in your Azure account: {readerLink} and {roleLink}.',
   },
   reader: {
     id: 'dataIntegrations.azureLighthouse.reader',
@@ -59,7 +60,7 @@ const messages = defineMessages({
   copyId: {
     id: 'dataIntegrations.azureLighthouse.copyId',
     defaultMessage:
-      'When deployment is complete, click Go to subscription and copy the Subscription ID.',
+      'When the deployment is complete, click <b>Go to subscription</b> and copy the <b>Subscription ID</b>.',
   },
   subscription: {
     id: 'dataIntegrations.azureLighthouse.subscription',
@@ -73,11 +74,7 @@ const messages = defineMessages({
   unavailable: {
     id: 'dataIntegrations.azureLighthouse.unavailable',
     defaultMessage:
-      'The Azure Lighthouse link could not be loaded. Please return to this step and try again.',
-  },
-  and: {
-    id: 'dataIntegrations.azureLighthouse.and',
-    defaultMessage: 'and',
+      'There is an error with loading of the configuration. Please go back and return to this step.',
   },
 });
 
@@ -86,7 +83,9 @@ const AzureLighthouseInstructions: React.FC<{
 }> = ({ stage = 'intro' }) => {
   const intl = useIntl();
   const form = useFormApi();
-  const { data: link, isError } = useAzureLighthouseLink();
+  const { data: link, isError } = useAzureLighthouseLink(
+    stage !== 'subscription',
+  );
 
   if (stage === 'subscription') {
     return (
@@ -103,38 +102,69 @@ const AzureLighthouseInstructions: React.FC<{
         variant="info"
         title={intl.formatMessage(messages.roleTitle)}
       >
-        {intl.formatMessage(messages.roleRequirement)}{' '}
-        <a href={AZURE_DOCS} target="_blank" rel="noopener noreferrer">
-          {intl.formatMessage(messages.azureDocs)}
-        </a>
+        <FormattedMessage
+          {...messages.roleRequirement}
+          values={{
+            link: (
+              <a href={AZURE_DOCS} target="_blank" rel="noopener noreferrer">
+                {intl.formatMessage(messages.azureDocs)}
+              </a>
+            ),
+          }}
+        />
       </Alert>
-      <p>{intl.formatMessage(messages.instructions)}</p>
+      <p>
+        <FormattedMessage
+          {...messages.instructions}
+          values={{ b: (chunks) => <strong>{chunks}</strong> }}
+        />
+      </p>
       <ol>
         <li>{intl.formatMessage(messages.select)}</li>
-        <li>{intl.formatMessage(messages.review)}</li>
         <li>
-          {intl.formatMessage(messages.create)}{' '}
-          <a href={READER_DOCS} target="_blank" rel="noopener noreferrer">
-            {intl.formatMessage(messages.reader)}
-          </a>{' '}
-          {intl.formatMessage(messages.and)}{' '}
-          <a href={ROLE_DOCS} target="_blank" rel="noopener noreferrer">
-            {intl.formatMessage(messages.assignmentRole)}
-          </a>
+          <FormattedMessage
+            {...messages.review}
+            values={{ b: (chunks) => <strong>{chunks}</strong> }}
+          />
         </li>
-        <li>{intl.formatMessage(messages.copyId)}</li>
+        <li>
+          <FormattedMessage
+            {...messages.create}
+            values={{
+              b: (chunks) => <strong>{chunks}</strong>,
+              readerLink: (
+                <a href={READER_DOCS} target="_blank" rel="noopener noreferrer">
+                  {intl.formatMessage(messages.reader)}
+                </a>
+              ),
+              roleLink: (
+                <a href={ROLE_DOCS} target="_blank" rel="noopener noreferrer">
+                  {intl.formatMessage(messages.assignmentRole)}
+                </a>
+              ),
+            }}
+          />
+        </li>
+        <li>
+          <FormattedMessage
+            {...messages.copyId}
+            values={{ b: (chunks) => <strong>{chunks}</strong> }}
+          />
+        </li>
       </ol>
-      {link && (
-        <Button
-          component="a"
-          href={link}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => form.change(LIGHTHOUSE_CLICKED_FIELD, true)}
-        >
-          {intl.formatMessage(messages.link)}
-        </Button>
-      )}
+      <Button
+        component="a"
+        href={link}
+        target="_blank"
+        rel="noopener noreferrer"
+        icon={<ExternalLinkAltIcon />}
+        iconPosition="end"
+        isLoading={!link && !isError}
+        isDisabled={!link}
+        onClick={() => form.change(LIGHTHOUSE_CLICKED_FIELD, true)}
+      >
+        {intl.formatMessage(messages.link)}
+      </Button>
       {isError && (
         <p role="alert">{intl.formatMessage(messages.unavailable)}</p>
       )}

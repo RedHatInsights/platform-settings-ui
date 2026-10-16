@@ -30,7 +30,7 @@ const copy = defineMessages({
   customize: {
     id: 'dataIntegrations.googleCost.customize',
     defaultMessage:
-      'If you need to further customize the data sent to Cost Management, select the manually customize option for the additional setup instructions.',
+      'If there is a need to further customize the data you want to send to Cost Management, select the manually customize option to follow the special instructions on how to.',
   },
   bucket: {
     id: 'dataIntegrations.googleCost.bucket',
@@ -152,7 +152,14 @@ const copy = defineMessages({
   },
 });
 
-type Stage = 'project' | 'bucket' | 'iam' | 'access' | 'dataset' | 'billing';
+type Stage =
+  | 'project'
+  | 'customize'
+  | 'bucket'
+  | 'iam'
+  | 'access'
+  | 'dataset'
+  | 'billing';
 
 const GoogleAccessInstructions: React.FC = () => {
   const intl = useIntl();
@@ -168,15 +175,15 @@ const GoogleAccessInstructions: React.FC = () => {
         </li>
         <li>
           <FormattedMessage {...copy.accessPaste} values={{ b: bold }} />
+          {account.isError ? (
+            <p role="alert">{intl.formatMessage(copy.accountError)}</p>
+          ) : (
+            <ClipboardCopy className="pf-v6-u-m-sm pf-v6-u-ml-0" isReadOnly>
+              {account.data ?? intl.formatMessage(copy.accountLoading)}
+            </ClipboardCopy>
+          )}
         </li>
       </ol>
-      {account.isError ? (
-        <p role="alert">{intl.formatMessage(copy.accountError)}</p>
-      ) : (
-        <ClipboardCopy isReadOnly>
-          {account.data ?? intl.formatMessage(copy.accountLoading)}
-        </ClipboardCopy>
-      )}
       <ol start={3}>
         <li>{intl.formatMessage(copy.accessRole)}</li>
         <li>
@@ -213,6 +220,12 @@ const GoogleCostInstructions: React.FC<{ stage: Stage }> = ({ stage }) => {
           {intl.formatMessage(copy.project)} {!hcsEnrolled && projectDocs}
         </p>
         <p>{intl.formatMessage(copy.projectId)}</p>
+      </Content>
+    );
+  }
+  if (stage === 'customize') {
+    return (
+      <Content>
         <p>{intl.formatMessage(copy.customize)}</p>
       </Content>
     );

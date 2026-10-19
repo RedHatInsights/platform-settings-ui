@@ -106,6 +106,11 @@ describe('createSourcesHandlers', () => {
       {
         sources: [expect.objectContaining({ name: 'resolver-test' })],
         applications: [],
+        authentications: [
+          {
+            id: expect.any(String),
+          },
+        ],
       },
       { status: 201 },
     );

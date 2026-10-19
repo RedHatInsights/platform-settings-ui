@@ -21,10 +21,9 @@ export const sourcesDb = createResettableCollection(seedSources);
 export const bulkCreateRequests: BulkCreatePayload[] = [];
 
 /**
- * The api layer sends arguments as GraphQL variables rather than interpolating
- * them into the query, so the handlers read a typed object instead of parsing
- * a query string. These mirror the `Filter` and `SortBy` inputs in
- * `graph/schema.graphqls`.
+ * These mirror the `Filter` and `SortBy` inputs in `graph/schema.graphqls`.
+ * List calls use variables, while the name validator intentionally mirrors
+ * sources-ui's raw GraphQL query.
  */
 interface GraphQLFilter {
   name: string;
@@ -45,6 +44,22 @@ interface SourcesRequestBody {
     sortBy?: GraphQLSortBy[];
     filter?: GraphQLFilter[];
   };
+}
+
+function nameFilterFromQuery(query: string): GraphQLFilter[] | undefined {
+  const match = query.match(
+    /filter:\s*\{\s*name:\s*"name",\s*value:\s*("(?:\\.|[^"\\])*")/,
+  );
+
+  if (!match) {
+    return undefined;
+  }
+
+  try {
+    return [{ name: 'name', value: [JSON.parse(match[1])] }];
+  } catch {
+    return undefined;
+  }
 }
 
 /** Only the columns a story sorts on; the real API allows more. */
@@ -250,12 +265,16 @@ function buildCreatedSource(payload: BulkCreatePayload): Source {
   return {
     id: `src-${Date.now()}-${nextId++}`,
     name: requested.name,
+    source_ref: requested.source_ref,
     source_type_id: sourceType?.id ?? '0',
     created_at: new Date().toISOString(),
-    applications: payload.applications.map(({ application_type_id }) => ({
-      id: `app-${Date.now()}-${nextId++}`,
-      application_type_id,
-    })),
+    applications: payload.applications.map(
+      ({ application_type_id, extra }) => ({
+        id: `app-${Date.now()}-${nextId++}`,
+        application_type_id,
+        extra,
+      }),
+    ),
   };
 }
 
@@ -268,13 +287,22 @@ export function createBulkCreateHandler(baseUrl = SOURCES_API_BASE) {
       const created = sourcesDb.create(buildCreatedSource(payload));
 
       return HttpResponse.json(
-        { sources: [created], applications: created.applications },
+        {
+          sources: [created],
+          applications: created.applications,
+          authentications: payload.authentications.map((_, index) => ({
+            id: `auth-${Date.now()}-${index}`,
+          })),
+        },
         { status: 201 },
       );
     }),
     http.post(
       `${baseUrl}/sources/:id/check_availability`,
       () => new HttpResponse(null, { status: 204 }),
+    ),
+    http.post(`${baseUrl}/application_authentications`, () =>
+      HttpResponse.json({}, { status: 201 }),
     ),
     http.get(`${baseUrl}/applications/:id`, ({ params }) =>
       HttpResponse.json({ id: params.id, availability_status: 'available' }),
@@ -311,6 +339,20 @@ export function createNetworkErrorBulkCreateHandler(
   baseUrl = SOURCES_API_BASE,
 ) {
   return [http.post(`${baseUrl}/bulk_create`, () => HttpResponse.error())];
+}
+
+export function createUnavailableApplicationHandler(
+  baseUrl = SOURCES_API_BASE,
+) {
+  return [
+    http.get(`${baseUrl}/applications/:id`, ({ params }) =>
+      HttpResponse.json({
+        id: params.id,
+        availability_status: 'unavailable',
+        availability_status_error: 'Role assumption failed: access denied',
+      }),
+    ),
+  ];
 }
 
 /**
@@ -350,22 +392,50 @@ export function createSourcesHandlers(
   return [
     ...createBulkCreateHandler(baseUrl),
     http.get('/api/cost-management/v1/sources/aws-s3-regions/', () =>
-      HttpResponse.json(['us-east-1', 'us-east-2', 'us-west-2']),
+      HttpResponse.json({
+        meta: { count: 3 },
+        data: ['us-east-1', 'us-east-2', 'us-west-2'],
+      }),
     ),
     http.get('/api/billing/v1/authorization/hcsEnrollment', () =>
       HttpResponse.json({ hcsDeal: hcsEnrolled }),
     ),
-    http.get(`${baseUrl}/app_meta_data`, () =>
-      HttpResponse.json({ data: [{ payload: '012345678901' }] }),
+    http.get(
+      'https://console.stage.redhat.com/api/billing/v1/authorization/hcsEnrollment',
+      () => HttpResponse.json({ hcsDeal: hcsEnrolled }),
+    ),
+    http.get(
+      'https://console.redhat.com/api/billing/v1/authorization/hcsEnrollment',
+      () => HttpResponse.json({ hcsDeal: hcsEnrolled }),
+    ),
+    http.get(`${baseUrl}/app_meta_data`, ({ request }) =>
+      HttpResponse.json({
+        data: [
+          {
+            payload:
+              new URL(request.url).searchParams.get('filter[name]') ===
+              'azure_lighthouse_template'
+                ? 'https://portal.azure.com/#create/Microsoft.Template'
+                : new URL(request.url).searchParams.get('filter[name]') ===
+                    'gcp_service_account'
+                  ? new URL(request.url).searchParams.has('application_type_id')
+                    ? 'provisioning@example.iam.gserviceaccount.com'
+                    : 'billing-export@example.iam.gserviceaccount.com'
+                  : '012345678901',
+          },
+        ],
+      }),
     ),
 
     http.post(`${baseUrl}/graphql`, async ({ request }) => {
-      const { variables } = (await request.json()) as SourcesRequestBody;
+      const body = (await request.json()) as SourcesRequestBody;
+      const { variables } = body;
       const limit = variables?.limit ?? DEFAULT_LIMIT;
       const offset = variables?.offset ?? 0;
+      const filter = variables?.filter ?? nameFilterFromQuery(body.query);
 
       const matched = sortSources(
-        filterSources(sourcesDb.findAll(), variables?.filter),
+        filterSources(sourcesDb.findAll(), filter),
         variables?.sortBy,
       );
 

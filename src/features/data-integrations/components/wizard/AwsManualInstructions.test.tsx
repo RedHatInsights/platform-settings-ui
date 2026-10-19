@@ -28,7 +28,7 @@ const PROVISIONING_APP = '/insights/platform/provisioning';
 
 function setup(
   appName: string,
-  stage: 'policy' | 'role',
+  stage: 'details' | 'policy' | 'role',
   environment: 'stage' | 'production' | 'qa' = 'stage',
   mockGet?: (get: jest.SpyInstance) => void,
 ) {
@@ -60,6 +60,19 @@ beforeEach(() => {
   jest.mocked(useNewHccmStgAccount).mockReturnValue(false);
   mockFormValues.aws.aliases.enabled = false;
   mockFormValues.aws.org_units.enabled = false;
+});
+
+it('shows the Cost Management storage instructions and link', () => {
+  setup(COST_APP, 'details');
+  expect(
+    screen.getByText(
+      'To store the data export (previously called a cost and usage report) for cost management, create an Amazon S3 bucket.',
+    ),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Learn more' })).toHaveAttribute(
+    'href',
+    'https://docs.redhat.com/en/documentation/cost_management_service/1-latest/integrate-adding_filtered_aws_int#creating-an-aws-s3-bucket-hcs-n',
+  );
 });
 
 it('shows a bucket-scoped cost policy', () => {
@@ -165,7 +178,9 @@ it('shows a provisioning error when the request fails', async () => {
     get.mockRejectedValue(new Error('network failure')),
   );
   await waitFor(() =>
-    expect(screen.getByText(/unable to load/i)).toBeInTheDocument(),
+    expect(
+      screen.getByText(/error while loading the commands/i),
+    ).toBeInTheDocument(),
   );
   expect(
     screen.queryByRole('link', { name: 'Connect AWS with CloudFormation' }),

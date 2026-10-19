@@ -1,6 +1,7 @@
 import {
   type ListApplicationTypesReturnType,
   type ListSourceTypesReturnType,
+  deleteSource,
   listApplicationTypes,
   listSourceTypes,
   postGraphQL,
@@ -15,6 +16,8 @@ import type {
   CreateSourceInput,
   PageSource,
   Source,
+  SourceApplication,
+  SourceEndpoint,
   SourceType,
   SourcesParams,
 } from '../types/sources.types';
@@ -35,16 +38,22 @@ const APPLICATION_TYPES_LIMIT = 100;
 const AVAILABILITY_WAIT_MS = 10_000;
 const AVAILABILITY_POLL_MS = 1_000;
 
+const validationErrorMessage = (error: unknown): string =>
+  error instanceof Error && error.message
+    ? error.message
+    : 'Unable to validate integration';
+
 async function checkApplicationAvailability(
   axios: AxiosInstance,
-  id: string,
+  application: SourceApplication,
   wait: boolean,
-): Promise<void> {
+): Promise<SourceApplication> {
+  const { id } = application;
   const deadline = Date.now() + (wait ? AVAILABILITY_WAIT_MS : 0);
 
   try {
     while (true) {
-      const { data } = await axios.get<{ availability_status?: string }>(
+      const { data } = await axios.get<SourceApplication>(
         `${SOURCES_API_BASE}/applications/${id}`,
       );
       if (
@@ -53,16 +62,40 @@ async function checkApplicationAvailability(
         data.availability_status === 'unavailable' ||
         Date.now() >= deadline
       ) {
-        return;
+        return data;
       }
       await new Promise((resolve) => setTimeout(resolve, AVAILABILITY_POLL_MS));
     }
-  } catch {
-    // Creation succeeded; a failed status read must not invite a duplicate retry.
+  } catch (error) {
+    return {
+      ...application,
+      id,
+      availability_status: 'unavailable',
+      availability_status_error: validationErrorMessage(error),
+    };
+  }
+}
+
+async function checkEndpointAvailability(
+  axios: AxiosInstance,
+  id: string,
+): Promise<SourceEndpoint> {
+  try {
+    const { data } = await axios.get<SourceEndpoint>(
+      `${SOURCES_API_BASE}/endpoints/${id}`,
+    );
+    return data;
+  } catch (error) {
+    return {
+      id,
+      availability_status: 'unavailable',
+      availability_status_error: validationErrorMessage(error),
+    };
   }
 }
 
 const endpoints = {
+  deleteSource,
   listApplicationTypes,
   listSourceTypes,
   postGraphQL,
@@ -114,6 +147,10 @@ interface SourcesQueryData {
 
 interface SourceQueryData {
   sources: Source[];
+}
+
+interface SourceNameQueryData {
+  sources: Array<Pick<Source, 'id' | 'name'>>;
 }
 
 /**
@@ -277,9 +314,25 @@ export function createSourcesApi(axios: AxiosInstance) {
       return sources[0];
     },
 
+    /** Matches the exact-name check used by sources-ui before source creation. */
+    async isSourceNameTaken(name: string): Promise<boolean> {
+      const response = await api.postGraphQL({
+        graphQLRequest: {
+          query: `{ sources(filter: {name: "name", value: ${JSON.stringify(name)}})
+        { id, name }
+    }`,
+        },
+      });
+
+      const { sources } = unwrap<SourceNameQueryData>(response.data);
+
+      return sources.length > 0;
+    },
+
     /**
-     * Creates a source, its authentication and its applications in one
-     * transaction.
+     * Creates a source, its authentication and its applications in one bulk
+     * request, then links endpoint authentication to the application when
+     * both resources are present.
      *
      * Goes over raw axios rather than `api`: the generated client ships
      * `CreateSource`, `CreateAuthentication` and friends but no `BulkCreate`,
@@ -292,6 +345,12 @@ export function createSourcesApi(axios: AxiosInstance) {
     async createSource(input: CreateSourceInput): Promise<Source> {
       const manual = input.appCreationWorkflow === 'manual_configuration';
       const manualApplication = input.manualApplication;
+      const selectedApplication = manual
+        ? manualApplication
+        : input.selectedApplication;
+      const parsedEndpoint = input.endpoint?.url
+        ? new URL(input.endpoint.url)
+        : undefined;
 
       if (manual && (!manualApplication || !input.authentication?.username)) {
         throw new Error(
@@ -305,24 +364,48 @@ export function createSourcesApi(axios: AxiosInstance) {
             name: input.name,
             source_type_name: input.sourceTypeName,
             app_creation_workflow: input.appCreationWorkflow,
+            ...(input.sourceRef ? { source_ref: input.sourceRef } : {}),
           },
         ],
-        endpoints: [],
-        authentications: input.authentication
+        endpoints: input.endpoint
           ? [
               {
-                ...input.authentication,
-                resource_type: manual ? 'application' : 'source',
-                resource_name: manual ? manualApplication!.name : input.name,
+                role: input.endpoint.role,
+                verify_ssl: input.endpoint.verify_ssl,
+                certificate_authority: input.endpoint.certificate_authority,
+                source_name: input.name,
+                default: true,
+                scheme: parsedEndpoint?.protocol.replace(/:$/, ''),
+                host: parsedEndpoint?.hostname,
+                port: parsedEndpoint?.port
+                  ? Number(parsedEndpoint.port)
+                  : undefined,
+                path: parsedEndpoint?.pathname,
               },
             ]
           : [],
-        applications: manual
+        authentications:
+          input.authentication && input.authentication.authtype !== 'empty'
+            ? [
+                {
+                  ...input.authentication,
+                  resource_type: input.endpoint
+                    ? 'endpoint'
+                    : selectedApplication
+                      ? 'application'
+                      : 'source',
+                  resource_name: input.endpoint
+                    ? parsedEndpoint?.hostname
+                    : (selectedApplication?.name ?? input.name),
+                },
+              ]
+            : [],
+        applications: selectedApplication
           ? [
               {
-                application_type_id: manualApplication!.id,
+                application_type_id: selectedApplication.id,
                 source_name: input.name,
-                extra: manualApplication!.extra,
+                extra: selectedApplication.extra,
               },
             ]
           : (input.applicationTypeIds ?? []).map((application_type_id) => ({
@@ -342,6 +425,20 @@ export function createSourcesApi(axios: AxiosInstance) {
         throw new Error('Sources bulk create returned no source');
       }
 
+      const createdApplication = response.data?.applications?.[0];
+      const createdAuthentication = response.data?.authentications?.[0];
+      if (
+        input.endpoint &&
+        selectedApplication &&
+        createdApplication &&
+        createdAuthentication
+      ) {
+        await axios.post(`${SOURCES_API_BASE}/application_authentications`, {
+          application_id: createdApplication.id,
+          authentication_id: createdAuthentication.id,
+        });
+      }
+
       try {
         await axios.post(
           `${SOURCES_API_BASE}/sources/${created.id}/check_availability`,
@@ -350,19 +447,40 @@ export function createSourcesApi(axios: AxiosInstance) {
         // Creation succeeded; a failed status check must not invite a duplicate retry.
       }
 
-      await Promise.all(
-        (response.data?.applications ?? []).map((application) =>
-          checkApplicationAvailability(
-            axios,
-            application.id,
-            input.availabilityWaitApplicationTypeIds?.includes(
-              application.application_type_id,
-            ) ?? false,
-          ),
-        ),
-      );
+      const [applications, endpoint] = await Promise.all([
+        response.data?.applications
+          ? Promise.all(
+              response.data.applications.map((application) =>
+                checkApplicationAvailability(
+                  axios,
+                  application,
+                  input.availabilityWaitApplicationTypeIds?.includes(
+                    application.application_type_id,
+                  ) ?? false,
+                ).then((status) => ({ ...application, ...status })),
+              ),
+            )
+          : undefined,
+        response.data?.endpoints
+          ? Promise.all(
+              response.data.endpoints.map((createdEndpoint) =>
+                checkEndpointAvailability(axios, createdEndpoint.id).then(
+                  (status) => ({ ...createdEndpoint, ...status }),
+                ),
+              ),
+            )
+          : undefined,
+      ]);
 
-      return created;
+      return {
+        ...created,
+        ...(applications ? { applications } : {}),
+        ...(endpoint ? { endpoint } : {}),
+      };
+    },
+
+    async deleteSource(id: string): Promise<void> {
+      await api.deleteSource({ id });
     },
 
     async getSourceTypes(): Promise<SourceType[]> {
@@ -382,17 +500,25 @@ export function createSourcesApi(axios: AxiosInstance) {
     },
 
     async getAwsRegions(): Promise<string[]> {
-      const response = await axios.get<string[]>(
+      const response = await axios.get<{ data: string[] }>(
         '/api/cost-management/v1/sources/aws-s3-regions/?limit=10000&offset=0',
       );
-      return response.data;
+      if (!Array.isArray(response.data?.data)) {
+        throw new Error('AWS regions response is invalid');
+      }
+      return response.data.data;
     },
 
-    async getHcsEnrollment(): Promise<boolean> {
-      const response = await axios.get<{ hcsDeal: boolean }>(
-        '/api/billing/v1/authorization/hcsEnrollment',
-      );
-      return response.data.hcsDeal;
+    async getHcsEnrollment(isProd = false): Promise<boolean> {
+      const consoleUrl = `https://console.${isProd ? '' : 'stage.'}redhat.com`;
+      try {
+        const response = await axios.get<{ hcsDeal: boolean }>(
+          `${consoleUrl}/api/billing/v1/authorization/hcsEnrollment`,
+        );
+        return response.status === 200 ? response.data.hcsDeal : false;
+      } catch {
+        return false;
+      }
     },
 
     async getAwsProvisioningAccount(
@@ -403,6 +529,38 @@ export function createSourcesApi(axios: AxiosInstance) {
       );
       const account = response.data.data?.[0]?.payload;
       if (!account) throw new Error('AWS provisioning account is unavailable');
+      return account;
+    },
+
+    async getAzureLighthouseLink(): Promise<string> {
+      const response = await axios.get<{ data: Array<{ payload: string }> }>(
+        `${SOURCES_API_BASE}/app_meta_data?filter[name]=azure_lighthouse_template`,
+      );
+      const link = response.data.data?.[0]?.payload;
+      if (!link) throw new Error('Azure Lighthouse link is unavailable');
+      return link;
+    },
+
+    async getGoogleBillingAccount(): Promise<string> {
+      const response = await axios.get<{
+        data: Array<{ payload: string }>;
+      }>(`${SOURCES_API_BASE}/app_meta_data?filter[name]=gcp_service_account`);
+      const account = response.data.data?.find(({ payload }) =>
+        payload.includes('billing-export'),
+      )?.payload;
+      if (!account) throw new Error('Google billing account is unavailable');
+      return account;
+    },
+
+    async getGoogleProvisioningAccount(
+      applicationTypeId: string,
+    ): Promise<string> {
+      const response = await axios.get<{ data: Array<{ payload: string }> }>(
+        `${SOURCES_API_BASE}/app_meta_data?filter[name]=gcp_service_account&application_type_id=${encodeURIComponent(applicationTypeId)}`,
+      );
+      const account = response.data.data?.[0]?.payload;
+      if (!account)
+        throw new Error('Google provisioning account is unavailable');
       return account;
     },
   };

@@ -757,12 +757,6 @@ export function providerWizardSteps(
         googleGuide('google-project-guide', 'project'),
         hidden(AUTH, 'project_id_service_account_json'),
         input('authentication.username', t(copy.projectId)),
-        input(
-          'authentication.password',
-          t(copy.serviceJson),
-          required,
-          componentTypes.TEXTAREA,
-        ),
         googleGuide('google-project-description-guide', 'customize'),
         {
           component: componentTypes.RADIO,

@@ -302,9 +302,6 @@ const GoogleCostInstructions: React.FC<{ stage: Stage }> = ({ stage }) => {
           <li>
             <FormattedMessage {...copy.datasetName} values={{ b: bold }} />
           </li>
-          <li>
-            <FormattedMessage {...copy.datasetCreate} values={{ b: bold }} />
-          </li>
         </ol>
       </Content>
     );

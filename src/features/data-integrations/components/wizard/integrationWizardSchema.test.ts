@@ -283,6 +283,36 @@ describe('createIntegrationWizardSchema', () => {
     ]);
   });
 
+  it('omits Service Account JSON only from Google Cost Management Project', () => {
+    const fields = wizardField().fields.find(
+      ({ name }: { name: string }) => name === 'google-cost',
+    ).fields;
+
+    expect(fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'authentication.username',
+          label: 'Project ID',
+          isRequired: true,
+        }),
+      ]),
+    );
+    expect(fields).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'authentication.password' }),
+      ]),
+    );
+    expect(
+      wizardField().fields.find(
+        ({ name }: { name: string }) => name === 'google-generic',
+      ).fields,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'authentication.password' }),
+      ]),
+    );
+  });
+
   it('chains steps: source type -> naming -> configuration -> apps -> review', () => {
     expect(firstStep().nextStep).toBe(WizardStepId.NameIntegration);
     expect(credentialsStep().nextStep).toBe(WizardStepId.ApplicationSelection);

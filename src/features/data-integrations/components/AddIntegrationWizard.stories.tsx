@@ -1265,10 +1265,9 @@ export const GoogleCostManagement: Story = {
       () => modal.getByRole('textbox', { name: 'Project ID' }),
       'project-1',
     );
-    await user.click(
-      modal.getByRole('textbox', { name: 'Service Account JSON' }),
-    );
-    await user.paste('{"type":"service_account"}');
+    expect(
+      modal.queryByRole('textbox', { name: 'Service Account JSON' }),
+    ).not.toBeInTheDocument();
     await advance(user);
     await modal.findByRole('heading', { name: 'Create IAM role' });
     await advance(user);
@@ -1284,6 +1283,11 @@ export const GoogleCostManagement: Story = {
     await modal.findByRole('heading', { name: 'Billing export' });
     await advance(user);
     await modal.findByRole('heading', { name: 'Review details' });
+    expect(
+      modal.queryByText(
+        'This integration will not be monitored in Integrations',
+      ),
+    ).not.toBeInTheDocument();
     await user.click(modal.getByRole('button', { name: 'Add' }));
     await modal.findByRole('heading', { name: 'Integration added' });
     const request = bulkCreateRequests[bulkCreateRequests.length - 1];
@@ -1292,6 +1296,7 @@ export const GoogleCostManagement: Story = {
       expect.objectContaining({ dataset: 'billing_dataset' }),
     );
     expect(request.authentications[0].resource_type).toBe('application');
+    expect(request.authentications[0].password).toBeUndefined();
   },
 };
 
@@ -1306,10 +1311,6 @@ export const GoogleCostCustomExport: Story = {
       () => modal.getByRole('textbox', { name: 'Project ID' }),
       'project-custom',
     );
-    await user.click(
-      modal.getByRole('textbox', { name: 'Service Account JSON' }),
-    );
-    await user.paste('{"type":"service_account"}');
     await user.click(
       modal.getByRole('radio', {
         name: 'I wish to manually customize the dataset sent to Cost Management',
@@ -1356,10 +1357,6 @@ export const GoogleRhelManagement: Story = {
       () => modal.getByRole('textbox', { name: 'Project ID' }),
       'old-project',
     );
-    await user.click(
-      modal.getByRole('textbox', { name: 'Service Account JSON' }),
-    );
-    await user.paste('{"type":"service_account"}');
     await user.click(modal.getByRole('button', { name: 'Back' }));
     await modal.findByRole('heading', { name: 'Select application' });
     await user.click(modal.getByRole('radio', { name: /RHEL management/ }));
@@ -1369,6 +1366,16 @@ export const GoogleRhelManagement: Story = {
     await modal.findByRole('heading', { name: 'Run Ansible playbook' });
     await advance(user);
     await modal.findByRole('heading', { name: 'Review details' });
+    expect(
+      await modal.findByText(
+        'This integration will not be monitored in Integrations',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      modal.getByText(
+        'This integration will be represented in the Integrations list, but will not reflect true status or resources.',
+      ),
+    ).toBeInTheDocument();
     await user.click(modal.getByRole('button', { name: 'Add' }));
     await modal.findByRole('heading', { name: 'Integration added' });
     const request = bulkCreateRequests[bulkCreateRequests.length - 1];
@@ -1455,10 +1462,6 @@ export const GoogleSubmitErrorRetry: Story = {
       () => modal.getByRole('textbox', { name: 'Project ID' }),
       'retry-project',
     );
-    await user.click(
-      modal.getByRole('textbox', { name: 'Service Account JSON' }),
-    );
-    await user.paste('{"type":"service_account"}');
     await advance(user);
     await modal.findByRole('heading', { name: 'Create IAM role' });
     await advance(user);

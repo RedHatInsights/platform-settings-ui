@@ -109,7 +109,7 @@ const DataIntegrationsPage: React.FC = () => {
         }}
         actionMenu={
           <AddDataIntegrationDropdown
-            initialSourceType={addParam}
+            initialSourceType={isOrgAdmin ? addParam : null}
             isDisabled={!isOrgAdmin}
           />
         }

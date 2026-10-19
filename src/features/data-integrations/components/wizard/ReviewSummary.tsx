@@ -133,6 +133,15 @@ const providerReview = defineMessages({
     id: 'dataIntegrations.review.customCost.link',
     defaultMessage: 'Customizing your {application} cost and usage report',
   },
+  googleRhelNoticeTitle: {
+    id: 'dataIntegrations.review.googleRhelNotice.title',
+    defaultMessage: 'This integration will not be monitored in Integrations',
+  },
+  googleRhelNoticeDescription: {
+    id: 'dataIntegrations.review.googleRhelNotice.description',
+    defaultMessage:
+      'This integration will be represented in the Integrations list, but will not reflect true status or resources.',
+  },
 });
 
 const DescriptionListTerm: React.FC<{
@@ -465,6 +474,18 @@ const ReviewSummary: React.FC = () => {
 
   return (
     <>
+      {provider === 'google' &&
+        manualAppName === '/insights/platform/cloud-meter' && (
+          <Alert
+            variant="info"
+            isInline
+            component="h3"
+            className="pf-v6-u-mb-md pf-v6-u-w-100"
+            title={intl.formatMessage(providerReview.googleRhelNoticeTitle)}
+          >
+            {intl.formatMessage(providerReview.googleRhelNoticeDescription)}
+          </Alert>
+        )}
       {summary}
       {showCustomCostAlert && (
         <Alert

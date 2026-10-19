@@ -252,7 +252,7 @@
     "defaultMessage": "Launch the Azure Enterprise Portal and give the service principal created above Administrator role on the associated account."
   },
   "dataIntegrations.azureCost.exportAfter": {
-    "defaultMessage": "After configuring the daily export, enter its name below."
+    "defaultMessage": "After configuring the daily export, enter the following:"
   },
   "dataIntegrations.azureCost.exportIntro": {
     "defaultMessage": "Create a recurring task to export cost data to your Azure storage account, where Cost Management will retrieve the data."
@@ -261,7 +261,7 @@
     "defaultMessage": "From the Azure portal, add a new cost export."
   },
   "dataIntegrations.azureCost.exportSettings": {
-    "defaultMessage": "Provide a container name and directory path, use the settings below, and leave all other options at their defaults."
+    "defaultMessage": "Provide a name for the container and directory path, and specify the below settings to create the daily export. Leave all other options as the default."
   },
   "dataIntegrations.azureCost.exportType": {
     "defaultMessage": "Export type"
@@ -285,16 +285,19 @@
     "defaultMessage": "Resource group for the storage account"
   },
   "dataIntegrations.azureCost.rolesCreate": {
-    "defaultMessage": "Run this command in Cloud Shell to create a service principal with the Storage Blob Data Reader role. Enter the tenant, client ID, and secret from its output below:"
+    "defaultMessage": "Run the following command in Cloud Shell to create a service principal with Cost Management Storage Blob Data Reader role. From the output enter the values in the fields below:"
   },
   "dataIntegrations.azureCost.rolesIntro": {
-    "defaultMessage": "Red Hat recommends dedicated credentials to grant {application} read-only access to Azure cost data."
+    "defaultMessage": "Red Hat recommends configuring dedicated credentials to grant {application} read-only access to Azure cost data."
   },
   "dataIntegrations.azureCost.scopeAlert": {
     "defaultMessage": "If your organization is converting systems from CentOS 7 to RHEL and using hourly billing, select Include RHEL usage."
   },
-  "dataIntegrations.azureCost.scopeCommand": {
-    "defaultMessage": "Run the following command in Cloud Shell to obtain the selected cost export scope. Enter its output below:"
+  "dataIntegrations.azureCost.scopeBillingAccount": {
+    "defaultMessage": "Run the following command from the Cloud Shell, providing the Billing Account name, to obtain the Billing Account scope associated with the generated cost export."
+  },
+  "dataIntegrations.azureCost.scopeBillingProfile": {
+    "defaultMessage": "Run the following command from the Cloud Shell, providing the Billing Account name and the Billig Profile name, to obtain the Billing Profile scope associated with the generated cost export."
   },
   "dataIntegrations.azureCost.scopeCustom": {
     "defaultMessage": "Since you have chosen to manually customize the data set you want to send to Cost Management, you do not need to specify an export scope at this point and time."
@@ -302,11 +305,29 @@
   "dataIntegrations.azureCost.scopeCustomTitle": {
     "defaultMessage": "Skip this step and proceed to next step"
   },
+  "dataIntegrations.azureCost.scopeEnrollmentAccount": {
+    "defaultMessage": "enrollment."
+  },
+  "dataIntegrations.azureCost.scopeInput": {
+    "defaultMessage": "After running the command, enter the output in the following field:"
+  },
   "dataIntegrations.azureCost.scopeIntro": {
     "defaultMessage": "From the Azure portal, select the scope for the new cost export. If there is a need to further customize the data you want to send to Red Hat, select the manually customize option to follow the special instructions on how to."
   },
+  "dataIntegrations.azureCost.scopeInvoiceSection": {
+    "defaultMessage": "Run the following command from the Cloud Shell, providing the Billing Account name, Billing Profile name, and Invoice Section name, to obtain the Invoice Section scope associated with the generated cost export."
+  },
   "dataIntegrations.azureCost.scopeLabel": {
     "defaultMessage": "Scope"
+  },
+  "dataIntegrations.azureCost.scopeManagementGroup": {
+    "defaultMessage": "Run the following command from the Cloud Shell, providing the Management Group name, to obtain the Management Group scope associated with the generated cost export."
+  },
+  "dataIntegrations.azureCost.scopeResourceGroup": {
+    "defaultMessage": "Run the following command from the Cloud Shell, providing the Resource Group name, to obtain the Resource Group scope associated with the generated cost export."
+  },
+  "dataIntegrations.azureCost.scopeSubscription": {
+    "defaultMessage": "Run the following command from the Cloud Shell to obtain the Subscription ID associated with the generated cost export."
   },
   "dataIntegrations.azureCost.storageAfter": {
     "defaultMessage": "After configuring a resource group and storage account in the Azure portal, enter the following:"
@@ -321,10 +342,7 @@
     "defaultMessage": "Created storage account name or existing storage account name"
   },
   "dataIntegrations.azureCost.subscription": {
-    "defaultMessage": "Run the following command in Cloud Shell to obtain the Subscription ID where the cost export is stored, then enter it below:"
-  },
-  "dataIntegrations.azureLighthouse.and": {
-    "defaultMessage": "and"
+    "defaultMessage": "Run the following command in Cloud Shell to obtain the Subscription ID where the cost export is being stored and enter it below:"
   },
   "dataIntegrations.azureLighthouse.assignmentRole": {
     "defaultMessage": "Managed Services Registration assignment Delete Role"
@@ -333,13 +351,13 @@
     "defaultMessage": "Azure documentation"
   },
   "dataIntegrations.azureLighthouse.copyId": {
-    "defaultMessage": "When deployment is complete, click Go to subscription and copy the Subscription ID."
+    "defaultMessage": "When the deployment is complete, click <b>Go to subscription</b> and copy the <b>Subscription ID</b>."
   },
   "dataIntegrations.azureLighthouse.create": {
-    "defaultMessage": "Click Create to run the deployment. This creates two roles in your Azure account:"
+    "defaultMessage": "Click <b>Create</b> to run the deployment. This action creates two roles in your Azure account: {readerLink} and {roleLink}."
   },
   "dataIntegrations.azureLighthouse.instructions": {
-    "defaultMessage": "In Azure Lighthouse, deploy the Azure Resource Manager custom template that connects your Red Hat and Azure accounts. Click Go to Lighthouse and follow these instructions:"
+    "defaultMessage": "In Azure Lighthouse, deploy the Azure Resource Manager custom template that connects your Red Hat and Azure accounts. When ready, click <b>Go to Lighthouse</b> and follow these instructions:"
   },
   "dataIntegrations.azureLighthouse.link": {
     "defaultMessage": "Go to Lighthouse"
@@ -348,10 +366,10 @@
     "defaultMessage": "Reader"
   },
   "dataIntegrations.azureLighthouse.review": {
-    "defaultMessage": "Edit any other instance details and click Review + create."
+    "defaultMessage": "Edit any other instance details and click <b>Review + create</b>."
   },
   "dataIntegrations.azureLighthouse.roleRequirement": {
-    "defaultMessage": "Your Azure account must have at least the Owner role for the selected subscription."
+    "defaultMessage": "To complete this step, your Azure account must have the Owner role, at a minimum, for the selected subscription. View the {link} for more information."
   },
   "dataIntegrations.azureLighthouse.roleTitle": {
     "defaultMessage": "Azure role requirements"
@@ -363,7 +381,7 @@
     "defaultMessage": "Paste your Azure subscription ID from the previous step into the field below."
   },
   "dataIntegrations.azureLighthouse.unavailable": {
-    "defaultMessage": "The Azure Lighthouse link could not be loaded. Please return to this step and try again."
+    "defaultMessage": "There is an error with loading of the configuration. Please go back and return to this step."
   },
   "dataIntegrations.azureProvisioning.lighthouse": {
     "defaultMessage": "Complete configuration steps in Azure Lighthouse according to Microsoft instructions. When you're finished, return to this wizard to finish creating this Azure source."
@@ -423,7 +441,7 @@
     "defaultMessage": "Cost Management"
   },
   "dataIntegrations.googleCost.customize": {
-    "defaultMessage": "If you need to further customize the data sent to Cost Management, select the manually customize option for the additional setup instructions."
+    "defaultMessage": "If there is a need to further customize the data you want to send to Cost Management, select the manually customize option to follow the special instructions on how to."
   },
   "dataIntegrations.googleCost.datasetCreate": {
     "defaultMessage": "Click <b>Create dataset.</b>"
@@ -749,6 +767,9 @@
   "dataIntegrations.review.clientId": {
     "defaultMessage": "Client ID"
   },
+  "dataIntegrations.review.cloudStorageBucket": {
+    "defaultMessage": "Cloud storage bucket name"
+  },
   "dataIntegrations.review.clusterId": {
     "defaultMessage": "Cluster identifier"
   },
@@ -778,6 +799,12 @@
   },
   "dataIntegrations.review.exportName": {
     "defaultMessage": "Cost export name"
+  },
+  "dataIntegrations.review.googleRhelNotice.description": {
+    "defaultMessage": "This integration will be represented in the Integrations list, but will not reflect true status or resources."
+  },
+  "dataIntegrations.review.googleRhelNotice.title": {
+    "defaultMessage": "This integration will not be monitored in Integrations"
   },
   "dataIntegrations.review.includeRhel": {
     "defaultMessage": "Include RHEL usage"

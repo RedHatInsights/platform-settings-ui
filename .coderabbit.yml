@@ -87,29 +87,6 @@ reviews:
         - Verify no legacy PatternFly v5 patterns are used
         - For module federation: ensure exports are properly typed and stable
 
-    - path: "**/*.{test,spec}.{ts,tsx}"
-      instructions: |
-        For unit test files:
-
-        IMPORTANT: Unit tests are ALWAYS REQUIRED for any source code changes.
-        This is the foundation of our testing strategy (unit → component → e2e).
-
-        When reviewing unit tests:
-        - MUST use @testing-library/react for DOM operations (not enzyme or direct DOM manipulation)
-        - Verify meaningful test descriptions that explain user behavior
-        - Check for proper test isolation (no shared state between tests)
-        - Ensure mocks are appropriate and minimal (don't mock what you own)
-        - Verify edge cases and error scenarios are tested
-        - Check that tests test user-visible behavior, not implementation details
-        - Ensure proper cleanup in beforeEach/afterEach hooks
-        - Snapshot tests should be meaningful and minimal (not just for coverage)
-        - Use role-based queries (getByRole, getByLabelText) for accessibility
-
-        When unit tests are MISSING:
-        - BLOCK THE PR if src/**/*.{ts,tsx} changed without corresponding tests
-        - Explain which files need test coverage
-        - Suggest test cases for the new/modified functionality
-
     - path: "**/*.{scss,css}"
       instructions: |
         For style files:
@@ -138,7 +115,6 @@ reviews:
       instructions: |
         Stories must have a title in meta. Play functions should use
         within() + role queries, not canvasElement.querySelector().
-        Use userEvent.setup() for interactions.
 
     - path: "eslint-rules/**"
       instructions: |
@@ -171,11 +147,8 @@ reviews:
         - Verify tests are resilient to staging environment delays
         - Check that E2E_USER and E2E_PASSWORD env vars are documented
 
-        When E2E tests are MISSING:
-        - Assess if the PR changes warrant E2E tests (see "Test Coverage and Strategy" check)
-        - High-complexity features (new routes, auth flows, critical workflows) REQUIRE E2E tests
-        - Medium-complexity features (major features, workflow changes) should have E2E tests
-        - Low-complexity changes (minor UI, docs, refactoring) don't need E2E tests
+        When E2E tests are missing, follow the advisory guidance in the
+        "Test Coverage and Strategy" check.
 
     - path: ".github/workflows/**/*.{yml,yaml}"
       instructions: |
@@ -240,6 +213,10 @@ reviews:
   # non-React slice. Do not quote it as a threshold for React changes.
   #
   pre_merge_checks:
+    # Docstring coverage is not a team standard for this TypeScript app.
+    docstrings:
+      mode: "off"
+
     # PR title validation
     title:
       mode: "warning"

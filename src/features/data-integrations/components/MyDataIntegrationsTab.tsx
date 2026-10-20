@@ -1,5 +1,5 @@
 import React from 'react';
-import SourcesTable from '../features/sources-list/SourcesTable';
+import SourcesTable from './sources-list/SourcesTable';
 
 /**
  * "My data integrations" tab showing the user's configured data source

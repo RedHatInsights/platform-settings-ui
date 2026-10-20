@@ -6,14 +6,12 @@ Landing page for the Settings application, providing an overview and navigation 
 
 ```
 settings-overview/
-├── features/
-│   └── about/                    # About tab (MVP: standalone page without tabs)
-│       ├── components/
-│       │   ├── AboutPage.tsx     # Main page component
-│       │   ├── AboutPage.scss    # Page styles
-│       │   └── AboutPage.stories.tsx  # Storybook stories
-│       ├── messages.ts           # i18n messages
-│       └── index.ts              # Exports
+├── components/
+│   ├── AboutPage.tsx              # Main page component
+│   ├── AboutPage.scss             # Page styles
+│   └── AboutPage.stories.tsx      # Storybook stories
+├── messages.ts                    # i18n messages
+├── index.ts                       # Exports
 └── README.md
 ```
 
@@ -80,7 +78,7 @@ The AboutPage is automatically registered in the application's routing at `/sett
 ```tsx
 // Routing.tsx
 const AboutPage = lazy(() =>
-  import('./features/settings-overview/features/about').then(
+  import('./features/settings-overview').then(
     (module) => ({ default: module.AboutPage })
   )
 );

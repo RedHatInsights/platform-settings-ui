@@ -18,8 +18,8 @@ import {
   GridItem,
 } from '@patternfly/react-core/dist/dynamic/layouts/Grid';
 import ExternalLinkAltIcon from '@patternfly/react-icons/dist/dynamic/icons/external-link-alt-icon';
-import UseCaseCard from './components/UseCaseCard';
-import AddIntegrationWizard from '../../components/AddIntegrationWizard';
+import UseCaseCard from './UseCaseCard';
+import AddIntegrationWizard from '../AddIntegrationWizard';
 import messages from './messages';
 import { DOCS_URL } from '../../constants/docs';
 import type { SourceTypeName } from '../../types';

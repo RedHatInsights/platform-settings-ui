@@ -3,8 +3,7 @@ import { useIntl } from 'react-intl';
 import { Divider } from '@patternfly/react-core/dist/dynamic/components/Divider';
 import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHeader';
 import Main from '@redhat-cloud-services/frontend-components/Main';
-// eslint-disable-next-line no-restricted-imports -- Page component needs chrome for document title
-import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome';
+import { useAppServices } from '../../../shared/ServiceContext';
 import AlertManagerTable from './AlertManagerTable';
 import messages from '../messages';
 
@@ -18,15 +17,15 @@ const ICON_SIZE = 48;
 
 const AlertManagerPage: React.FC = () => {
   const intl = useIntl();
-  const { updateDocumentTitle, helpTopics } = useChrome();
+  const { updateDocumentTitle, openHelpTopic } = useAppServices();
 
   useEffect(() => {
-    updateDocumentTitle?.(intl.formatMessage(messages.pageTitle));
+    updateDocumentTitle(intl.formatMessage(messages.pageTitle));
   }, [updateDocumentTitle, intl]);
 
   const handleLearnMore = (e: React.MouseEvent) => {
     e.preventDefault();
-    helpTopics?.setActiveTopic?.('learn');
+    openHelpTopic('learn');
   };
 
   return (

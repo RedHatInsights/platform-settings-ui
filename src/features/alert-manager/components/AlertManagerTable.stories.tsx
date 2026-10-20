@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MemoryRouter } from 'react-router-dom';
-import { clearAndType } from '../../../../../shared/interactionHelpers';
+import { clearAndType } from '../../../shared/interactionHelpers';
 import { eventTypesHandlers } from '../data/mocks/eventTypes';
 import { eventTypeEndpointsHandlers } from '../data/mocks/eventTypeEndpoints';
 import AlertManagerTable from './AlertManagerTable';

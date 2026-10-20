@@ -7,12 +7,12 @@ import {
   StackItem,
 } from '@patternfly/react-core/dist/dynamic/layouts/Stack';
 import { useIntl } from 'react-intl';
-import messages from '../messages';
+import messages from './messages';
 import type {
   ApplicationType,
   Source,
   SourceApplication,
-} from '../../../data/types/sources.types';
+} from '../../data/types/sources.types';
 
 interface ConnectedApplicationsSectionProps {
   source: Source;

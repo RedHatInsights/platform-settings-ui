@@ -9,10 +9,10 @@ import {
 } from '@patternfly/react-core/dist/dynamic/components/Card';
 import { Tooltip } from '@patternfly/react-core/dist/dynamic/components/Tooltip';
 import PlusCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/plus-circle-icon';
-import messages from '../messages';
-import { PROVIDER_DOCS_URLS } from '../../../constants/docs';
-import { getSourceTypeIcon } from '../../../constants/sourceTypeIcons';
-import type { SourceTypeName } from '../../../types';
+import messages from './messages';
+import { PROVIDER_DOCS_URLS } from '../../constants/docs';
+import { getSourceTypeIcon } from '../../constants/sourceTypeIcons';
+import type { SourceTypeName } from '../../types';
 
 const ICON_SIZE = 32;
 

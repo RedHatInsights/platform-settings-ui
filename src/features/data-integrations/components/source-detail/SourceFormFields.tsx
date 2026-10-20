@@ -7,9 +7,9 @@ import {
 } from '@patternfly/react-core/dist/dynamic/components/DescriptionList';
 import { useIntl } from 'react-intl';
 import DateFormat from '@redhat-cloud-services/frontend-components/DateFormat';
-import messages from '../messages';
-import { getDateFormatType } from '../../../utils/dateFormatType';
-import type { Source, SourceType } from '../../../data/types/sources.types';
+import messages from './messages';
+import { getDateFormatType } from '../../utils/dateFormatType';
+import type { Source, SourceType } from '../../data/types/sources.types';
 
 interface SourceFormFieldsProps {
   source: Source;

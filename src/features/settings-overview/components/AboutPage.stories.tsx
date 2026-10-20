@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { MemoryRouter } from 'react-router-dom';
 import AboutPage from './AboutPage';
+
+const openHelpTopic = fn();
 
 const meta = {
   title: 'Features/SettingsOverview/AboutPage',
@@ -13,6 +15,9 @@ const meta = {
       </MemoryRouter>
     ),
   ],
+  beforeEach: () => {
+    openHelpTopic.mockClear();
+  },
 } satisfies Meta<typeof AboutPage>;
 
 export default meta;
@@ -22,6 +27,9 @@ type Story = StoryObj<typeof meta>;
  * Default state - shows the Settings Overview About page with all content
  */
 export const Default: Story = {
+  parameters: {
+    services: { openHelpTopic },
+  },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
 
@@ -38,6 +46,11 @@ export const Default: Story = {
       expect(
         canvas.getByRole('link', { name: /learn more/i }),
       ).toBeInTheDocument();
+    });
+
+    await step('Learn more opens the help topic', async () => {
+      await userEvent.click(canvas.getByRole('link', { name: /learn more/i }));
+      expect(openHelpTopic).toHaveBeenCalledWith('learn');
     });
 
     await step('Section heading displays', async () => {

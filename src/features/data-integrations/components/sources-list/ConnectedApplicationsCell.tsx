@@ -5,9 +5,9 @@ import { Label } from '@patternfly/react-core/dist/dynamic/components/Label';
 import type {
   ApplicationType,
   SourceApplication,
-} from '../../../data/types/sources.types';
-import messages from '../messages';
-import { getSourceStatusVariant } from '../../../components/SourceStatusLabel';
+} from '../../data/types/sources.types';
+import messages from './messages';
+import { getSourceStatusVariant } from '../SourceStatusLabel';
 
 interface ConnectedApplicationsCellProps {
   applications?: SourceApplication[];

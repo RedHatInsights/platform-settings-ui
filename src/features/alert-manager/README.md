@@ -16,12 +16,12 @@ alert-manager/
 │   │   └── events.ts              # MSW v2 handler factories
 │   └── types/
 │       └── events.types.ts        # Strongly-typed event log interfaces
-├── features/
-│   └── event-log/
-│       ├── EventLogPage.tsx           # Page shell (PageHeader, date range toolbar)
-│       ├── EventLogPage.stories.tsx   # Storybook stories with play functions
-│       └── components/
-│           └── EventLogTable.tsx      # useTableState + TableView + filters
+└── components/
+    ├── AlertManagerPage.tsx
+    └── event-log/
+        ├── EventLogPage.tsx           # Page shell (PageHeader, date range toolbar)
+        ├── EventLogPage.stories.tsx   # Storybook stories with play functions
+        └── EventLogTable.tsx          # useTableState + TableView + filters
 ```
 
 ### API Client
@@ -46,7 +46,7 @@ eventsKeys.list(p)      // ['events', 'list', params]
 
 ### Event Log Page
 
-The Event Log page (`features/event-log/EventLogPage.tsx`) displays a paginated table of notification events with:
+The Event Log page (`components/event-log/EventLogPage.tsx`) displays a paginated table of notification events with:
 
 - **Admin gate** — non-admin users see a `NotAuthorized` screen (pending Kessel `EVENTS_VIEW` permission rollout)
 - **Filters** — Event name (text), Service, Severity (checkboxes)

@@ -28,9 +28,9 @@ import {
   useSource,
   useSourceTypes,
 } from '../../index';
-import { SourceHeader } from './components/SourceHeader';
-import { SourceFormFields } from './components/SourceFormFields';
-import { ConnectedApplicationsSection } from './components/ConnectedApplicationsSection';
+import { SourceHeader } from './SourceHeader';
+import { SourceFormFields } from './SourceFormFields';
+import { ConnectedApplicationsSection } from './ConnectedApplicationsSection';
 import messages from './messages';
 
 /**

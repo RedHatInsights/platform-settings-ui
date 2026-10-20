@@ -1,4 +1,4 @@
-import type { EndpointType } from '../../data/types/events.types';
+import type { EndpointType } from './data/types/events.types';
 
 export type { EndpointType };
 

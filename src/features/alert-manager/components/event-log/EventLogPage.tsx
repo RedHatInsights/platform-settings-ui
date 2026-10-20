@@ -10,7 +10,7 @@ import {
 import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHeader';
 import { NotAuthorized } from '@redhat-cloud-services/frontend-components/NotAuthorized';
 import { useAppServices } from '../../../../shared/ServiceContext';
-import EventLogTable from './components/EventLogTable';
+import EventLogTable from './EventLogTable';
 import messages from './messages';
 
 type DatePreset = 'today' | 'yesterday' | 'last7' | 'last14';

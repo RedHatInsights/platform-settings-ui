@@ -25,9 +25,8 @@ import UserIcon from '@patternfly/react-icons/dist/js/icons/user-icon';
 import ColumnsIcon from '@patternfly/react-icons/dist/js/icons/columns-icon';
 import PortIcon from '@patternfly/react-icons/dist/js/icons/port-icon';
 import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHeader';
-// eslint-disable-next-line no-restricted-imports -- Page component needs chrome for document title
-import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome';
-import { AppLink } from '../../../../../Components/AppLink';
+import { useAppServices } from '../../../shared/ServiceContext';
+import { AppLink } from '../../../Components/AppLink';
 import messages from '../messages';
 import './AboutPage.scss';
 
@@ -110,15 +109,15 @@ const UseCaseRow: React.FC<UseCaseRowProps> = ({
 
 const AboutPage: React.FC = () => {
   const intl = useIntl();
-  const { updateDocumentTitle, helpTopics } = useChrome();
+  const { updateDocumentTitle, openHelpTopic } = useAppServices();
 
   useEffect(() => {
-    updateDocumentTitle?.(intl.formatMessage(messages.pageTitle));
+    updateDocumentTitle(intl.formatMessage(messages.pageTitle));
   }, [updateDocumentTitle, intl]);
 
   const handleLearnMore = (e: React.MouseEvent) => {
     e.preventDefault();
-    helpTopics?.setActiveTopic?.('learn');
+    openHelpTopic('learn');
   };
 
   return (

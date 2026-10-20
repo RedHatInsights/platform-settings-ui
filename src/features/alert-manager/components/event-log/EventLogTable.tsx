@@ -33,15 +33,15 @@ import type {
   ColumnConfigMap,
   FilterConfig,
 } from '@redhat-cloud-services/frontend-components/TableView';
-import { useBundleFacets } from '../../../data/queries/bundles';
-import { useEvents } from '../../../data/queries/events';
+import { useBundleFacets } from '../../data/queries/bundles';
+import { useEvents } from '../../data/queries/events';
 import type {
   EndpointType,
   EventLogEntry,
   EventLogEntryAction,
   Severity,
-} from '../../../data/types/events.types';
-import messages from '../messages';
+} from '../../data/types/events.types';
+import messages from './messages';
 
 const COLUMNS = [
   'event_type',

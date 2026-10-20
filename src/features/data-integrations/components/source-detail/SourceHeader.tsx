@@ -34,10 +34,10 @@ import { useIntl } from 'react-intl';
 const COLON_SPACE = ': ';
 
 import DateFormat from '@redhat-cloud-services/frontend-components/DateFormat';
-import messages from '../messages';
-import SourceStatusLabel from '../../../components/SourceStatusLabel';
-import { getSourceTypeIcon } from '../../../constants/sourceTypeIcons';
-import type { Source, SourceType } from '../../../data/types/sources.types';
+import messages from './messages';
+import SourceStatusLabel from '../SourceStatusLabel';
+import { getSourceTypeIcon } from '../../constants/sourceTypeIcons';
+import type { Source, SourceType } from '../../data/types/sources.types';
 
 interface SourceHeaderProps {
   source: Source;

@@ -5,7 +5,7 @@ import { StorybookMockProvider } from '@redhat-cloud-services/hcc-storybook-hub'
 import { waitForModalClose } from '../../shared/interactionHelpers';
 import DataIntegrationsPage from './DataIntegrationsPage';
 import MyDataIntegrationsTab from './components/MyDataIntegrationsTab';
-import SourceDetailPage from './features/source-detail/SourceDetailPage';
+import SourceDetailPage from './components/source-detail/SourceDetailPage';
 import { createSourcesHandlers, sourcesDb } from './data/mocks/sources';
 
 const DOCS_URL =

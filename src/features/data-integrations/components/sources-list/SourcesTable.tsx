@@ -17,9 +17,9 @@ import { useApplicationTypes } from '../../data/queries/useApplicationTypes';
 import type { Source } from '../../data/types/sources.types';
 import type { SourceTypeName } from '../../types';
 import { AppLink } from '../../../../Components/AppLink';
-import AddDataIntegrationDropdown from '../../components/AddDataIntegrationDropdown';
-import ConnectedApplicationsCell from './components/ConnectedApplicationsCell';
-import SourceStatusLabel from '../../components/SourceStatusLabel';
+import AddDataIntegrationDropdown from '../AddDataIntegrationDropdown';
+import ConnectedApplicationsCell from './ConnectedApplicationsCell';
+import SourceStatusLabel from '../SourceStatusLabel';
 import messages from './messages';
 import pageMessages from '../../messages';
 

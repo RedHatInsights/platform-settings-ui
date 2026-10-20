@@ -41,17 +41,18 @@ data-integrations/
 │   ├── docs.ts                        # guide URL + per-provider anchors
 │   └── sourceTypeIcons.ts             # frontend-assets logo paths
 ├── data/                              # see "Data layer" below
-├── features/
-│   └── about/                         # About tab (RHCLOUD-49534)
-│       ├── AboutTab.tsx
-│       ├── AboutTab.stories.tsx
-│       ├── messages.ts
-│       └── components/UseCaseCard.tsx
 └── components/
     ├── AddDataIntegrationDropdown.tsx
     ├── AddDataIntegrationDropdown.stories.tsx
     ├── AddIntegrationWizard.tsx       # wizard host: catalogue, mutation, cancel
     ├── MyDataIntegrationsTab.tsx
+    ├── about/                         # About tab (RHCLOUD-49534)
+    │   ├── AboutTab.tsx
+    │   ├── AboutTab.stories.tsx
+    │   ├── messages.ts
+    │   └── UseCaseCard.tsx
+    ├── sources-list/                  # Integration table
+    ├── source-detail/                 # Source details
     └── wizard/                        # see "The creation wizard" below
         ├── integrationWizardSchema.ts # the steps, the routing between them
         ├── IntegrationsFormRenderer.tsx
@@ -60,8 +61,8 @@ data-integrations/
         └── SubmissionResult.tsx
 ```
 
-The tree above lists only what the About tab touches; `features/sources-list` and
-`features/source-detail` are documented in their own sections below.
+The table and detail view live in `components/sources-list` and
+`components/source-detail` alongside the rest of this island.
 
 `experience-ui/no-boundary-violations` is set to `error`, so nothing here may import from
 `alert-manager` or `settings-overview`. Shared code goes through `src/shared/`,

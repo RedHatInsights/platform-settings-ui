@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAppServices } from '../../../../../../shared/ServiceContext';
+import { useAppServices } from '../../../../shared/ServiceContext';
 import { EventTypesParams } from '../../types';
 import { fetchEventTypes } from '../api/eventTypes';
 

@@ -1,5 +1,5 @@
 export { default as DataIntegrationsPage } from './DataIntegrationsPage';
-export { default as MyDataIntegrationsTab } from './components/MyDataIntegrationsTab';
+export { default as MyDataIntegrationsTab } from './sources-list/MyDataIntegrationsTab';
 export { default as AboutTab } from './components/about/AboutTab';
 export type { AboutTabProps } from './components/about/AboutTab';
 export type { SourceTypeName, IntegrationTypeOption } from './types';
@@ -25,11 +25,11 @@ export type {
 export {
   DataIntegrationsWidget,
   useIntegrationCounts,
-} from './components/integrations-widget';
+} from './integrations-widget';
 export type {
   IntegrationCounts,
   DataIntegrationProvider,
-} from './components/integrations-widget';
+} from './integrations-widget';
 export {
   SOURCE_TYPE_ICONS,
   getSourceTypeIcon,

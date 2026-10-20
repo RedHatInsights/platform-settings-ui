@@ -19,7 +19,7 @@ import {
 } from '@patternfly/react-core/dist/dynamic/layouts/Grid';
 import ExternalLinkAltIcon from '@patternfly/react-icons/dist/dynamic/icons/external-link-alt-icon';
 import UseCaseCard from './UseCaseCard';
-import AddIntegrationWizard from '../AddIntegrationWizard';
+import AddIntegrationWizard from '../../wizard/AddIntegrationWizard';
 import messages from './messages';
 import { DOCS_URL } from '../../constants/docs';
 import type { SourceTypeName } from '../../types';

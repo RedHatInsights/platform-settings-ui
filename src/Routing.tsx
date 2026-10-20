@@ -8,7 +8,7 @@ import { Spinner } from '@patternfly/react-core/dist/dynamic/components/Spinner'
 const AlertManagerPage = lazy(
   () =>
     import(
-      /* webpackChunkName: "AlertManagerPage" */ './features/alert-manager/components/AlertManagerPage'
+      /* webpackChunkName: "AlertManagerPage" */ './features/alert-manager/AlertManagerPage'
     ),
 );
 const OopsPage = lazy(
@@ -23,7 +23,7 @@ const NoPermissionsPage = lazy(
 const EventLogPage = lazy(
   () =>
     import(
-      /* webpackChunkName: "EventLogPage" */ './features/alert-manager/components/event-log/EventLogPage'
+      /* webpackChunkName: "EventLogPage" */ './features/alert-manager/event-log/EventLogPage'
     ),
 );
 const AboutPage = lazy(() =>
@@ -40,13 +40,13 @@ const DataIntegrationsPage = lazy(
 const MyDataIntegrationsTab = lazy(
   () =>
     import(
-      /* webpackChunkName: "MyDataIntegrationsTab" */ './features/data-integrations/components/MyDataIntegrationsTab'
+      /* webpackChunkName: "MyDataIntegrationsTab" */ './features/data-integrations/sources-list/MyDataIntegrationsTab'
     ),
 );
 const SourceDetailPage = lazy(
   () =>
     import(
-      /* webpackChunkName: "SourceDetailPage" */ './features/data-integrations/components/source-detail/SourceDetailPage'
+      /* webpackChunkName: "SourceDetailPage" */ './features/data-integrations/source-detail/SourceDetailPage'
     ),
 );
 

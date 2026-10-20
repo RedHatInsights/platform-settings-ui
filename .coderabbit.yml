@@ -108,6 +108,8 @@ reviews:
     - path: "src/features/**"
       instructions: |
         Feature islands are self-contained. Flag imports between features.
+        Route pages and API-owning UI belong at an island or named subfeature
+        root, not under components/. Subfeatures may have their own components/.
         Components should use useAppServices(), not useChrome() directly.
         Data fetching should use TanStack Query hooks, not useEffect+useState.
 

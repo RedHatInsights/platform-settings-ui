@@ -7,7 +7,7 @@ import {
   DropdownList,
 } from '@patternfly/react-core/dist/dynamic/components/Dropdown';
 import { MenuToggle } from '@patternfly/react-core/dist/dynamic/components/MenuToggle';
-import AddIntegrationWizard from './AddIntegrationWizard';
+import AddIntegrationWizard from '../wizard/AddIntegrationWizard';
 import messages from '../messages';
 import type { SourceTypeName } from '../types';
 

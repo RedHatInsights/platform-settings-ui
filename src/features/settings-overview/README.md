@@ -6,10 +6,9 @@ Landing page for the Settings application, providing an overview and navigation 
 
 ```
 settings-overview/
-├── components/
-│   ├── AboutPage.tsx              # Main page component
-│   ├── AboutPage.scss             # Page styles
-│   └── AboutPage.stories.tsx      # Storybook stories
+├── AboutPage.tsx                  # Route-level feature
+├── AboutPage.scss                 # Page styles
+├── AboutPage.stories.tsx          # Storybook stories
 ├── messages.ts                    # i18n messages
 ├── index.ts                       # Exports
 └── README.md

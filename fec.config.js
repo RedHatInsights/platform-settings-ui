@@ -23,7 +23,7 @@ module.exports = {
     exposes: {
       './RootApp': './src/AppEntry',
       './DataIntegrationsWidget':
-        './src/features/data-integrations/components/integrations-widget',
+        './src/features/data-integrations/integrations-widget',
     },
     exclude: ['react-router-dom'],
     shared: [

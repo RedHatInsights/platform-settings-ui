@@ -12,10 +12,9 @@ import InfoCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/info-circ
 import ListIcon from '@patternfly/react-icons/dist/dynamic/icons/list-icon';
 import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHeader';
 import Main from '@redhat-cloud-services/frontend-components/Main';
-// eslint-disable-next-line no-restricted-imports -- Page component needs chrome for document title
-import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome';
+import { useAppServices } from '../../shared/ServiceContext';
 import AddDataIntegrationDropdown from './components/AddDataIntegrationDropdown';
-import AboutTab from './features/about/AboutTab';
+import AboutTab from './components/about/AboutTab';
 import messages from './messages';
 import { DOCS_URL } from './constants/docs';
 import type { SourceTypeName } from './types';
@@ -32,11 +31,11 @@ type TabKey = 'my-integrations' | 'about';
 
 const DataIntegrationsPage: React.FC = () => {
   const intl = useIntl();
-  const { updateDocumentTitle } = useChrome();
+  const { updateDocumentTitle } = useAppServices();
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
-    updateDocumentTitle?.(intl.formatMessage(messages.pageTitle));
+    updateDocumentTitle(intl.formatMessage(messages.pageTitle));
   }, [updateDocumentTitle, intl]);
 
   // Consume query parameters emitted by widgets and other entry points.

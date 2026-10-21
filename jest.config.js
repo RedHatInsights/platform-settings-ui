@@ -14,7 +14,6 @@ module.exports = {
   preset: 'ts-jest/presets/js-with-babel-esm',
   testEnvironment: 'jsdom',
   coverageDirectory: './coverage/',
-  collectCoverage: true,
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/stories/*', '!src/**/*.stories.{ts,tsx}'],
   roots: ['<rootDir>/src/'],
   moduleNameMapper: {

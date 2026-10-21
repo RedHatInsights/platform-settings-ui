@@ -19,6 +19,9 @@ See `CLAUDE.md` for full architecture details.
 ### Feature Islands (`src/features/`)
 Each feature is self-contained: components, hooks, queries, mocks, stories,
 and docs co-located in one folder. Features should not import from each other.
+Route pages and UI that calls API query or mutation hooks belong at the island
+root or in a named subfeature folder. Keep UI-only pieces under `components/`;
+subfeatures may have their own `components/` folders.
 
 ### ServiceContext DI (`src/shared/ServiceContext.tsx`)
 Components use `useAppServices()` instead of importing `useChrome()` directly.

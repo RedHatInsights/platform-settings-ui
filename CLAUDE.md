@@ -188,11 +188,14 @@ export default MyComponent;
 
 ### Chrome Integration
 
+Feature components use `useAppServices()` for Chrome-backed actions. `App.tsx`
+creates the browser services from `useChrome()`; stories and tests supply mocks.
+
 ```tsx
-import { useChrome } from '@redhat-cloud-services/frontend-components/useChrome';
+import { useAppServices } from '../../shared/ServiceContext';
 
 const MyComponent = () => {
-  const { updateDocumentTitle, appAction } = useChrome();
+  const { updateDocumentTitle, appAction } = useAppServices();
 
   useEffect(() => {
     updateDocumentTitle('My Page Title');

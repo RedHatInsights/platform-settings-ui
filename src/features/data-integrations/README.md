@@ -41,27 +41,30 @@ data-integrations/
 │   ├── docs.ts                        # guide URL + per-provider anchors
 │   └── sourceTypeIcons.ts             # frontend-assets logo paths
 ├── data/                              # see "Data layer" below
-├── features/
-│   └── about/                         # About tab (RHCLOUD-49534)
-│       ├── AboutTab.tsx
-│       ├── AboutTab.stories.tsx
-│       ├── messages.ts
-│       └── components/UseCaseCard.tsx
+├── sources-list/
+│   ├── MyDataIntegrationsTab.tsx       # Routed tab
+│   ├── SourcesTable.tsx               # Fetches and filters sources
+│   └── components/ConnectedApplicationsCell.tsx
+├── source-detail/
+│   ├── SourceDetailPage.tsx           # Routed page, fetches one source
+│   └── components/                   # Header, fields, applications
+├── wizard/
+│   ├── AddIntegrationWizard.tsx       # Catalogue, mutation, cancel
+│   ├── integrationWizardSchema.tsx    # Steps and routing between them
+│   ├── ReviewSummary.tsx              # Fetches application names for review
+│   ├── AwsManualInstructions.tsx      # Fetches AWS guidance and enrollment
+│   └── components/                   # Wizard UI and renderer
+├── integrations-widget/
+│   ├── DataIntegrationsWidget.tsx     # Fetches provider counts
+│   └── hooks/useIntegrationCounts.ts
 └── components/
     ├── AddDataIntegrationDropdown.tsx
-    ├── AddDataIntegrationDropdown.stories.tsx
-    ├── AddIntegrationWizard.tsx       # wizard host: catalogue, mutation, cancel
-    ├── MyDataIntegrationsTab.tsx
-    └── wizard/                        # see "The creation wizard" below
-        ├── integrationWizardSchema.ts # the steps, the routing between them
-        ├── IntegrationsFormRenderer.tsx
-        ├── SourceTypeCardSelect.tsx
-        ├── ReviewSummary.tsx
-        └── SubmissionResult.tsx
+    ├── SourceStatusLabel.tsx
+    └── about/                         # About tab and use-case cards
 ```
 
-The tree above lists only what the About tab touches; `features/sources-list` and
-`features/source-detail` are documented in their own sections below.
+Each subfeature keeps its data-owning container at its root and its UI-only
+pieces under `components/`. Shared API hooks remain in the island's `data/` folder.
 
 `experience-ui/no-boundary-violations` is set to `error`, so nothing here may import from
 `alert-manager` or `settings-overview`. Shared code goes through `src/shared/`,

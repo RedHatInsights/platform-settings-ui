@@ -16,6 +16,7 @@ export function createBrowserServices(
     isBeta: () => boolean;
     isProd: () => boolean;
     updateDocumentTitle?: (title: string) => void;
+    helpTopics?: { setActiveTopic?: (topic: string) => void };
   },
   addNotification: (notification: Notification) => void,
   isOrgAdmin: boolean,
@@ -45,6 +46,9 @@ export function createBrowserServices(
     notify,
     updateDocumentTitle: (title: string) => {
       chrome.updateDocumentTitle?.(title);
+    },
+    openHelpTopic: (topic: string) => {
+      chrome.helpTopics?.setActiveTopic?.(topic);
     },
     fetchCVEs: async (params = {}) => {
       const url = new URL(CVE_API_URL);

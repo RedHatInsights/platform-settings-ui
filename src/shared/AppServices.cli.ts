@@ -11,6 +11,7 @@ export function createCliServices(): AppServices {
     axios: Axios.create(),
     notify: () => undefined,
     updateDocumentTitle: () => undefined,
+    openHelpTopic: () => undefined,
     fetchCVEs: async () => [],
   };
 }

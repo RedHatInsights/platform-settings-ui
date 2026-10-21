@@ -9,9 +9,11 @@ src/features/
 ├── <feature-name>/
 │   ├── <FeatureName>Page.tsx
 │   ├── <FeatureName>Page.stories.tsx
+│   ├── <subfeature>/
+│   │   ├── <SubfeaturePage>.tsx
+│   │   └── components/  # UI pieces owned by the subfeature
 │   ├── components/
-│   │   ├── <Component>.tsx
-│   │   └── <Component>.stories.tsx
+│   │   └── <Component>.tsx
 │   ├── data/
 │   │   ├── queries/     # TanStack Query hooks
 │   │   └── mocks/       # MSW handlers for Storybook
@@ -21,7 +23,9 @@ src/features/
 ```
 
 Rules:
-- One folder per feature
+- One top-level folder per feature island
+- Keep route and API-owning containers at the island root or in a named subfeature folder
+- Keep UI-only pieces under `components/`; do not nest another `features/` folder
 - Co-locate everything the feature needs
 - Features should not import from each other
 - Use ServiceContext for Chrome dependencies (see `src/shared/ServiceContextDI.mdx`)

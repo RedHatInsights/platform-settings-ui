@@ -36,4 +36,5 @@ export interface AppServices {
   axios: AxiosInstance;
   notify: NotifyFn;
   updateDocumentTitle: (title: string) => void;
+  openHelpTopic: (topic: string) => void;
 }

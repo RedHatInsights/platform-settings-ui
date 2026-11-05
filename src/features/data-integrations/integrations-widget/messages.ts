@@ -20,7 +20,7 @@ export default defineMessages({
     id: 'dataIntegrationsWidget.integrationCount',
     description: 'Number of integrations for a provider',
     defaultMessage:
-      '{count, plural, =0 {0 integrations} one {1 integration} other {{count} integrations}}',
+      '{count, plural, =0 {0 integrations} one {# integration} other {{count} integrations}}',
   },
   amazonWebServices: {
     id: 'dataIntegrationsWidget.provider.aws',

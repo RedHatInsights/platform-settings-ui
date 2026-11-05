@@ -978,7 +978,7 @@
     "description": "Error loading integrations message"
   },
   "dataIntegrationsWidget.integrationCount": {
-    "defaultMessage": "{count, plural, =0 {0 integrations} one {1 integration} other {{count} integrations}}",
+    "defaultMessage": "{count, plural, =0 {0 integrations} one {# integration} other {{count} integrations}}",
     "description": "Number of integrations for a provider"
   },
   "dataIntegrationsWidget.loading": {

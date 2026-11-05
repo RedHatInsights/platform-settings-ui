@@ -9,7 +9,8 @@ on:
       - messages/**
       - deploy/frontend.yaml
       - deploy/locales/**
-      - src/**/*.{ts,tsx}
+      - src/**/*.ts
+      - src/**/*.tsx
       - package.json
       - package-lock.json
 

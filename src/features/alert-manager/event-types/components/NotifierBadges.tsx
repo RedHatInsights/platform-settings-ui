@@ -1,5 +1,5 @@
 import React from 'react';
-import { type IntlShape, useIntl } from 'react-intl';
+import { type IntlShape, type MessageDescriptor, useIntl } from 'react-intl';
 import {
   Label,
   LabelGroup,
@@ -24,30 +24,30 @@ function getNotifierLabel(
   subType?: string,
 ): string {
   if (type === 'camel' && subType) {
-    const subTypeMessages: Record<string, keyof typeof messages> = {
-      slack: 'notifierSlack',
-      google_chat: 'notifierGoogleChat',
-      teams: 'notifierTeams',
-      servicenow: 'notifierServiceNow',
-      splunk: 'notifierSplunk',
+    const subTypeMessages: Partial<Record<string, MessageDescriptor>> = {
+      slack: messages.notifierSlack,
+      google_chat: messages.notifierGoogleChat,
+      teams: messages.notifierTeams,
+      servicenow: messages.notifierServiceNow,
+      splunk: messages.notifierSplunk,
     };
-    const messageKey = subTypeMessages[subType];
-    if (messageKey) {
-      return intl.formatMessage(messages[messageKey]);
+    const message = subTypeMessages[subType];
+    if (message) {
+      return intl.formatMessage(message);
     }
     return subType;
   }
 
-  const typeMessages: Partial<Record<EndpointType, keyof typeof messages>> = {
-    email_subscription: 'notifierEmail',
-    drawer: 'notifierDrawer',
-    webhook: 'notifierWebhook',
-    ansible: 'notifierAnsible',
-    pagerduty: 'notifierPagerDuty',
-    camel: 'notifierIntegration',
+  const typeMessages: Partial<Record<EndpointType, MessageDescriptor>> = {
+    email_subscription: messages.notifierEmail,
+    drawer: messages.notifierDrawer,
+    webhook: messages.notifierWebhook,
+    ansible: messages.notifierAnsible,
+    pagerduty: messages.notifierPagerDuty,
+    camel: messages.notifierIntegration,
   };
-  const messageKey = typeMessages[type];
-  return messageKey ? intl.formatMessage(messages[messageKey]) : type;
+  const message = typeMessages[type];
+  return message ? intl.formatMessage(message) : type;
 }
 
 function getNotifierIcon(

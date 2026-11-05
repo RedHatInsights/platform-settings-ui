@@ -1,0 +1,114 @@
+{
+  "bundleSegments.settings.platform-settings.navItems.alert-manager.title": {
+    "defaultMessage": "Alert Manager",
+    "description": "title of bundleSegments.settings.platform-settings.navItems.alert-manager"
+  },
+  "bundleSegments.settings.platform-settings.navItems.data-integrations.title": {
+    "defaultMessage": "Data Integrations",
+    "description": "title of bundleSegments.settings.platform-settings.navItems.data-integrations"
+  },
+  "bundleSegments.settings.platform-settings.navItems.eventlog.title": {
+    "defaultMessage": "Event Log",
+    "description": "title of bundleSegments.settings.platform-settings.navItems.eventlog"
+  },
+  "bundleSegments.settings.platform-settings.navItems.overview.title": {
+    "defaultMessage": "Overview",
+    "description": "title of bundleSegments.settings.platform-settings.navItems.overview"
+  },
+  "module.defaultDocumentTitle": {
+    "defaultMessage": "Platform Settings | Settings",
+    "description": "defaultDocumentTitle of module"
+  },
+  "searchEntries.platform-settings-alertmanager.alt_title.alert-manager": {
+    "defaultMessage": "Alert Manager",
+    "description": "search alias (keyword/synonym) of searchEntries.platform-settings-alertmanager; short search term, not a sentence"
+  },
+  "searchEntries.platform-settings-alertmanager.alt_title.alerts": {
+    "defaultMessage": "Alerts",
+    "description": "search alias (keyword/synonym) of searchEntries.platform-settings-alertmanager; short search term, not a sentence"
+  },
+  "searchEntries.platform-settings-alertmanager.alt_title.notifications": {
+    "defaultMessage": "Notifications",
+    "description": "search alias (keyword/synonym) of searchEntries.platform-settings-alertmanager; short search term, not a sentence"
+  },
+  "searchEntries.platform-settings-alertmanager.description": {
+    "defaultMessage": "Manage alert configurations and notification settings for your organization.",
+    "description": "description of searchEntries.platform-settings-alertmanager"
+  },
+  "searchEntries.platform-settings-alertmanager.title": {
+    "defaultMessage": "Alert Manager",
+    "description": "title of searchEntries.platform-settings-alertmanager"
+  },
+  "searchEntries.platform-settings-eventlog.alt_title.event-log": {
+    "defaultMessage": "Event Log",
+    "description": "search alias (keyword/synonym) of searchEntries.platform-settings-eventlog; short search term, not a sentence"
+  },
+  "searchEntries.platform-settings-eventlog.alt_title.events": {
+    "defaultMessage": "Events",
+    "description": "search alias (keyword/synonym) of searchEntries.platform-settings-eventlog; short search term, not a sentence"
+  },
+  "searchEntries.platform-settings-eventlog.alt_title.notifications-log": {
+    "defaultMessage": "Notifications Log",
+    "description": "search alias (keyword/synonym) of searchEntries.platform-settings-eventlog; short search term, not a sentence"
+  },
+  "searchEntries.platform-settings-eventlog.description": {
+    "defaultMessage": "View and filter platform event logs for your organization.",
+    "description": "description of searchEntries.platform-settings-eventlog"
+  },
+  "searchEntries.platform-settings-eventlog.title": {
+    "defaultMessage": "Event Log",
+    "description": "title of searchEntries.platform-settings-eventlog"
+  },
+  "searchEntries.platform-settings-integrations.alt_title.data-integration": {
+    "defaultMessage": "Data Integration",
+    "description": "search alias (keyword/synonym) of searchEntries.platform-settings-integrations; short search term, not a sentence"
+  },
+  "searchEntries.platform-settings-integrations.alt_title.integrations": {
+    "defaultMessage": "Integrations",
+    "description": "search alias (keyword/synonym) of searchEntries.platform-settings-integrations; short search term, not a sentence"
+  },
+  "searchEntries.platform-settings-integrations.alt_title.sources": {
+    "defaultMessage": "Sources",
+    "description": "search alias (keyword/synonym) of searchEntries.platform-settings-integrations; short search term, not a sentence"
+  },
+  "searchEntries.platform-settings-integrations.description": {
+    "defaultMessage": "Manage data sources and integrations for the Hybrid Cloud Console.",
+    "description": "description of searchEntries.platform-settings-integrations"
+  },
+  "searchEntries.platform-settings-integrations.title": {
+    "defaultMessage": "Data Integrations",
+    "description": "title of searchEntries.platform-settings-integrations"
+  },
+  "serviceTiles.integrations-notifications.settings.settings-alert-manager.description": {
+    "defaultMessage": "Manage alert configurations and event logs for supported services on the Hybrid Cloud Console.",
+    "description": "description of serviceTiles.integrations-notifications.settings.settings-alert-manager"
+  },
+  "serviceTiles.integrations-notifications.settings.settings-alert-manager.title": {
+    "defaultMessage": "Alert Manager",
+    "description": "title of serviceTiles.integrations-notifications.settings.settings-alert-manager"
+  },
+  "serviceTiles.integrations-notifications.settings.settings-alert-preferences.description": {
+    "defaultMessage": "A standardized way of notifying users of events for supported services on the Hybrid Cloud Console.",
+    "description": "description of serviceTiles.integrations-notifications.settings.settings-alert-preferences"
+  },
+  "serviceTiles.integrations-notifications.settings.settings-alert-preferences.title": {
+    "defaultMessage": "Alert Preferences",
+    "description": "title of serviceTiles.integrations-notifications.settings.settings-alert-preferences"
+  },
+  "serviceTiles.systemConfiguration.settings.configurations-alert-manager.description": {
+    "defaultMessage": "Manage alert configurations and event logs for supported services on the Hybrid Cloud Console.",
+    "description": "description of serviceTiles.systemConfiguration.settings.configurations-alert-manager"
+  },
+  "serviceTiles.systemConfiguration.settings.configurations-alert-manager.title": {
+    "defaultMessage": "Alert Manager",
+    "description": "title of serviceTiles.systemConfiguration.settings.configurations-alert-manager"
+  },
+  "serviceTiles.systemConfiguration.settings.configurations-alert-preferences.description": {
+    "defaultMessage": "A standardized way of notifying users of events for supported services on the Hybrid Cloud Console.",
+    "description": "description of serviceTiles.systemConfiguration.settings.configurations-alert-preferences"
+  },
+  "serviceTiles.systemConfiguration.settings.configurations-alert-preferences.title": {
+    "defaultMessage": "Alert Preferences",
+    "description": "title of serviceTiles.systemConfiguration.settings.configurations-alert-preferences"
+  }
+}

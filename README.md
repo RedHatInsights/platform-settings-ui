@@ -1,63 +1,23 @@
-# frontend-starter-app 
+# Platform Settings UI
 
-React.js starter app for Red Hat Hybrid cloud console UI modules that includes Patternfly and shared Red Hat cloud service frontend components.
+Hybrid Cloud Console micro-frontend for `/settings/user-preferences/language` and its descendants. Chrome mounts `./RootApp` at that subtree only. The base URL shows a placeholder; undefined child paths show a not-found page. Language preferences are not implemented yet.
 
-## Initial etc/hosts setup
+## Local development
 
-In order to access the https://[env].foo.redhat.com in your browser, you have to add entries to your `/etc/hosts` file. This is a **one-time** setup that has to be done only once (unless you modify hosts) on each devel machine.
+Use Node 22 (CI) or Node 24 LTS. Make sure `stage.foo.redhat.com` resolves to `127.0.0.1` in `/etc/hosts`. Run `npm run patch:hosts` if local Console host mappings are missing.
 
-Best way is to edit manually `/etc/hosts` on your localhost line:
-
-```
-127.0.0.1 <your-fqdn> localhost prod.foo.redhat.com stage.foo.redhat.com
-```
-
-Alternatively you can do this by running following command:
-```bash
-npm run patch:hosts
+```sh
+npm ci
+npm start
 ```
 
-If this command throws an error run it as a `sudo`:
-```bash
-sudo npm run patch:hosts
-```
+Open `/settings/user-preferences/language` on the local staging URL printed by FEC (typically `https://stage.foo.redhat.com:1337`).
 
-## Getting started
+## Build and test
 
-1. ```npm install```
+- `npm run build` builds the federated app.
+- `npm run verify` runs the build, lint, and Jest checks used by CI.
+- `npm run storybook` starts Storybook.
+- With FEC running and `E2E_USER` and `E2E_PASSWORD` set, run `npx playwright test` to verify direct loading, refresh, and the child-route fallback in Chrome.
 
-2. ```npm run start```
-   1. If you are running the [chrome-service-backend](https://github.com/RedHatInsights/chrome-service-backend) locally, set the environment variable `CHROME_SERVICE` to the port that it is listening on (by default `8000`). For example, `CHROME_SERVICE=8000 npm run start`.
-
-3. Open browser in URL listed in the terminal output
-
-Update `appUrl` string inside `fec.config.js` according to your application URL. [Read more](http://front-end-docs-insights.apps.ocp4.prod.psi.redhat.com/ui-onboarding/fec-binary#TODO:documentalloptions).
-
-### Frontend operator
-
-HCC uses OpenShift frontend operator to collect metadata about individual UI modules and creates environment based UI configuration that is used by the Chrome UI shell application to construct the frontend.
-
-To learn about the operator and its configuration follow [this link](./docs/frontend-operator/index.md)
-
-### Scalprum Remote Hooks and Shared Stores
-
-This project demonstrates cross-micro-frontend state management using Scalprum's remote hooks and shared stores pattern. This enables event-driven state synchronization across independently deployed applications with optimal rendering performance.
-
-See the complete implementation in `/src/Routes/SharedStoresDemo/` and read the documentation:
-- [Full Guide](./docs/scalprum-remote-hooks-shared-stores.md) - Comprehensive documentation
-- [Quick Reference](./docs/scalprum-quick-reference.md) - Code snippets and cheat sheet
-
-### Testing
-
-`npm run verify` will run `npm run lint` (eslint) and `npm test` (Jest)
-
-#### Cypress Component Testing
-
-This project includes component tests using Cypress for testing React components in isolation:
-
-- `npm run test:cypress` - Run all component tests headlessly
-- `npm run test:cypress:open` - Open Cypress UI for interactive component testing
-- `npm run test:cypress:component` - Run component tests (same as test:cypress)
-
-Component tests are fast, reliable, and don't require a running server. They're perfect for testing individual UI components with different props and states.
-
+[`deploy/frontend.yaml`](deploy/frontend.yaml) registers the route with Frontend Operator and points Chrome to `/apps/platform-settings-ui/fed-mods.json`. Deployment must supply the `IMAGE`, `IMAGE_TAG`, and `ENV_NAME` parameters.

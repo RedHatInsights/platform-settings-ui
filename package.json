@@ -1,9 +1,9 @@
 {
-  "name": "experience-ui-starter-app",
+  "name": "platform-settings-ui",
   "version": "1.2.0",
   "private": true,
   "engines": {
-    "node": ">=18.20.8",
+    "node": "^22 || >=24",
     "npm": ">=8.19.4"
   },
   "scripts": {
@@ -68,7 +68,7 @@
     "webpack-bundle-analyzer": "4.10.2"
   },
   "insights": {
-    "appname": "experience-ui-starter-app"
+    "appname": "platform-settings-ui"
   },
   "msw": {
     "workerDirectory": [

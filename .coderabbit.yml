@@ -93,12 +93,6 @@ reviews:
         within() + role queries, not canvasElement.querySelector().
         Use userEvent.setup() for interactions.
 
-    - path: "src/features/roles/**"
-      instructions: |
-        This is a REFERENCE GUIDE, not production code. Changes here should
-        maintain the teaching quality of the code. Every pattern demonstrated
-        should be the recommended approach.
-
     - path: "eslint-rules/**"
       instructions: |
         Custom ESLint rules must land in the same PR as the pattern

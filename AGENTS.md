@@ -40,10 +40,10 @@ See `src/shared/WHY-TanStackQuery.md`.
 
 Three local rules under `experience-ui/*` — see `eslint-rules/README.md`.
 
-## Reference Guide
+## Route Scope
 
-`src/features/roles/` is a REFERENCE GUIDE demonstrating all patterns.
-Replace it with your own features when creating a new app.
+Register only `/settings/user-preferences/language` and its descendants in
+`deploy/frontend.yaml`. `src/Routing.tsx` renders a placeholder until the feature exists.
 
 ## File Naming
 

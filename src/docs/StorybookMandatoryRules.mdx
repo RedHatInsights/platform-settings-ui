@@ -93,13 +93,8 @@ const table = await canvas.findByRole('table');
 **Component stories** test a component in isolation with inline mock data:
 
 ```typescript
-const meta: Meta<typeof CVEList> = {
-  component: CVEList,
-  parameters: {
-    services: {
-      fetchCVEs: async () => [{ CVE: 'CVE-2024-12345', ... }],
-    },
-  },
+const meta: Meta<typeof AppLink> = {
+  component: AppLink,
 };
 ```
 

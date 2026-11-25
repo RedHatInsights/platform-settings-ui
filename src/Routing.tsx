@@ -1,94 +1,27 @@
-import { Suspense, lazy, useMemo } from 'react';
-import type { ComponentType } from 'react';
-import { Route as RouterRoute, Routes as RouterRoutes } from 'react-router-dom';
-import { InvalidObject } from '@redhat-cloud-services/frontend-components/InvalidObject';
-import { Bullseye, Spinner } from '@patternfly/react-core';
+import { PageSection } from '@patternfly/react-core/dist/dynamic/components/Page';
+import { Title } from '@patternfly/react-core/dist/dynamic/components/Title';
+import { Route, Routes } from 'react-router-dom';
 
-const SamplePage = lazy(
-  () =>
-    import(/* webpackChunkName: "SamplePage" */ './features/sample/SamplePage'),
-);
-const OopsPage = lazy(
-  () => import(/* webpackChunkName: "OopsPage" */ './Components/OopsPage'),
-);
-const NoPermissionsPage = lazy(
-  () =>
-    import(
-      /* webpackChunkName: "NoPermissionsPage" */ './Components/NoPermissionsPage'
-    ),
-);
-const RolesPage = lazy(
-  () =>
-    import(/* webpackChunkName: "RolesPage" */ './features/roles/RolesPage'),
-);
-const CreateRoleWizard = lazy(
-  () =>
-    import(
-      /* webpackChunkName: "CreateRoleWizard" */ './features/roles/components/CreateRoleWizard'
-    ),
-);
-const EditRoleWizard = lazy(
-  () =>
-    import(
-      /* webpackChunkName: "EditRoleWizard" */ './features/roles/components/EditRoleWizard'
-    ),
-);
-
-const routes = [
-  {
-    path: 'no-permissions',
-    element: NoPermissionsPage,
-  },
-  {
-    path: 'oops',
-    element: OopsPage,
-  },
-  {
-    path: '/',
-    element: SamplePage,
-  },
-  {
-    path: 'roles',
-    element: RolesPage,
-    childRoutes: [
-      { path: 'create', element: CreateRoleWizard },
-      { path: ':uuid/edit', element: EditRoleWizard },
-    ],
-  },
-  /* Catch all unmatched routes */
-  {
-    path: '*',
-    element: InvalidObject,
-  },
-];
-
-interface RouteType {
-  path?: string;
-  element: ComponentType;
-  childRoutes?: RouteType[];
-  elementProps?: Record<string, unknown>;
-}
-
-const renderRoutes = (routes: RouteType[] = []) =>
-  routes.map(({ path, element: Element, childRoutes, elementProps }) => (
-    <RouterRoute key={path} path={path} element={<Element {...elementProps} />}>
-      {renderRoutes(childRoutes)}
-    </RouterRoute>
-  ));
-
-const Routing = () => {
-  const renderedRoutes = useMemo(() => renderRoutes(routes), [routes]);
-  return (
-    <Suspense
-      fallback={
-        <Bullseye>
-          <Spinner />
-        </Bullseye>
+const Routing = () => (
+  <Routes>
+    <Route
+      index
+      element={
+        <PageSection>
+          <Title headingLevel="h1">Language</Title>
+          <p>Language preferences are not available yet.</p>
+        </PageSection>
       }
-    >
-      <RouterRoutes>{renderedRoutes}</RouterRoutes>
-    </Suspense>
-  );
-};
+    />
+    <Route
+      path="*"
+      element={
+        <PageSection>
+          <Title headingLevel="h1">Language page not found</Title>
+        </PageSection>
+      }
+    />
+  </Routes>
+);
 
 export default Routing;

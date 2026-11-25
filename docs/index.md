@@ -1,4 +1,4 @@
-# Frontend starter app docs
+# Platform Settings UI docs
 
 - [Frontend Operator](./frontend-operator/index.md)
   - [Basic configuration](./frontend-operator/basic-configuration.md)

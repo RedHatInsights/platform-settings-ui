@@ -1,26 +1,25 @@
-# Experience UI Starter App
+# Platform Settings UI
 
 ## Team Standards
 
 Read `node_modules/experience-ui-governance/standards/index.md` for team-wide rules.
 This repo follows all standards defined there. The sections below are repo-specific context.
 
-> See `AGENTS.md` for architecture patterns specific to this starter template.
+> See `AGENTS.md` for repository conventions and `README.md` for local setup.
 
-**Seed repository** for creating new Red Hat Hybrid Cloud Console (HCC) frontend applications. Use this as a template when starting a new HCC UI project — it provides a working foundation with all required integrations, build tooling, and testing infrastructure pre-configured.
+This Red Hat Hybrid Cloud Console (HCC) micro-frontend owns only
+`/settings/user-preferences/language` and its descendants. Keep the FEC app URL
+and `deploy/frontend.yaml` route in sync. Chrome loads `./RootApp` from
+`/apps/platform-settings-ui/fed-mods.json`.
 
-## Purpose
+## Starter Template Background
 
-This is a **starter template and reference implementation** that frontend teams use to:
+This app was created from the Experience UI Starter App, which frontend teams use to:
 - Bootstrap new HCC frontend applications quickly
 - Follow established HCC frontend patterns and best practices
 - Get pre-configured integration with Chrome shell, Module Federation, and FEO
 - Start with a working testing infrastructure (unit, component, e2e)
 - Learn by example from working code demonstrating common patterns
-
-**Who uses this**: Platform Experience Services teams and other HCC teams building new frontend micro-frontends.
-
-**How to use this**: Fork or clone this repository as the starting point for your new HCC application, then customize it for your specific use case (see "Getting Started with a New Application" below).
 
 ## What This Template Provides
 
@@ -72,7 +71,9 @@ HCC frontend applications are **micro-frontends** that run within the Chrome she
 - **Scalprum**: Enables cross-application communication and shared state
 - **Chrome Services**: Auth, navigation, notifications provided by Chrome shell
 
-## Getting Started with a New Application
+## Reference: Bootstrapping a Different Application
+
+The steps below apply to new projects based on the starter, not this repository.
 
 ### 1. Create Your Repository
 
@@ -164,18 +165,18 @@ All dependencies are already configured in `package.json`:
   - **Component**: Storybook with play functions
   - **E2E**: Playwright
 - **Linting**: ESLint with `@redhat-cloud-services/eslint-config-redhat-cloud-services`
-- **Node Requirements**: Node >=18.20.8, npm >=8.19.4
+- **Node Requirements**: Node 22 (CI) or 24 LTS, npm >=8.19.4
 
 **All of these are ready to use** — just `npm install` and start coding.
 
 ## Project Structure
 
 ```
-experience-ui-starter-app/
+platform-settings-ui/
 ├── src/
 │   ├── Components/         # Reusable React components
-│   ├── index.tsx          # Entry point
-│   └── RootApp.tsx        # Root application component
+│   ├── AppEntry.tsx       # Federated ./RootApp
+│   └── Routing.tsx        # Language route placeholder
 ├── config/                # Webpack and build configuration
 ├── deploy/
 │   └── frontend.yaml      # Frontend Operator configuration
@@ -190,7 +191,7 @@ experience-ui-starter-app/
 
 ### Prerequisites
 
-1. **Node.js and npm**: Install Node >=18.20.8 and npm >=8.19.4
+1. **Node.js and npm**: Install Node 22 or 24 LTS and npm >=8.19.4
 2. **Hosts file setup** (one-time): Add entries to `/etc/hosts` for local development:
 
 ```bash
@@ -478,20 +479,22 @@ npx playwright show-report       # View HTML report
   - Avoid fixed timeouts except for staging environment quirks
 - **Selectors**: Prefer role-based selectors (`getByRole`, `getByLabel`) over CSS selectors
 
-**Example** (see `playwright/experience-ui-starter-app.spec.ts`):
+**Example** (see `playwright/language.spec.ts`):
 
 ```typescript
 import { test, expect } from '@playwright/test';
 import { disableCookiePrompt } from '@redhat-cloud-services/playwright-test-auth';
 
-test.describe('frontend starter app', () => {
+test.describe('Language', () => {
   test.beforeEach(async ({ page }) => {
     await disableCookiePrompt(page);
-    await page.goto('/');
+    await page.goto('/settings/user-preferences/language', {
+      waitUntil: 'domcontentloaded',
+    });
   });
 
   test('page loads with expected content', async ({ page }) => {
-    await expect(page.getByText('Sample Insights App')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Language' })).toBeVisible();
   });
 });
 ```

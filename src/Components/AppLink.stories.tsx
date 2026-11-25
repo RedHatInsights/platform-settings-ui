@@ -26,10 +26,10 @@ const meta: Meta<typeof AppLink> = {
   component: AppLink,
   decorators: [
     (Story) => (
-      <MemoryRouter initialEntries={['/staging/starter/roles']}>
+      <MemoryRouter initialEntries={['/settings/user-preferences']}>
         <Routes>
           <Route
-            path="/staging/starter/*"
+            path="/settings/user-preferences/*"
             element={
               <>
                 <Story />
@@ -48,31 +48,31 @@ type Story = StoryObj<typeof AppLink>;
 
 export const Default: Story = {
   args: {
-    to: '/roles/create',
-    children: 'Create role',
+    to: '/language',
+    children: 'Language',
   },
   play: async ({ canvasElement, step }) => {
     const user = userEvent.setup();
 
     await step('Verify link renders with correct text', async () => {
       const canvas = within(canvasElement);
-      const link = canvas.getByRole('link', { name: 'Create role' });
+      const link = canvas.getByRole('link', { name: 'Language' });
       expect(link).toBeInTheDocument();
     });
 
     await step('Click link and verify navigation', async () => {
       const canvas = within(canvasElement);
-      const link = canvas.getByRole('link', { name: 'Create role' });
+      const link = canvas.getByRole('link', { name: 'Language' });
       await user.click(link);
       const location = canvas.getByTestId('current-location');
-      expect(location.textContent).toBe('/staging/starter/roles/create');
+      expect(location.textContent).toBe('/settings/user-preferences/language');
     });
   },
 };
 
 export const IdempotentBasename: Story = {
   args: {
-    to: '/staging/starter/roles',
+    to: '/settings/user-preferences/language',
     children: 'Already prefixed link',
   },
   play: async ({ canvasElement, step }) => {
@@ -87,7 +87,9 @@ export const IdempotentBasename: Story = {
         });
         await user.click(link);
         const location = canvas.getByTestId('current-location');
-        expect(location.textContent).toBe('/staging/starter/roles');
+        expect(location.textContent).toBe(
+          '/settings/user-preferences/language',
+        );
       },
     );
   },

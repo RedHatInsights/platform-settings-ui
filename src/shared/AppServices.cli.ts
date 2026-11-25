@@ -11,9 +11,5 @@ export function createCliServices(): AppServices {
     axios: Axios.create(),
     notify: (variant, title, description) =>
       console.log(`[cli] ${variant}: ${title} ${description ?? ''}`),
-    fetchCVEs: async () => {
-      console.log('[cli] fetchCVEs called');
-      return [];
-    },
   };
 }

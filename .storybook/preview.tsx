@@ -17,7 +17,6 @@ const baseMockServices: Omit<AppServices, 'addNotification' | 'notify'> = {
   appAction: () => {},
   getToken: async () => 'mock-token',
   environment: 'stage',
-  fetchCVEs: async () => [],
   axios: Axios.create(),
 };
 
@@ -50,8 +49,8 @@ const preview: Preview = {
       });
       return (
         <StorybookMockProvider
-          bundle="staging"
-          app="starter"
+          bundle="settings"
+          app="user-preferences"
           environment={
             parameters.environment === 'production' ? 'production' : 'stage'
           }

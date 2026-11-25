@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+      "outDir": "./dist/",
+      "sourceMap": true,
+      "noImplicitAny": true,
+      "module": "esnext",
+      "target": "esnext",
+      "jsx": "react-jsx",
+      "allowJs": true,
+      "moduleResolution": "bundler",
+      "removeComments": false,
+      "strict": true,
+      "skipLibCheck": true,
+      "allowSyntheticDefaultImports": true,
+      "esModuleInterop": true,
+      "forceConsistentCasingInFileNames": true,
+      "resolveJsonModule": true,
+      "types": ["node", "jest", "@testing-library/jest-dom"]
+  },
+  "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "config/**/*.ts"
+  ],
+  "exclude": [
+      "src/**/*.stories.ts",
+      "src/**/*.stories.tsx",
+      "src/**/*.mdx",
+      "src/shared/interactionHelpers.ts"
+  ]
+}

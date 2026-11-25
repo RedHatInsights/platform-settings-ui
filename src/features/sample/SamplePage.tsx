@@ -1,0 +1,94 @@
+import { Suspense, lazy, useEffect } from 'react';
+
+import {
+  Button,
+  Spinner,
+  Stack,
+  StackItem,
+  Title,
+} from '@patternfly/react-core';
+import {
+  PageHeader,
+  PageHeaderTitle,
+} from '@redhat-cloud-services/frontend-components/PageHeader';
+import { useAppServices } from '../../shared/ServiceContext';
+
+const SampleComponent = lazy(
+  () => import('./components/SampleComponent/sample-component'),
+);
+
+import CVEList from './components/CVEList';
+import './sample-page.scss';
+import { AppLink } from '../../Components/AppLink';
+
+const SamplePage = () => {
+  const { appAction, addNotification } = useAppServices();
+
+  useEffect(() => {
+    appAction('sample-page');
+  }, []);
+
+  const handleAlert = () => {
+    addNotification({
+      variant: 'success',
+      title: 'Notification title',
+      description: 'notification description',
+    });
+  };
+
+  return (
+    <>
+      <PageHeader>
+        <PageHeaderTitle title="Sample Insights App" />
+        <p> This is page header text </p>
+      </PageHeader>
+      <main>
+        <Stack hasGutter>
+          <StackItem>
+            <Title headingLevel="h2" size="3xl">
+              {' '}
+              Alerts{' '}
+            </Title>
+            <Button variant="primary" onClick={handleAlert}>
+              {' '}
+              Add alert{' '}
+            </Button>
+          </StackItem>
+          <StackItem>
+            <Suspense fallback={<Spinner />}>
+              <SampleComponent />
+            </Suspense>
+          </StackItem>
+          <StackItem>
+            <CVEList />
+          </StackItem>
+          <StackItem>
+            <Stack hasGutter>
+              <StackItem>
+                <Title headingLevel="h2" size="3xl">
+                  {' '}
+                  Links{' '}
+                </Title>
+              </StackItem>
+              <StackItem>
+                <AppLink to="/shared-stores-demo">
+                  Shared Stores Demo - Remote Hooks & Data Visualization
+                </AppLink>
+              </StackItem>
+              <StackItem>
+                <AppLink to="/oops"> How to handle 500s in app </AppLink>
+              </StackItem>
+              <StackItem>
+                <AppLink to="/no-permissions">
+                  How to handle 403s in app
+                </AppLink>
+              </StackItem>
+            </Stack>
+          </StackItem>
+        </Stack>
+      </main>
+    </>
+  );
+};
+
+export default SamplePage;

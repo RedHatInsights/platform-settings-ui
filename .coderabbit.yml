@@ -1,0 +1,164 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit review configuration for Experience UI team repos.
+#
+# AGENTS.md (auto-detected) covers rules for agents WRITING code.
+# This file covers rules for CodeRabbit REVIEWING code.
+# They are complementary: AGENTS.md = coding standards, this file = PR hygiene checks.
+#
+# When forking this template for a new app, customize the path_instructions
+# section for your repo's specific API client and feature island structure.
+
+language: "en-US"
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: true
+  high_level_summary: true
+  collapse_walkthrough: false
+  poem: false
+  review_status: true
+
+  path_filters:
+    - "!dist/**"
+    - "!build/**"
+    - "!node_modules/**"
+    - "!coverage/**"
+    - "!*.lock"
+    - "!package-lock.json"
+    - "!*.min.js"
+    - "!*.min.css"
+    - "!*.map"
+    - "!storybook-static/**"
+
+  path_instructions:
+    # Catch-all: PR hygiene checks applied to every changed file
+    - path: "**"
+      instructions: |
+        ## PR hygiene checks
+
+        ### Routes
+        If the PR adds or modifies a route (check routing config or any component
+        that introduces a new URL-tied modal/page):
+        - There must be a Storybook user-journey story covering the happy path.
+        - If it is a page or modal tied to a real URL, there must also be a Playwright
+          E2E spec or a concrete plan to add one.
+        - Flag the absence of either as a blocking issue.
+
+        ### Components
+        If the PR adds a new component in `**/features/` or `**/components/`:
+        - There must be a `.stories.tsx` file alongside it.
+        - The story must have at least one `play` function testing an interaction.
+        - Flag missing stories as a blocking issue. Flag stories with no `play` function as a warning.
+
+        ### TableView usage
+        If the PR introduces a `TableView` import without a corresponding `useTableState` import
+        in the same file, flag it as a blocking issue. The ESLint rule `experience-ui/require-use-table-state`
+        enforces this, but CodeRabbit should flag it explicitly in the review comment too.
+
+        ### Feature island READMEs
+        If the PR modifies files inside `**/features/<island>/` and introduces a new sub-feature,
+        changes the data layer, alters the permission model, or adds a notable constraint —
+        the island's `README.md` should be updated. Flag missing README updates as a warning.
+
+    - path: "**/features/**/*.tsx"
+      instructions: |
+        Export rule: components must use named exports only. Features (route/page containers, i.e. files
+        directly under `**/features/<island>/`) may additionally export a default, but must always have
+        a named export too. Flag `export default function` or `export default` as the only export on a
+        component file as a blocking issue.
+
+        Feature islands are self-contained. Flag imports between features as a blocking issue.
+        Components should use useAppServices(), not useChrome() directly.
+        Data fetching should use TanStack Query hooks, not useEffect+useState.
+
+    - path: "**/components/**/*.tsx"
+      instructions: |
+        Export rule (skip `*.stories.tsx` — Storybook CSF requires a default meta export):
+        shared components must use named exports only. No default exports.
+        Flag any `export default` in `**/components/` as a blocking issue.
+
+        Separation of concerns: components must not import raw infrastructure hooks — i.e.
+        low-level primitives that expose platform internals the component shouldn't know about.
+        Banned: `useFlag` (raw Unleash primitive — the component shouldn't know flag names),
+        `useIdentity` (raw identity context), `useChrome` (platform kitchen-sink API),
+        `usePermissions` (raw RBAC check). Semantic/domain hooks that encapsulate a decision
+        (e.g. `useWorkspacesFlag`) are fine — the distinction is whether the component is
+        interpreting raw infrastructure or consuming a resolved domain concept. If a component
+        imports a banned hook, flag it as a blocking issue.
+
+    - path: "src/**/*.stories.tsx"
+      instructions: |
+        Stories must have a title in meta. Play functions should use
+        within() + role queries, not canvasElement.querySelector().
+        Use userEvent.setup() for interactions.
+
+    - path: "src/features/roles/**"
+      instructions: |
+        This is a REFERENCE GUIDE, not production code. Changes here should
+        maintain the teaching quality of the code. Every pattern demonstrated
+        should be the recommended approach.
+
+    - path: "eslint-rules/**"
+      instructions: |
+        Custom ESLint rules must land in the same PR as the pattern
+        they enforce. Update eslint-rules/README.md when adding rules.
+
+    - path: "packages/eslint-plugin/**"
+      instructions: |
+        This is the shared ESLint plugin consumed by all Experience UI team repos.
+        Changes here affect rbac-ui, notifications-frontend, and platform-settings-ui.
+        Ensure backward compatibility. Add RuleTester tests for any rule changes.
+
+    - path: "src/docs/**"
+      instructions: |
+        Docs must not duplicate TypeScript type definitions from source — they reference
+        source file paths instead. Flag code blocks that contain `interface Foo { ... }` or
+        `type Foo = ...` declarations — these are definitions that will drift from source.
+
+    - path: "deploy/frontend.yaml"
+      instructions: |
+        For Frontend Operator configuration:
+        - Verify navigation routes match module routes
+        - Check that all required FEO fields are present
+        - Verify bundleSegments position values don't conflict
+
+    - path: ".github/CODEOWNERS"
+      instructions: |
+        Each owner entry must be on its own line for independent approval enforcement.
+        A single line with multiple teams means only one approval is required total — flag this.
+
+    - path: ".github/workflows/**/*.{yml,yaml}"
+      instructions: |
+        Reusable workflows (workflow_call) in this repo are consumed by other team repos.
+        Changes to reusable workflows must maintain backward compatibility with existing callers.
+        Verify secrets and inputs are properly documented.
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    base_branches:
+      - "master"
+      - "main"
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT MERGE"
+    ignore_usernames:
+      - "dependabot[bot]"
+      - "renovate[bot]"
+      - "github-actions[bot]"
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CLAUDE.md"
+      - "AGENTS.md"
+      - "docs/**/*.md"
+
+tone_instructions: "Experience UI team starter app and shared governance source. Be professional and direct. Focus on architectural boundaries, separation of concerns, and team standards. Distinguish blocking issues from suggestions."
